@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="page-header d-print-none">
+  <div class="container-xl">
+    <div class="row g-2 align-items-center">
+      <div class="col">
+        <h2 class="page-title">MINUTES OF MEETING</h2>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="container mt-5">
+  <div class="d-flex justify-content-start mb-3">
+    <a href="{% url 'mom_records' %}" class="btn btn-primary">
+      View MOM Records
+    </a>
+  </div>
+  <div class="page-body">
+    <div class="row row-cards">
+      <div class="col-12">
+        <form action="{% url 'mom' %}" method="post" class="card" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="card-body">
+            <!-- Topic -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label" for="topic">Topic</label>
+                <input type="text" class="form-control" id="topic" name="topic" placeholder="Enter topic" required />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="organize">Organization</label>
+                <input type="text" class="form-control" id="organize" name="organize" placeholder="Enter organization"
+                  required />
+              </div>
+            </div>
+
+            <!-- Client and Meeting Chair -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label" for="client">Client</label>
+                <input type="text" class="form-control" id="client" name="client" placeholder="Enter client" required />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="meeting_chair">Meeting Chair</label>
+                <input type="text" class="form-control" id="meeting_chair" name="meeting_chair"
+                  placeholder="Enter meeting chair" required />
+              </div>
+            </div>
+
+            <!-- Location and Date -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label" for="date">Updation Date</label>
+                <input type="date" class="form-control" id="date" name="date" required disabled />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="date">Meeting Date</label>
+                <input type="date" class="form-control" id="date" name="date" required />
+              </div>
+            </div>
+
+            <!-- Start Time and End Time -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label" for="start_time">Start Time</label>
+                <input type="time" class="form-control" id="start_time" name="start_time" required />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="end_time">End Time</label>
+                <input type="time" class="form-control" id="end_time" name="end_time" required />
+              </div>
+            </div>
+            <div class="row mb-3">
+              <!-- Duration -->
+              <div class="col-md-6">
+                <label class="form-label" for="duration">Duration</label>
+                <input type="text" class="form-control" id="duration" name="duration" placeholder="" required
+                  readonly />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="location">Location</label>
+                <input type="text" class="form-control" id="location" name="location" placeholder="Enter location"
+                  required />
+              </div>
+            </div>
+
+            <!-- Updated By -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label" for="updated_by">Updated By</label>
+                <input type="text" class="form-control" value="{{ user.username }}" disabled>
+              </div>
+            </div>
+
+            <!-- Attendees and Apologies Table -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label" for="attendees">Attendees</label>
+                <div id="attendees-container">
+                  <input type="text" class="form-control mb-2" name="attendees[]" placeholder="Attendee 1" required />
+                </div>
+                <button type="button" id="add-attendee-btn" class="btn btn-outline-primary">+ Add </button>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="apologies">Apologies</label>
+                <div id="apologies-container">
+                  <input type="text" class="form-control mb-2" name="apologies[]" placeholder="Apology 1" required />
+                </div>
+                <button type="button" id="add-apology-btn" class="btn btn-outline-primary">+ Add </button>
+              </div>
+            </div>
+
+            <!-- Agenda Section -->
+            <div class="row mb-3">
+              <div class="col-12">
+                <h5>Agenda</h5>
+                <div id="agenda-container">
+                  <input type="text" class="form-control mb-2" name="agenda[]" placeholder="Agenda item 1" required />
+                </div>
+                <button type="button" id="add-agenda-btn" class="btn btn-outline-primary">+ Add </button>
+              </div>
+            </div>
+
+            <div class="row" id="attachment-section">
+              <div class="mb-3">
+                <label for="attachment" class="form-label">Attachments</label>
+                <input type="file" class="form-control" name="attachment[]" multiple>
+              </div>
+              <div class="col-md-6 mb-3 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-primary" id="add-attachment-btn">Add More</button>
+              </div>
+            </div>
+
+            <!-- Meeting Conclusion -->
+            <div class="row mb-3">
+              <div class="col-12">
+                <label class="form-label" for="meeting_conclusion">Meeting Discusson</label>
+                <textarea class="form-control" id="meeting_conclusion" name="meeting_conclusion" rows="3"
+                  placeholder="Enter meeting conclusion"></textarea>
+              </div>
+            </div>
+
+            <!-- Summary of Discussion -->
+            <div class="row mb-3">
+              <div class="col-12">
+                <label class="form-label" for="summary_of_discussion">Summary of Discussion</label>
+                <textarea class="form-control" id="summary_of_discussion" name="summary_of_discussion" rows="3"
+                  placeholder="Enter summary of discussion"></textarea>
+              </div>
+            </div>
+
+            <!-- Submit and Reset Buttons -->
+            <div class="row mt-4">
+              <div class="col-12">
+                <button type="submit" class="btn btn-primary">Submit</button>
+                <button type="reset" class="btn btn-secondary">Reset</button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

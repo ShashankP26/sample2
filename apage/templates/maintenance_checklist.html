@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header d-print-none">
+  <div class="container-xl">
+    <div class="row g-2 align-items-center">
+      <div class="col">
+        <h2 class="page-title">MAINTENANCE CHECKLIST</h2>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container mt-5">
+  <div class="page-body">
+    <div class="container mt-5">
+      <div class="d-flex justify-content-start mb-3">
+          <a href="{% url 'maintenance_checklist_records' %}" class="btn btn-primary">
+              View Maintenance Records
+          </a>
+      </div>
+    <div class="row row-cards">
+      <div class="col-12">
+        <form method="post" class="card" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="card-body">
+            <div class="row">
+              <!-- Inspector Name -->
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="inspector-name">Inspector</label>
+                <input type="text" class="form-control" id="inspector-name" name="inspector_name"
+                  value="{{ user.username }}" disabled>
+              </div>
+
+              <!-- Date -->
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="date">Date</label>
+                <input type="date" class="form-control" id="date" name="date" required disabled>
+              </div>
+            </div>
+
+            <div class="row">
+              <!-- Machine Name -->
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="machine-name">Machine </label>
+                <select class="form-select" id="machine-name" name="machine_name" required>
+                  {% for machine in machines %}
+                  <option value="{{ machine.id }}">{{ machine.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <!-- Date of Visit -->
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="visit-date">Date of Inspection</label>
+                <input type="date" class="form-control" id="visit-date" name="visit_date" required>
+              </div>
+            </div>
+
+            <div class="row">
+              <!-- Supply Voltage -->
+              <div class="col-md-8 mb-3">
+                <label class="form-label">Supply Voltage</label>
+                <div class="d-flex align-items-center">
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" name="supply_voltage" value="checked">
+                    <span class="form-check-label">Checked</span>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" name="supply_voltage" value="repair">
+                    <span class="form-check-label">Repair</span>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" name="supply_voltage" value="replacement">
+                    <span class="form-check-label">Replacement</span>
+                  </div>
+                  <input type="text" class="form-control ms-2" name="supply_voltage_details"
+                    placeholder="Enter details for Supply Voltage">
+                </div>
+              </div>
+            </div>
+
+            <!-- Current Load -->
+
+            <div class="row">
+              <div class="col-md-8 mb-3">
+                <label class="form-label">Current Load</label>
+                <div class="d-flex align-items-center">
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" name="current_load" value="checked">
+                    <span class="form-check-label">Checked</span>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" name="current_load" value="repair">
+                    <span class="form-check-label">Repair</span>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" name="current_load" value="replacement">
+                    <span class="form-check-label">Replacement</span>
+                  </div>
+                  <input type="text" class="form-control ms-2" name="current_load_details"
+                    placeholder="Enter details for Current Load">
+                </div>
+              </div>
+            </div>
+
+
+            <!-- Notes -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="notes">Observations</label>
+                <div id="notes-container">
+                  <input type="text" class="form-control mb-2" name="observation[]" placeholder="Observation 1">
+                </div>
+                <button type="button" class="btn btn-outline-primary mt-2" id="add-note-btn">+ Add More </button>
+              </div>
+            </div>
+            <!-- Attachment Section -->
+            <div class="row" id="attachment-section">
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="attachment">Attachment</label>
+                <input type="file" class="form-control" name="attachment[]">
+              </div>
+              <div class="col-md-6 mb-3 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-primary" id="add-attachment-btn">Add More</button>
+              </div>
+            </div>
+
+            <!-- Submit and Reset Buttons -->
+            <div class="row">
+              <div class="col-md-12 d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary me-2">Submit</button>
+                <button type="reset" class="btn btn-secondary">Reset</button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}

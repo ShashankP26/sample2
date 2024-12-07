@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="page-body">
+    <div class="row row-cards">
+      <div class="col-12">
+        <div class="card mb-4">
+          <div class="card-body">
+            <h3>{{ mom.topic }}</h3>
+            <p><strong>Organized By:</strong> {{ mom.organize }}</p>
+            <p><strong>Client:</strong> {{ mom.client }}</p>
+            <p><strong>Meeting Chair:</strong> {{ mom.meeting_chair }}</p>
+            <p><strong>Date:</strong> {{ mom.date }}</p>
+            <p><strong>Location:</strong> {{ mom.location }}</p>
+            <p><strong>Start Time:</strong> {{ mom.start_time }}</p>
+            <p><strong>End Time:</strong> {{ mom.end_time }}</p>
+            <p><strong>Duration:</strong> {{ mom.duration }}</p>
+            <p><strong>Meeting Conclusion:</strong> {{ mom.meeting_conclusion }}</p>
+            <p><strong>Summary of Discussion:</strong> {{ mom.summary_of_discussion }}</p>
+
+            <h5>Attendees</h5>
+            <ul>
+              {% for attendee in mom.attendees %}
+                <li>{{ attendee }}</li>
+              {% endfor %}
+            </ul>
+
+            <h5>Apologies</h5>
+            <ul>
+              {% for apology in mom.apologies %}
+                <li>{{ apology }}</li>
+              {% endfor %}
+            </ul>
+
+            <h5>Agenda</h5>
+            <ul>
+              {% for agenda_item in mom.agenda %}
+                <li>{{ agenda_item }}</li>
+              {% endfor %}
+            </ul>
+
+            <h5>Attachments</h5>
+            <ul>
+              {% for attachment in mom.attachments.all %}
+                <li><a href="{{ attachment.file.url }}" target="_blank">{{ attachment.file.name }}</a></li>
+              {% endfor %}
+            </ul>
+
+            <a href="{% url 'mom_records' %}" class="btn btn-secondary">Back to Records</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

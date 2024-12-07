@@ -1,0 +1,88 @@
+<!-- service_report_list.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Service Reports</h2>
+    <div class="row row-cards mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form action="{% url 'service_report_list' %}" method="GET" class="row g-2">
+                        
+                        <div class="btn-group col-md-2">
+                            <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                Export Report
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{% url 'export_service_report' 'csv' %}">Export as CSV</a></li>
+                                <li><a class="dropdown-item" href="{% url 'export_service_report' 'pdf' %}">Export as PDF</a></li>
+                                <li><a class="dropdown-item" href="{% url 'export_service_report' 'xlsx' %}">Export as XLSX</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-md-2 mr-3">
+                            <a href="{% url 'servicereport' %}" class="btn btn-success">Create Report</a>
+                        </div>
+                    
+                        <div class="col-md-6">
+                            <input type="text" name="search" class="form-control" placeholder="Search reports by site name, date, or keywords...">
+                        </div>
+                    
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">Search</button>
+                        </div>
+                    </form>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-body">
+        <div class="row row-cards">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title">Service Reports List</h4>
+                    </div>
+                    <div class="container">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Service Name</th>
+                                    <th>Date of Visit</th>
+                                    <th>Customer Name</th>
+                                    <th>State</th>
+                                    <th>Status of Call</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for report in service_reports %}
+                                <tr>
+                                    <td>{{ report.service_name }}</td>
+                                    <td>{{ report.date_of_visit }}</td>
+                                    <td>{{ report.customer_name }}</td>
+                                    <td>{{ report.state.name }}</td>
+                                    <td>{{ report.status_of_call }}</td>
+                                    <td>
+                                        <!-- You can add action links like view/edit if needed -->
+                                        <a href="{% url 'view_service_report' report.id %}"
+                                            class="btn btn-info">View</a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6">No service reports found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock content %}

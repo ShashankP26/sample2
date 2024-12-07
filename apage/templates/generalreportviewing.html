@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>All General Reports</h2>
+    <div class="row row-cards mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form action="{% url 'generalreportsviewing' %}" method="GET" class="row g-2">
+
+                        <div class="btn-group col-md-2">
+                            <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                                Export Report
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{% url 'export_service_report' 'csv' %}">Export as
+                                        CSV</a></li>
+                                <li><a class="dropdown-item" href="{% url 'export_service_report' 'pdf' %}">Export as
+                                        PDF</a></li>
+                                <li><a class="dropdown-item" href="{% url 'export_service_report' 'xlsx' %}">Export as
+                                        XLSX</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-md-2 mr-3">
+                            <a href="{% url 'generalreport' %}" class="btn btn-success">Create Report</a>
+                        </div>
+                        <div class="col-md-6">
+                            <input type="text" name="search" class="form-control"
+                                placeholder="Search reports by site name, date, or keywords...">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">Search</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Site</th>
+                <th>Date of Visit</th>
+                <th>Point 1</th>
+                <th>Point 2</th>
+                <th>Point 3</th>
+                <th>Point 4</th>
+                <th>Notes</th>
+                <th>Attachment</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for report in reports %}
+            <tr>
+                <td>{{ report.site.name }}</td>
+                <td>{{ report.date_of_visit }}</td>
+                <td>{{ report.point1|truncatechars:30 }}</td>
+                <td>{{ report.point2|truncatechars:30 }}</td>
+                <td>{{ report.point3|truncatechars:30 }}</td>
+                <td>{{ report.point4|truncatechars:30 }}</td>
+                <td>{{ report.notes|truncatechars:50 }}</td>
+                <td>
+                    {% if report.attachment %}
+                    <a href="{{ report.attachment.url }}" target="_blank">View</a>
+                    {% else %}
+                    No Attachment
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'generate_pdf' report.id %}" class="btn btn-sm btn-success">Download PDF</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9" class="text-center">No reports found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

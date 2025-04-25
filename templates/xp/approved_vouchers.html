@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-center align-items-center mt-3 ms-6 me-3">
+    <h2>Approved Vouchers</h2>
+</div>
+
+<!-- Display total amount -->
+<div class="mb-3 ms-8">
+    <button type="button" class="btn btn-primary">
+        <strong>Total Amount: </strong> {{ total_amount|floatformat:2 }}
+    </button>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-bordered table-hover" style="border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th style="font-size: 14px; padding: 8px;">Voucher Number</th>
+                <th style="font-size: 14px; padding: 8px;">Item Name</th>
+                <th style="font-size: 14px; padding: 8px;">Raised Date</th>
+                <th style="font-size: 14px; padding: 8px;">Approved Date</th>
+                <th style="font-size: 14px; padding: 8px;">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for voucher in vouchers %}
+            <tr>
+                <td style="font-size: 14px; padding: 8px;">{{ voucher.voucher_number }}</td>
+                <td style="font-size: 14px; padding: 8px;">{{ voucher.item_name }}</td>
+                <td style="font-size: 14px; padding: 8px;">{{ voucher.date }}</td>
+                <td style="font-size: 14px; padding: 8px;">{{ voucher.verified_at }}</td>
+                <td style="font-size: 14px; padding: 8px;">{{ voucher.amount }}</td>
+            </tr>
+            {% endfor %}
+            {% if not vouchers %}
+            <tr>
+                <td colspan="5" class="text-center" style="font-size: 14px; padding: 8px;">No approved vouchers available.</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

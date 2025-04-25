@@ -1,0 +1,551 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quotation Preview - {{ quotation_number }}</title>
+    <style>
+        /* A4 Page Layout */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0 auto;
+            padding: 20px;
+            width: 21cm;
+            min-height: 29.7cm;
+            box-sizing: border-box;
+            background-color: #fff;
+            max-height: 99vh;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 10px;
+            margin-top: 0px;
+            padding-bottom: 10px;
+        }
+
+        header h1 {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .details-section {
+            margin-bottom: 20px;
+        }
+
+        .details-section h3 {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .details-section p {
+            margin: 5px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: center;
+        }
+
+        table th {
+            background-color: #f4f4f4;
+            font-weight: bold;
+        }
+
+        /* Adjust column widths */
+        table th:nth-child(1), table td:nth-child(1) {
+            width: 10%;
+        }
+        table th:nth-child(2), table td:nth-child(2) {
+            width: 30%;
+        }
+        table th:nth-child(3), table td:nth-child(3),
+        table th:nth-child(4), table td:nth-child(4) {
+            width: 15%;
+        }
+        table th:nth-child(5), table td:nth-child(5) {
+            width: 20%;
+        }
+
+        .totals-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .totals-container .section {
+            width: 48%;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 12px;
+            page-break-inside: avoid;
+        }
+
+        .line-border {
+            border-top: 1px solid #ddd;
+            margin-top: 20px;
+        }
+
+        @media print {
+            /* Print specific styles */
+            body {
+                width: 100%;
+                min-height: auto;
+                margin: 0;
+                padding: 20mm;
+            }
+
+            .details-section h3, .totals-container h3 {
+                font-size: 16px;
+                font-weight: normal;
+            }
+
+            .totals-container {
+                flex-direction: column;
+            }
+
+            table th, table td {
+                padding: 4px;
+            }
+
+            footer {
+                font-size: 10px;
+            }
+
+            .print-button {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="{% static 'xpredictlogo.jpg' %}" width="110" height="32" alt="Xpredict" class="navbar-brand-image">
+    </header>
+
+    <h1>Proposal Details</h1>
+    {% for comp in company  %}
+        <p><strong>{{ comp.c_name }} </strong></p>
+        <p><strong>{{ comp.mail }} / {{ comp.phone }} </strong></p>
+        
+        <table class="table table-bordered">
+            <tbody>
+                <tr>
+                    <td><strong>Date</strong></td>
+                    <td>{{ current_date }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Quotation No</strong></td>
+                    <td>{{ quotation_no }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Validity</strong></td>
+                    <td>15 days</td>
+                </tr>
+                <tr>
+                    <td><strong>Prepared by</strong></td>
+                    <td>Kirti</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        {% endfor %}
+
+    
+    
+    <h3 class="mt-4">Contents</h3>
+    <div class="mb-4">
+        {% for cont in data.contents %}
+        <div class="mb-2">
+            <p>{{ cont.value }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <h2 class="mt-4">Site Information</h2>
+    <ul>
+        {% for item in data.site_info %}
+            {% if item.is_checked %}
+            <li class="mb-2">
+                <p>{{ item.info_text }}</p>
+            </li>
+            {% endif %}
+            
+            {% if item.is_standard_checked %}
+            <li class="mb-2">
+                <p>{{ item.standard_text }}</p>
+            </li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+
+    
+    <h3 class="mt-4">Raw Sewage Characteristics</h3>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Sl. No</th>
+                <th>Raw Sewage Characteristics</th>
+                <th>Unit</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t1 in data.table_data %}
+                {% if t1.is_checked %}
+                <tr>
+                    <td>{{ t1.sl_no }}</td>
+                    <td>{{ t1.raw_sewage_characteristics }}</td>
+                    <td>{{ t1.unit }}</td>
+                    <td>{{ t1.value }}</td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+
+    <h2 class="mt-4">Treatment Processes and Purpose of Each Process in a Treatment System</h2>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Principal Purpose Unit Process</th>
+                <th>Unit Processes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for treat in data.treatment_processes %}
+                {% if treat.is_checked %}
+                <tr>
+                    <td>{{ treat.principal_purpose_unit_process }}</td>
+                    <td>{{ treat.unit_processes }}</td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2 class="mt-4">Observations and Suggestions</h2>
+    <ul>
+        {% for obs in data.observations_and_suggestions %}
+            {% if obs.observation_checked %}
+            <h3 class="mt-4">Observations</h3>
+            <li class="mb-2">
+                <p>{{ obs.observation }}</p>
+            </li>
+            {% endif %}
+            {% if obs.suggestion_checked %}
+            <h3 class="mt-4">Suggestions</h3>
+            <li class="mb-2">
+                <p>{{ obs.suggestion }}</p>
+            </li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+
+    <h2 class="mt-4">Requirements and Specifications</h2>
+    <ul>
+        {% for req in data.requirements_and_specifications %}
+            {% if req.requirement_checked %}
+            <li class="mb-2">
+                <p>{{ req.requirement_text }}</p>
+            </li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+
+    <h2 class="mt-4">Specs</h2>
+    <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Specs for 25 KLD</th>
+                        <th>HIDREC</th>
+                    </tr>
+                </thead>
+        <tbody>
+            {% for spec in data.specifications %}
+                {% if spec.spec_checked %}
+                    <tr>
+                        <td>{{ spec.specs_for_25kld }}</td>
+                        <td>{{ spec.hidrec }}</td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+
+    <h2 class="mt-4">Process Diagram</h2>
+    <ul>
+        {% for pro in data.process_diagram %}
+            {% if pro.process_diagram_checked %}
+            <li class="mb-2">
+                <p>{{ pro.req_text }}</p>
+            </li>
+            <li class="mb-2">
+                {% if pro.process_diagram1_path %}
+                    <img src="{% static pro.process_diagram1_path %}" alt="Process Diagram 1" class="img-fluid"  width="280" height="280"/>
+                {% endif %}
+            </li>
+            <li class="mb-2">
+                {% if pro.process_diagram2_path %}
+                    <img src="{% static pro.process_diagram2_path %}" alt="Process Diagram 2" class="img-fluid" width="280" height="280" />
+                    
+                    {% endif %}
+                </li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+
+
+    <h2>Process Description</h2>
+    {% for des in data.process_description %}
+        {% if des.process_data.process_description_checked %}
+        <p>{{ des.process_data.process_description }}</p>
+        {% endif %}
+    {% endfor %}
+
+    <h2 class="mt-4">Output Treated Water Quality as per KSPCB</h2>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Sl</th>
+                <th>Treated Water Characteristics</th>
+                <th>Unit</th>
+                <th>Standard Value as per KSPCB</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for outt in data.output_table %}
+                {% if outt.output_data.is_checked %}
+                <tr>
+                    <td>{{ outt.output_data.sl_no }}</td>
+                    <td>{{ outt.output_data.treated_water_characteristics }}</td>
+                    <td>{{ outt.output_data.unit }}</td>
+                    <td>{{ outt.output_data.standard_value }}</td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+    <ul>
+        <h3 class="mt-4">Sludge Handling System</h3>
+        {% for des in data.process_description %}
+            {% if des.process_data.process_description_checked %}
+                <p>{{ des.shs_text }}</p>
+            {% endif %}
+        {% endfor %}
+
+        <h3 class="mt-4">Automation</h3>
+        {% for des in data.process_description %}
+            {% if des.is_checked %}
+                <p>{{ des.automation_text }}</p>
+            {% endif %}
+        {% endfor %}
+    </ul>
+
+    <h2 class="mt-4">Pricing: Machine Costs</h2>
+    <ul>
+        {% for pri in data.pricing %}
+            {% if pri.is_checked %}
+                <p>{{ pri.machine_cost_text }}</p>
+            {% endif %}
+        {% endfor %}
+    </ul>
+
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Product on Offer</th>
+                <th>Capacity</th>
+                <th>Total Needed Capacity</th>
+                <th>Wastewater Type</th>
+                <th>Total Number of Machines</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for instal in data.installation %}
+            {% if instal.is_checked %}
+                <tr>
+                    <td>{{ instal.product_name }}</td>
+                    <td>{{ instal.capacity }}</td>
+                    <td>{{ instal.total_needed_capacity }}</td>
+                    <td>{{ instal.waste_water_type }}</td>
+                    <td>{{ instal.total_no_machines }}</td>
+                </tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Sl</th>
+                <th>Specification</th>
+                <th>Quantity</th>
+                <th>Unit</th>
+                <th>Unit Rate</th>
+                <th>Pricing Excluding GST (18%)</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sp in data.specification %}
+            {% if sp.is_checked %}
+                <tr>
+                    <td>{{ sp.sl_no }}</td>
+                    <td>{{ sp.specification }}</td>
+                    <td>{{ sp.qnty }}</td>
+                    <td>{{ sp.unit }}</td>
+                    <td>{{ sp.unit_rate }}</td>
+                    <td>{{ sp.price_exgst }}</td>
+                    <td>{{ sp.total }}</td>
+                </tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h3 class="mt-4">Terms and Conditions</h3>
+    <ul>
+        {% for pri in data.terms %}
+            {% if pri.is_checked %}
+                <p>{{ pri.text }}</p>
+            {% endif %}
+        {% endfor %}
+    </ul>
+
+    <h3 class="mt-4">General Terms and Conditions</h3>
+    <ul>
+        {% for gterms in data.general_terms_conditions %}
+            {% if gterms.performance_checked %}
+                <h4>Performance</h4>
+                <p>{{ gterms.performance_text }}</p>
+            {% endif %}
+            {% if gterms.flow_characteristics_checked %}
+                <h4>Flow and Characteristics</h4>
+                <p>{{ gterms.flow_characteristics_text }}</p>
+            {% endif %}
+            {% if gterms.trial_quality_check_checked %}
+                <h4>Trial Run and Quality Check Before Dispatch</h4>
+                <p>{{ gterms.trial_quality_check_text }}</p>
+            {% endif %}
+            {% if gterms.virtual_completion_checked %}
+                <h4>Virtual Completion</h4>
+                <p>{{ gterms.virtual_completion_text }}</p>
+            {% endif %}
+            {% if gterms.limitation_liability_checked %}
+                <h4>Limitations of Liability</h4>
+                <p>{{ gterms.limitation_liability_text }}</p>
+            {% endif %}
+            {% if gterms.force_clause_checked %}
+                <h4>Force Majeure Clause</h4>
+                <p>{{ gterms.force_clause_text }}</p>
+            {% endif %}
+            {% if gterms.additional_works_checked %}
+                <h4>Additional Works</h4>
+                <p>{{ gterms.additional_works_text }}</p>
+            {% endif %}
+            {% if gterms.warranty_guaranty_checked %}
+                <h4>Warranty/Guarantee</h4>
+                <p>{{ gterms.warranty_guaranty_text }}</p>
+            {% endif %}
+            {% if gterms.arbitration_checked %}
+                <h4>Arbitration</h4>
+                <p>{{ gterms.arbitration_text }}</p>
+            {% endif %}
+            {% if gterms.validity_checked %}
+                <h4>Validity</h4>
+                <p>{{ gterms.validity_text }}</p>
+            {% endif %}
+        {% endfor %}
+    </ul>
+
+    <h2>Appendix A</h2>
+    <h3>Scope of Work</h3>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Product on Offer</th>
+                <th>Capacity</th>
+                <th>Total Needed Capacity</th>
+                <th>Wastewater Type</th>
+                <th>Total Number of Machines</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for instal in data.installation %}
+            {% if instal.is_checked %}
+                <tr>
+                    <td>{{ instal.product_name }}</td>
+                    <td>{{ instal.capacity }}</td>
+                    <td>{{ instal.total_needed_capacity }}</td>
+                    <td>{{ instal.waste_water_type }}</td>
+                    <td>{{ instal.total_no_machines }}</td>
+                </tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h3 class="mt-4">Inclusions:</h3>
+    <ul>
+        <h4>Supply of Equipment</h4>
+        {% for apen in data.appendix %}
+            {% if apen.supply_eq_checked %}
+                <p>{{ apen.supply_eq_text }}</p>
+            {% endif %}
+        {% endfor %}
+
+        <h4>Installation & Commissioning of Equipment</h4>
+        {% for apen in data.appendix %}
+            {% if apen.instal_commissioning_checked %}
+                <p>{{ apen.instal_commissioning_text }}</p>
+            {% endif %}
+        {% endfor %}
+
+        <h4>Client's Scope</h4>
+        {% for apen in data.appendix %}
+            {% if apen.clients_scope_checked %}
+                <p>{{ apen.clients_scope_text }}</p>
+            {% endif %}
+        {% endfor %}
+
+        <h4>Note:</h4>
+        {% for apen in data.appendix %}
+            {% if apen.note_checked %}
+                <p>{{ apen.note_text }}</p>
+            {% endif %}
+        {% endfor %}
+
+        <h4>DRISTI Software Subscription and XHUB:</h4>
+        {% for apen in data.appendix %}
+            {% if apen.dristi_checked %}
+                <p>{{ apen.dristi_subscription_text }}</p>
+            {% endif %}
+        {% endfor %}
+
+        <h4>IOT Hardware:</h4>
+        {% for apen in data.appendix %}
+            {% if apen.iot_checked %}
+                <p>{{ apen.iot_hardware_text }}</p>
+            {% endif %}
+        {% endfor %}
+    </ul>
+     <footer>
+        <p>© Xpredict Labs. All rights reserved.</p>
+    </footer> 
+</html>

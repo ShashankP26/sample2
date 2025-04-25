@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minutes of Meeting</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .section-title {
+            margin-top: 30px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Minutes of Meeting</h1>
+
+    <table>
+        <tr>
+            <th>Topic</th>
+            <td>{{ mom.topic }}</td>
+        </tr>
+        <tr>
+            <th>Organized By</th>
+            <td>{{ mom.organize }}</td>
+        </tr>
+        <tr>
+            <th>Meeting Chair</th>
+            <td>{{ mom.meeting_chair }}</td>
+        </tr>
+        <tr>
+            <th>Date</th>
+            <td>{{ mom.date }}</td>
+        </tr>
+        <tr>
+            <th>Location</th>
+            <td>{{ mom.location }}</td>
+        </tr>
+        <tr>
+            <th>Start Time</th>
+            <td>{{ mom.start_time }}</td>
+        </tr>
+        <tr>
+            <th>End Time</th>
+            <td>{{ mom.end_time }}</td>
+        </tr>
+        <tr>
+            <th>Duration</th>
+            <td>{{ mom.duration }}</td>
+        </tr>
+        <tr>
+            <th>Meeting Conclusion</th>
+            <td>{{ mom.meeting_conclusion }}</td>
+        </tr>
+        <tr>
+            <th>Summary of Discussion</th>
+            <td>{{ mom.summary_of_discussion }}</td>
+        </tr>
+    </table>
+
+    <h5 class="section-title">Attendees</h5>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for attendee in mom.attendees %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ attendee }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="2">No attendees found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h5 class="section-title">Apologies</h5>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for apology in mom.apologies %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ apology }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="2">No apologies found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h5 class="section-title">Agenda</h5>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Agenda Item</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for agenda_item in mom.agenda %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ agenda_item }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="2">No agenda items found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h5 class="section-title">Attachments</h5>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>File Name</th>
+                <th>Link</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for attachment in mom.attachments.all %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ attachment.file.name }}</td>
+                <td><a href="{{ attachment.file.url }}" target="_blank">Download</a></td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">No attachments found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
+

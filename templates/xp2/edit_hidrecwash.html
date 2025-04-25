@@ -1,0 +1,65 @@
+
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-5">
+
+    <h2>Edit  Hidrec Wash Quote</h2><br>
+    <p><strong>Enquiry ID:</strong> {{ enquiry_id }}</p>
+    <p><strong>Quotation No:</strong> {{ quotation_no }}</p>
+
+    <form method="POST">
+        {% csrf_token %}
+        {% for hi in hidrec %}
+
+        
+
+        <div class="mb-3">
+            <label for="contents" class="form-label">Contents</label>
+            <textarea class="form-control" id="contents" name="hi_contents" rows="7">{{ hi.contents }}</textarea>
+        </div>
+
+        <div class="mb-3">
+            <label for="Hidrec text" class="form-label">Hidrec text</label>
+            <textarea class="form-control" id="wash_text" name="wash_texts" rows="7">{{ hi.hidrec_wash_text }}</textarea>
+        </div>
+
+        <div class="mb-3">
+            <label for="Price" class="form-label">Price</label>
+            <input type="text" class="form-control" id="h_price" name="price" value="{{ hi.price }}">
+        </div>
+
+        <div class="mb-3">
+            <label for="carwash text" class="form-label">carwash text</label>
+            <textarea class="form-control" id="cw_text" name="car_texts" rows="7">{{ hi.carwash_text }}</textarea>
+        </div>
+        <div class="mb-3">
+            <label for="Price oil Skimmer" class="form-label">Price oil Skimmer</label>
+            <input type="text" class="form-control" id="price_oil_skimmer" name="price_oil" value="{{ hi.priceoil_skimmer }}">
+        </div>
+        <div class="mb-3">
+            <label for="Specification" class="form-label">Specification</label>
+            <textarea class="form-control" id="specification" name="specifications" rows="15">{{ hi.specification }}</textarea>
+        </div>
+
+        <div class="mb-3">
+            <label for="Terms and Conditions" class="form-label">Terms and Conditions</label>
+            <textarea class="form-control" id="terms_conditions" name="terms&condition" rows="15">{{ hi.terms_conditions }}</textarea>
+        </div>
+
+        <div class="mb-3">
+            <label for="GM" class="form-label">General Maintenance</label>
+            <textarea class="form-control" id="generalmaintenance" name="general" rows="15">{{ hi.general_maintenance }}</textarea>
+        </div>
+        <div class="mb-3">
+            <label for="Total" class="form-label">Grand Total</label>
+            <input type="text" class="form-control" id="g_total" name="total" value="{{ hi.total_price }}">
+        </div>
+        {% endfor %}
+        <button type="submit" id="saveButton" class="btn btn-success">Save</button>
+            
+    </form>            
+
+</div>
+
+{% endblock  %}

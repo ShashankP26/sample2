@@ -1,0 +1,36 @@
+<!-- templates/admin/index.html -->
+{% extends "admin/index.html" %}
+
+{% block title %}Custom Admin Dashboard{% endblock %}
+
+{% block content %}
+    <h1>XpredictLabs</h1>
+    <div class="model-list">
+        <h3>Models:</h3>
+        <ul>
+            <li><a href="{% url 'admin:app_coremodule_changelist' %}">Check databases</a></li>
+        </ul>
+    </div>
+
+    <div class="group-buttons">
+        <h3>Manage Groups:</h3>
+        {% for group_button in group_buttons %}
+        {% if group_button.url_name %}
+        <button onclick="window.location.href='{% url 'admin:manage_group_permissions' group_name=group_button.name %}'">
+        {{ group_button.name }}
+        </button>
+        {% else %}
+            <button disabled>{{ group_button.name }} (Invalid URL)</button>
+        {% endif %}
+        {% endfor %}
+        <h3>Manage Users:</h3>
+        <button onclick="window.location.href='{% url 'admin:manage_user_groups' %}'">Manage User Groups</button>
+        <button onclick="window.location.href='{% url 'admin:auth_user_add' %}'">Add user</button>
+        <h3>Add Modules</h3>
+        <button onclick="window.location.href='{% url 'admin:app_coremodule_add' %}'">Add Module</button>
+        <button onclick="window.location.href='{% url 'admin:app_submodule_add' %}'">Add SubModule</button>
+        <h3>Module Visibility</h3>
+        <button onclick="window.location.href='{% url 'admin:auth_user_changelist' %}'">Module Visibility</button>
+        <button onclick="window.location.href='{% url 'admin:auth_user_changelist' %}'">Manage Submodule Visibility</button>        
+    </div>
+{% endblock %}

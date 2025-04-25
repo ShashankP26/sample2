@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load static %}
+
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta14/dist/js/tabler.min.js"></script>
+<div class="container-fluid"><br>
+  <h2>Edit Enquiry</h2>
+  
+  <div class="card">
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <!-- Render form fields -->
+        <div class="mb-3">
+          <label for="companyname" class="form-label">Company Name</label>
+          {{ form.companyname }}
+        </div>
+
+        <div class="mb-3">
+          <label for="customername" class="form-label">Customer Name</label>
+          {{ form.customername }}
+        </div>
+
+        <div class="mb-3">
+          <label for="email" class="form-label">Email</label>
+          {{ form.email }}
+        </div>
+
+        <div class="mb-3">
+          <label for="contact" class="form-label">Contact</label>
+          {{ form.contact }}
+        </div>
+
+        <div class="mb-3">
+          <label for="location" class="form-label">Location</label>
+          {{ form.location }}
+        </div>
+
+        <div class="mb-3">
+          <label for="status" class="form-label">Status</label>
+          {{ form.status }}
+        </div>
+
+        <div class="mb-3">
+            <label for="executive" class="form-label">Products</label>
+            {{ form.products }}
+          </div>
+
+        <div class="mb-3">
+          <label for="closuredate" class="form-label">Closure Date</label>
+          {{ form.closuredate }}
+        </div>
+
+       
+        <div class="mb-3">
+          <label for="executive" class="form-label">Executive</label>
+          {{ form.executive}}
+        </div>
+        <div class="mb-3">
+          <label for="attachment" class="form-label">Files</label><br>
+          <input type="file" class="form-control" name="attachment[]" multiple><br>
+          {% comment %} <button type="button" class="btn btn-outline-primary" id="add-attachment-btn">Add More</button> {% endcomment %}
+      
+          <!-- Add some space between the file input and the form files -->
+          <div style="margin-top: 10px;">
+              {{ form.files }}
+          </div>
+        {% comment %} <div class="row" id="attachment-section">
+          <div class="col-md-6 mb-3">
+            <label class="form-label" for="attachment">Attachment</label>
+            <input type="file" class="form-control" name="attachment[]" multiple>
+          </div>
+          <div class="col-md-6 mb-3 d-flex align-items-end">
+            <button type="button" class="btn btn-outline-primary" id="add-attachment-btn">Add More</button>
+          </div>
+        </div> {% endcomment %}
+
+        <div class="mb-3">
+          <label for="remarks" class="form-label">Remarks</label>
+          {{ form.remarks }}
+        </div>
+
+        <div class="d-flex justify-content-between">
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+          <a href="{% url 'enquiry_details' enquiry_id %}" class="btn btn-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% if form.errors %}
+    <div class="alert alert-danger">
+        <ul>
+        {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+                <li>{{ field }}: {{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+{% endblock %}

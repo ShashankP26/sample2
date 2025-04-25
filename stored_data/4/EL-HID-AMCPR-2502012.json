@@ -1,0 +1,21 @@
+{
+    "quotation_number": "EL-HID-AMCPR-2502012",
+    "contents": [],
+    "terms": [],
+    "Amc_Proposal": [],
+    "maintenance_support": [],
+    "yearly_maintenance": [],
+    "running_consumables": [],
+    "exclusions": [
+        {
+            "value": "vbchnfcg",
+            "is_checked": true
+        }
+    ],
+    "amc_pricing": [],
+    "Particulars": [],
+    "Subtotal_list": [],
+    "GST": [],
+    "Grand_Total": [],
+    "enquiry_id": 4
+}

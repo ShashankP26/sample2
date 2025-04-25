@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-center align-items-center mt-3">
+    <h2>Rejected Vouchers</h2>
+</div>
+
+<!-- Wrap table in a responsive container -->
+<div class="table-responsive">
+    <table class="table table-bordered table-hover ms-5 me-5 mt-3">
+        <thead>
+            <tr>
+                <th>Voucher Number</th>
+                <th>Item Name</th>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Reasons</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for voucher in rejected_vouchers %}
+            <tr>
+                <td>{{ voucher.voucher_number }}</td>
+                <td>{{ voucher.item_name }}</td>
+                <td>{{ voucher.date }}</td>
+                <td>{{ voucher.amount }}</td>
+                <td>{{ voucher.rejection_reason }}</td>
+            </tr>
+            {% endfor %}
+            {% if not rejected_vouchers %}
+            <tr>
+                <td colspan="5" class="text-center">No rejected vouchers available.</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

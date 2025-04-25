@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% comment %} {% load custom_filters %} {% endcomment %}
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta14/dist/js/tabler.min.js"></script>
+
+<div class="container mt-5"> 
+    <h2>Create Quotation</h2>
+    <div class="page-body">
+        <div class="container-fluid">
+          <form method="post" enctype="multipart/form-data" class="card">
+            {% csrf_token %}
+            
+            <div class="card-body">
+              <div class="row g-4">
+                <!-- Left Half -->
+                <div class="col-lg-6">
+                  <div class="mb-3">
+                    <label class="form-label"><strong>Enquiry ID:</strong></label>
+                    <p class="form-control-plaintext">{{ form.enquiry_display.id }}</p>
+                  
+                    <label class="form-label"><strong>Company Name:</strong></label>
+                    <p class="form-control-plaintext">{{ form.enquiry_display.company_name }}</p>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label"><strong>Company GST:</strong></label>
+                    <input type="text" name="companygst" value="{{ form.enquiry_display.company_gst }}" class="form-control" >
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label"><strong>Company PAN:</strong></label>
+                    <input type="text" name="companypan" value="{{ form.enquiry_display.company_pan }}" class="form-control" >
+                  </div>
+                </div>
+      
+                <!-- Right Half -->
+                <div class="col-lg-6">
+                  <div class="mb-3">
+                    <label class="form-label" for="{{ form.quote.id_for_label }}">Quote</label>
+                    {{ form.quote }}
+                  </div>
+
+                  <!-- Base Amount in Tabler Style -->
+                  <div class="mb-3">
+                    <label class="form-label" for="baseamount">Base Amount</label>
+                    <input type="number" name="baseamount" value="{{ form.baseamount.value }}" class="form-control" id="{{ form.baseamount.id_for_label }}" required>
+                  </div>
+
+                  <!-- BOQ in Tabler Style -->
+                  <div class="mb-3">
+                    <label class="form-label" for="boq">BOQ</label>
+                    {{ form.boq }}
+                  </div>
+                  
+                  <!-- Final Amount in Tabler Style -->
+                  <div class="mb-3">
+                    <label class="form-label" for="finalamount">Final Amount</label>
+                    <input type="number" name="finalamount" value="{{ form.finalamount.value }}" class="form-control" id="{{ form.finalamount.id_for_label }}" required>
+                  </div>
+                </div>
+              </div>
+            </div>
+      
+            <div class="card-footer text-end">
+              <a class="btn btn-link" href="{% url 'managequotationpage' enquiry_id %}">Cancel</a>
+              <button type="submit" class="btn btn-primary ms-auto">Save Quotation</button>
+            </div>
+          </form>
+        </div>
+{%endblock%}

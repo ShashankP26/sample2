@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container-fluid mt-5">
+        <h1 class="text-center mb-4">XPREDICT AUTOMATION SOLUTION PVT LTD</h1>
+        <h3 class="text-center mb-4">Create Cash Voucher</h3>
+
+        <form method="POST">
+            {% csrf_token %}
+            {{ form.as_p }}  <!-- Render the form fields -->
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    </div>
+{% endblock %}

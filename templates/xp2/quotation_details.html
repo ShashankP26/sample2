@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta14/dist/js/tabler.min.js"></script>
+
+<div class="container-fluid mt-4">
+    <h2 class="page-title">Quotation Details</h2><br>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <!-- Enquiry Information -->
+                <div class="col-md-6">
+                    <h3><strong>Enquiry Details:</strong></h3>
+                    <p><strong>Company Name:</strong> {{ enquiry.companyname }}</p>
+                    <p><strong>Customer Name:</strong> {{ enquiry.customername }}</p>
+                    <p><strong>Email:</strong> {{ enquiry.email }}</p>
+                    <p><strong>Contact:</strong> {{ enquiry.contact }}</p>
+                    <p><strong>Location:</strong> {{ enquiry.location }}</p>
+                    <p><strong>Status:</strong> {{ enquiry.get_status_display }}</p>
+                    <p><strong>Closure Date:</strong> {{ enquiry.closuredate }}</p>
+                    <p><strong>Executive:</strong> {{ enquiry.executive.name }}</p>
+                    <p><strong>Remarks:</strong> {{ enquiry.remarks }}</p>
+                    <p><strong>Files:</strong></p>
+                    {% if files %}
+                        <p>Total Files: {{ files.count }}</p>
+                        <ul>
+                            {% for file in files %}
+                                <li>
+                                    <a href="{{ file.file.url }}" download>{{ file.name }}</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p>No files uploaded</p>
+                    {% endif %}
+                </div>
+
+                <!-- Quotation Information -->
+                <div class="col-md-6">
+                    <h5><strong>Quotation Details:</strong></h5>
+                    <p><strong>Quotation ID:</strong> {{ quotations.id }}</p>
+                    <p><strong>Base Amount:</strong> {{ quotations.baseamount }}</p>
+                    <p><strong>Final Amount:</strong> {{ quotations.finalamount }}</p>
+                    <p><strong>BOQ:</strong></p>
+                    {% if boq_file_name %}
+                        <ul>
+                            <li>
+                                <a href="{{ quotations.boq.url }}" download>{{ boq_file_name }}</a>
+                            </li>
+                        </ul>
+                    {% else %}
+                        <p>No BOQ file uploaded</p>
+                    {% endif %}
+
+                    <p><strong>Quote:</strong></p>
+                    {% if quote_file_name %}
+                        <ul>
+                            <li>
+                                <a href="{{ quotations.quote.url }}" download>{{ quote_file_name }}</a>
+                            </li>
+                        </ul>
+                    {% else %}
+                        <p>No Quote file uploaded</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex justify-content-end mt-4">
+                <a href="{% url 'managequotationpage' enquiry.id %}" class="btn btn-primary me-3">Manage Quotation</a>
+                <a href="{% url 'enquries' %}" class="btn btn-secondary me-3">Back to Enquiries</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -18,12 +18,12 @@ class MachineAdmin(admin.ModelAdmin):
 
 @admin.register(MaintenanceChecklist)
 class MaintenanceChecklistAdmin(admin.ModelAdmin):
-    list_display = ('inspector_name', 'machine', 'visit_date')
+    list_display = ('inspector_name', 'machine', 'visit_date','edit_history')
     list_filter = ('date', 'machine')
 
 @admin.register(MaintenanceChecklistAttachment)
 class MaintenanceChecklistAttachmentAdmin(admin.ModelAdmin):
-    list_display = ('checklist', 'file')
+    list_display = ('checklist', 'file' ,'edit_history')
     search_fields = ('checklist__inspector_name', 'file')
 
 
@@ -44,8 +44,8 @@ from django.contrib import admin
 from .models import MOM, Attachment
 
 class MOMAdmin(admin.ModelAdmin):
-    list_display = ('topic', 'organize', 'client', 'meeting_chair', 'date', 'updated_at')
-    search_fields = ('topic', 'organize', 'client', 'meeting_chair')
+    list_display = ('topic', 'organize', 'meeting_chair', 'date', 'updated_at')
+    search_fields = ('topic', 'organize', 'meeting_chair')
     list_filter = ('date', 'location')
 
 class AttachmentAdmin(admin.ModelAdmin):
@@ -88,7 +88,7 @@ class ElectronicItemStatusAdmin(admin.ModelAdmin):
 class ElectronicItemAdmin(admin.ModelAdmin):
     list_display = ('name',)
     search_fields = ('name',)
-
+@admin.register(ElectronicPanelStatus)
 class ElectronicPanelStatus(admin.ModelAdmin):
     list_display = ('report', 'panel', 'checked', 'repair', 'replacement', 'remark')
     list_filter = ('checked', 'repair', 'replacement')
@@ -164,3 +164,12 @@ class ToolStatusAdmin(admin.ModelAdmin):
 class StateAdmin(admin.ModelAdmin):
     list_display = ('name',)
     search_fields = ('name',)
+
+from .models import ServiceReportEditLog
+
+@admin.register(ServiceReportEditLog)
+class ServiceReportEditLogAdmin(admin.ModelAdmin):
+    list_display = ('report', 'edited_by', 'edit_timestamp', 'field_changed', 'old_value', 'new_value')
+    list_filter = ('edit_timestamp', 'field_changed', 'edited_by')
+    search_fields = ('report__id', 'field_changed', 'old_value', 'new_value')
+    ordering = ('-edit_timestamp',)

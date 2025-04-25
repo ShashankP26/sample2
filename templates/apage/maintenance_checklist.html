@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+  /* Default Styles - Desktop First */
+
+/* Media Query for Small Screens */
+@media (max-width: 576px) {
+    /* Page Header */
+    .page-header h2 {
+        font-size: 1.5rem; /* Reduce font size for smaller screens */
+        text-align: center; /* Center align the header text */
+    }
+
+    /* Form Layout */
+    .form-label {
+        font-size: 0.9rem; /* Reduce label font size */
+    }
+
+    .form-control, .form-select {
+        font-size: 0.9rem; /* Adjust input and select font size */
+        padding: 0.5rem; /* Reduce padding for compactness */
+    }
+
+    /* Align Buttons and Inputs Vertically */
+    .row > .col-md-6, .row > .col-md-8 {
+        width: 100%; /* Ensure full width for columns */
+    }
+
+    /* Observations and Attachments */
+    #notes-container input,
+    #attachment-section input {
+        width: 100%; /* Make inputs full-width */
+        margin-bottom: 0.5rem; /* Add spacing */
+    }
+
+    /* Buttons */
+    .btn {
+        font-size: 0.85rem; /* Reduce button font size */
+        padding: 0.5rem 1rem; /* Compact button padding */
+    }
+
+    /* Add More Buttons */
+    #add-note-btn, #add-attachment-btn {
+        width: 100%; /* Make Add More buttons full-width */
+        margin-top: 0.5rem; /* Add spacing above */
+    }
+
+    /* Submit and Reset Buttons */
+    .d-flex.justify-content-end {
+        justify-content: center; /* Center align submit and reset buttons */
+    }
+
+    .d-flex.justify-content-end .btn {
+        width: 45%; /* Set consistent width for buttons */
+        margin: 0 0.5rem; /* Add spacing between buttons */
+    }
+}
+.form-check-inline {
+  margin-right: 10px;
+}
+
+.form-check-label {
+  white-space: nowrap;
+}
+
+input[type="text"] {
+  flex-grow: 1; /* Allow the textbox to grow as needed */
+}
+
+/* Small Devices (phones, <576px) */
+@media (max-width: 575.98px) {
+  .d-flex.align-items-center {
+    flex-wrap: wrap; /* Stack the items if space is limited */
+  }
+  .form-check-inline {
+    margin-bottom: 5px; /* Add spacing between stacked checkboxes */
+  }
+  input[type="text"] {
+    margin-top: 10px; /* Add spacing above the textbox */
+    width: 100%; /* Make textbox take full width */
+  }
+}
+
+/* Medium Devices (tablets, 576px to 767px) */
+@media (min-width: 576px) and (max-width: 767.98px) {
+  .d-flex.align-items-center {
+    flex-wrap: wrap; /* Stack the items if space is limited */
+  }
+  input[type="text"] {
+    width: 100%; /* Textbox takes full width on smaller tablets */
+  }
+}
+
+/* Large Devices (desktops, 768px and above) */
+@media (min-width: 768px) {
+  input[type="text"] {
+    width: auto; /* Textbox retains its natural size */
+  }
+}
+
+</style>
+<div class="page-header d-print-none">
+  <div class="container-fluid">
+    <div class="row g-2 align-items-center">
+      <div class="col">
+        <h2 class="page-title">MAINTENANCE CHECKLIST</h2>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid mt-5">
+  <div class="page-body">
+    <div class="container-fluid mt-5">
+      <div class="d-flex justify-content-start mb-3">
+          <a href="{% url 'maintenance_checklist' %}" class="btn btn-primary">
+              View Maintenance Records
+          </a>
+      </div>
+    <div class="row row-cards">
+      <div class="col-12">
+        <form method="post" class="card" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="card-body">
+            <div class="row">
+              <!-- Inspector Name -->
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="inspector-name">Inspector</label>
+                <input type="text" class="form-control" id="inspector-name" name="inspector_name"
+                  value="{{ user.username }}" disabled>
+              </div>
+
+              <!-- Date -->
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="date">Date</label>
+                <input type="date" class="form-control" id="date" name="date" required disabled>
+              </div>
+            </div>
+
+            <div class="row">
+              <!-- Machine Name -->
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="machine-name">Machine </label>
+                <select class="form-select" id="machine-name" name="machine_name" required>
+                  {% for machine in machines %}
+                  <option value="{{ machine.id }}">{{ machine.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <!-- Date of Visit -->
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="visit-date">Date of Inspection</label>
+                <input type="date" class="form-control" id="visit-date" name="visit_date" required>
+                <div id="visit-date-error" class="text-danger" style="display: none;">Future dates are not allowed. "Data Will not be stored"</div>
+            </div>
+            </div>
+
+            <!-- Supply Voltage -->
+              <div class="row">
+                <div class="col-md-8 mb-3">
+                  <label class="form-label">Supply Voltage</label>
+                  <div class="d-flex align-items-center">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" name="supply_voltage" value="checked">
+                      <span class="form-check-label">Checked</span>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" name="supply_voltage" value="repair">
+                      <span class="form-check-label">Repair</span>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" name="supply_voltage" value="replacement">
+                      <span class="form-check-label">Replacement</span>
+                    </div>
+                    <input type="text" class="form-control ms-2" name="supply_voltage_details" placeholder="Enter details for Supply Voltage" required>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Current Load -->
+              <div class="row">
+                <div class="col-md-8 mb-3">
+                  <label class="form-label">Current Load</label>
+                  <div class="d-flex align-items-center">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" name="current_load" value="checked">
+                      <span class="form-check-label">Checked</span>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" name="current_load" value="repair">
+                      <span class="form-check-label">Repair</span>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" name="current_load" value="replacement">
+                      <span class="form-check-label">Replacement</span>
+                    </div>
+                    <input type="text" class="form-control ms-2" name="current_load_details" placeholder="Enter details for Current Load" required>
+                  </div>
+                </div>
+              </div>
+
+
+
+            <!-- Notes -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="notes">Observations</label>
+                <div id="notes-container">
+                  <input type="text" class="form-control mb-2" name="observation[]" placeholder="Observation 1">
+                </div>
+                <button type="button" class="btn btn-outline-primary mt-2" id="add-note-btn">+ Add More </button>
+              </div>
+            </div>
+            <!-- Attachment Section -->
+            <div class="row" id="attachment-section">
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="attachment">Attachment</label>
+                <input type="file" class="form-control" name="attachment[]">
+              </div>
+              <div class="col-md-6 mb-3 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-primary" id="add-attachment-btn">Add More</button>
+              </div>
+            </div>
+
+            <!-- Submit and Reset Buttons -->
+            <div class="row">
+              <div class="col-md-12 d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary me-2">Submit</button>
+                <button type="reset" class="btn btn-secondary">Reset</button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    console.log("JavaScript Loaded");
+
+    // Get the input element and error message container by ID
+    const visitDateInput = document.getElementById("visit-date");
+    const errorDiv = document.getElementById("visit-date-error");
+
+    // Add event listener for the 'input' event on the visit-date field
+    visitDateInput.addEventListener("change", function () {
+        const selectedDate = new Date(visitDateInput.value); // Convert selected date to Date object
+        const today = new Date(); // Get today's date
+        today.setHours(0, 0, 0, 0);  // Set today's time to 00:00:00 for comparison
+
+        // Check if the selected date is in the future
+        if (selectedDate > today) {
+            errorDiv.style.display = "block"; // Show error message
+            visitDateInput.classList.add("is-invalid"); // Add 'is-invalid' class to the input field for styling
+        } else {
+            errorDiv.style.display = "none"; // Hide error message
+            visitDateInput.classList.remove("is-invalid"); // Remove the 'is-invalid' class
+        }
+    });
+});
+
+  
+<script>
+{% endblock %}

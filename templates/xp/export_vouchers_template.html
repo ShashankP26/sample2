@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h2 style="text-align: center;">E-Voucher Export</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Id</th>
+          <th>User</th>
+          <th style="width: 25%; border: 1px solid #ddd; padding: 8px;">Voucher Number</th>
+          <th>Date</th>
+          <th>Paid To</th>
+          <th>Item Name</th>
+          <th>Amount (₹)</th>
+          <th>Transaction Date</th>
+
+
+            </tr>
+        </thead>
+        <tbody>
+            {% for voucher in vouchers %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+          <td>{{ voucher.created_by }}</td>
+          <td>{{ voucher.evoucher_number }}</td>
+          <td>{{ voucher.date }}</td>
+          <td>{{ voucher.paid_to }}</td>
+          <td>{{ voucher.item_name }}</td>
+          <td>{{ voucher.amount }}</td>
+          <td>{{ voucher.transaction_date }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

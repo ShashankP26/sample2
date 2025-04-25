@@ -1,0 +1,12 @@
+/* static/ex.css */
+body {
+    font-family: Arial, sans-serif;
+}
+
+.table th, .table td {
+    text-align: center;
+}
+
+.modal-body input {
+    margin-bottom: 10px;
+}

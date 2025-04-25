@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% comment %} <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta14/dist/js/tabler.min.js"></script> {% endcomment %}
+<div class="container-fluid mt-4">
+  <h2 class="page-title">Confirmed Order Details</h2><br>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="row">
+        <!-- Enquiry Details -->
+        <div class="col-md-6">
+          <h4><strong>Enquiry Details:</strong></h4>
+          <p><strong>Enquiry id:</strong> {{ enquiry_id }}</p>
+          <p><strong>Company Name:</strong> {{ enquiry.companyname }}</p>
+          <p><strong>Customer Name:</strong> {{ enquiry.customername }}</p>
+          <p><strong>Email:</strong> {{ enquiry.email }}</p>
+          <p><strong>Contact:</strong> {{ enquiry.contact }}</p>
+          <p><strong>Location:</strong> {{ enquiry.location }}</p>
+          <p><strong>Status:</strong> {{ enquiry.get_status_display }}</p>
+          <p><strong>Closure Date:</strong> {{ enquiry.closuredate }}</p>
+          <p><strong>Executive:</strong> {{ enquiry.executive.name }}</p>
+          <p><strong>Remarks:</strong> {{ enquiry.remarks }}</p>
+        </div>
+  
+        <!-- Quotation Number aligned to the right -->
+        <div class="col-md-6 text-right">
+          <p><strong>Quotations</strong></p>
+          <p><strong>Click to Preview the Quotation:</strong></p>
+          {% if quotation_type == 'amc' %}
+              <a href="{% url 'amc_preview' quotation_no=quotation_number %}" class="btn btn-primary btn-sm">{{ quotation_number }}</a>
+          {% elif quotation_type == 'commercial' %}
+              <a href="{% url 'preview_quotation' quotation_no=quotation_number %}" class="btn btn-primary btn-sm">{{ quotation_number }}</a>
+          {% elif quotation_type == 'proposal' %}
+              <a href="{% url 'proposal_preview' quotation_no=quotation_number %}" class="btn btn-primary btn-sm">{{ quotation_number }}</a>
+          {% endif %}
+          
+
+        </div>
+      </div>
+    </div>
+  </div>
+  
+
+        {% comment %} <!-- Quotation Details -->
+        <div class="col-md-6">
+          <h4><strong>Quotation Details:</strong></h4>
+          <p><strong>Quotation ID:</strong> {{ quotation.id }}</p>
+          <p><strong>Base Amount:</strong> {{ quotation.baseamount }}</p>
+          <p><strong>Final Amount:</strong> {{ quotation.finalamount }}</p>
+
+          <p><strong>BOQ:</strong> 
+            {% if boq_file_name %}
+              <a href="{{ quotation.boq.url }}" download>{{ boq_file_name }}</a>
+            {% else %}
+              No BOQ file uploaded
+            {% endif %}
+          </p>
+
+          <p><strong>Quote:</strong> 
+            {% if quote_file_name %}
+              <a href="{{ quotation.quote.url }}" download>{{ quote_file_name }}</a>
+            {% else %}
+              No Quote file uploaded
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <!-- Files Section -->
+      <h4>Files:</h4>
+      {% if files %}
+        <p>Total Files: {{ files.count }}</p>
+        <ul>
+          {% for file in files %}
+            <li>
+              <a href="{{ file.file.url }}" download>{{ file.name }}</a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>No files uploaded</p>
+      {% endif %}
+    </div>
+  </div> {% endcomment %}
+
+  <!-- Add Follow-Up Section -->
+  <div class="card mt-4">
+    <div class="card-body">
+        <h3>Add Follow-Up</h3>
+        {% comment %} {{enquiry.id}} {% endcomment %}
+        <form method="post" action="{% url 'add_confirmed_order_followup' enquiry_id=enquiry_id quotation_no=quotation_number %}">
+            {% csrf_token %}
+            <div class="d-flex flex-column flex-sm-row align-items-center gap-3">
+                <!-- Follow-up Name -->
+                <div class="form-group col-12 col-md-7">
+                    <label for="foname">Follow-up Details:</label>
+                    <input type="text" id="foname" name="foname" class="form-control" required>
+                </div>
+                <!-- Follow-up Date -->
+                <div class="col-12 col-md-2">
+                    <label for="fodate">Follow-up Date:</label>
+                    <input class="form-control" type="date" id="fodate" name="fodate" required>
+                </div>
+                <!-- Follow-up Time -->
+                <div class="col-12 col-md-2">
+                    <label for="fotime">Follow-up Time:</label>
+                    <input type="time" id="fotime" name="fotime" class="form-control" required placeholder="Select Time">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-success mt-3">Add Follow-Up</button>
+        </form>
+    </div>
+</div>
+
+<!-- Display Follow-Up Records -->
+<div class="card mt-4">
+    <div class="card-body">
+        <h3>Follow-ups for Quotation: {{ order.quotation }}</h3>
+        <ul>
+            {% for followup in followups %}
+                <li>
+                    <strong>{{ followup.foname }}</strong> on {{ followup.fodate }} at {{ followup.fotime }}
+                </li>
+            {% empty %}
+                <li>No follow-ups found for this confirmed enquiry.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+
+{% endblock %}

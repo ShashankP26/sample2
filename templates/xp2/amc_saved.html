@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saved Quotations</title>
+    <!-- Bootstrap CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid mt-4">
+        <h2 class="text-center">Saved Quotations</h2>
+        <a href="{% url 'quotation_details' %}" class="btn btn-primary btn-sm">New Quotation</a>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Quotation Number</th>
+                    <th>Actions</th>
+                    <th>Preview</th>
+
+                </tr>
+            </thead>
+            <tbody>
+                {% for quote in quotations %}
+                <tr>
+                    <td>{{ quote.quotation_number }}</td>
+                    <td>
+                        <a href="{% url 'edit_quotation' quote.quotation_number %}" class="btn btn-warning btn-sm">Edit</a>
+                    </td>
+                    <td>
+                        <a href="{% url 'preview' quote.quotation_number %}" class="btn btn-secondary">Preview</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="2" class="text-center">No quotations found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <!-- Bootstrap JS CDN -->
+    {% comment %} <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script> {% endcomment %}
+</body>
+</html>

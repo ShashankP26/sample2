@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block content %}
+<!-- Tabler CSS -->
+{% comment %} <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta14/dist/css/tabler.min.css" rel="stylesheet"> {% endcomment %}
+<!-- Tabler JS -->
+{% comment %} <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta14/dist/js/tabler.min.js"></script> {% endcomment %}
+
+<div class="container-fluid mt-4">
+  <h2 class="page-title">Confirm Order for Enquiry #{{ enquiry.id }}</h2><br><br>
+
+  <form method="post" enctype="multipart/form-data" class="card card-body shadow-sm">
+    {% csrf_token %}
+
+    <!-- Radio buttons for selecting one quotation from any category -->
+    <label for="quotations" class="form-label">Select Quotations:</label><br>
+
+    <!-- Category 1: Quotations -->
+    <h4> Commercial Quotations</h4>
+    {% for quotation in quotations %}
+      <div class="form-check">
+        <input class="form-check-input" 
+               type="radio" 
+               name="quotation_selection" 
+               value="{{ quotation.quotation_no }}" 
+               id="quotation_{{ quotation.id }}" 
+               {% if quotation.quotation_no in confirmed_quotations %}disabled{% endif %}>
+        <label class="form-check-label" for="quotation_{{ quotation.id }}">
+          Quotation ID: {{ quotation.quotation_no }} - Subtotal: {{ quotation.subtotal }} - Grand Total: {{ quotation.grand_total }}
+          {% if quotation.quotation_no in confirmed_quotations %}
+            <span class="text-danger">(Already Confirmed)</span>
+          {% endif %}
+        </label>
+      </div>
+    {% empty %}
+      <p>No Quotations Available</p>
+    {% endfor %}
+
+    <!-- Category 2: Stored Data -->
+    <h4>AMC  Quotations</h4>
+    {% for filename, file_data_list in stored_data.items %}
+      {% for file_data in file_data_list %}
+        {% if not file_data.error %}
+          <div class="form-check">
+            <input 
+              class="form-check-input" 
+              type="radio" 
+              name="quotation_selection" 
+              value="{{ file_data.quotation_number }}" 
+              id="stored_quotation_{{ file_data.quotation_number }}"
+              {% if file_data.quotation_number in confirmed_quotations %}disabled{% endif %}
+            >
+            <label class="form-check-label" for="stored_quotation_{{ file_data.quotation_number }}">
+              Quotation Number: {{ file_data.quotation_number }} - Subtotal: {{ file_data.Subtotal_value }} - Grand Total: {{ file_data.gtotal_value }}
+              {% if file_data.quotation_number in confirmed_quotations %}
+                <span class="text-danger">(Already Confirmed)</span>
+              {% endif %}
+            </label>
+          </div>
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
+
+    <!-- Category 3: Proposal Data -->
+    <h4>Proposal Quotations</h4>
+    {% for filename, file_data_list in proposal_data.items %}
+      {% for file_data in file_data_list %}
+        {% if not file_data.error %}
+          <div class="form-check">
+            <input 
+              class="form-check-input" 
+              type="radio" 
+              name="quotation_selection" 
+              value="{{ file_data.quotation_number }}" 
+              id="proposal_quotation_{{ file_data.quotation_number }}"
+              {% if file_data.quotation_number in confirmed_quotations %}disabled{% endif %}
+            >
+            <label class="form-check-label" for="proposal_quotation_{{ file_data.quotation_number }}">
+              Quotation Number: {{ file_data.quotation_number }}
+              {% if file_data.quotation_number in confirmed_quotations %}
+                <span class="text-danger">(Already Confirmed)</span>
+              {% endif %}
+            </label>
+          </div>
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
+
+    <!-- Render form fields dynamically -->
+    <div class="row">
+      {% for field in form %}
+        <div class="col-md-6 mb-3">
+          <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}
+            <small class="form-text text-muted">{{ field.help_text }}</small>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Submit button and Back button -->
+    <div class="d-flex justify-content-start">
+      <button type="submit" class="btn btn-success me-3 ml-2">Push to Confirm Orders</button>
+      <a href="{% url 'managequotationpage' enquiry.id %}" class="btn btn-dark me-3 ml-2">Back</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

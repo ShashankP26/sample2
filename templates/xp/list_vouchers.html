@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-5 "> <!-- Increased top margin -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <a href="{% url 'new_cash_voucher_form' %}" class="btn btn-primary w-60">New Cash Voucher</a>
+        </div>
+    
+        <div class="col-md-4 offset-md-2 order-md-1">
+            <form method="get" action="{% url 'item_form' %}" autocomplete="off" novalidate>
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                            <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"/>
+                            <path d="M21 21l-6 -6"/>
+                        </svg>
+                    </span>
+                    <input type="text" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Search…" aria-label="Search in website">
+                    <button type="button" class="btn btn-outline-danger btn-sm" id="clearButton">Clear</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if vouchers %}
+        <table class="table table-bordered table-hover ms-3">
+            <thead class="table-light">
+                <tr>
+                    <th>Id</th>
+                    <th>Voucher Number</th>
+                    <th>Date</th>
+                    <th>Paid To</th>
+                    <th>Item Name</th>
+                    <th>Amount (₹)</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for voucher in vouchers %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ voucher.voucher_number }}</td>
+                    <td>{{ voucher.date }}</td>
+                    <td>{{ voucher.paid_to }}</td>
+                    <td>{{ voucher.item_name }}</td>
+                    <td>{{ voucher.amount }}</td>
+                    <td>{{ voucher.status }}</td>
+                    <td>
+                        <!-- Edit Button (Now redirects to edit page) -->
+                        <a href="{% url 'edit_cash_voucher_form' voucher.id %}" class="btn btn-warning">Edit</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No vouchers found.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-5">
+    <h2>General Report Details</h2>
+    <div class="card">
+        <div class="card-body">
+            <h4>Site: {{ report.site.name }}</h4>
+            <p><strong>Date of Visit:</strong> {{ report.date_of_visit }}</p>
+            <p><strong>Point 1:</strong> {{ report.point1 }}</p>
+            <p><strong>Point 2:</strong> {{ report.point2 }}</p>
+            <p><strong>Point 3:</strong> {{ report.point3 }}</p>
+            <p><strong>Point 4:</strong> {{ report.point4 }}</p>
+            <p><strong>Notes:</strong> {{ report.notes }}</p>
+
+            <h4>Edit History</h4>
+            <div>
+                <textarea class="form-control" rows="10" readonly>{{ report.edit_history }}</textarea>
+            </div>
+
+            <a href="{% url 'generalreport' %}" class="btn btn-secondary mt-3">Back to Reports</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

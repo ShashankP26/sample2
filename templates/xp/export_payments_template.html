@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    {% comment %} <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            width: 30%;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style> {% endcomment %}
+</head>
+<body>
+    <h2>Your Payment History</h2>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 30%; border: 1px solid #ddd; padding: 8px;">Transaction ID</th>
+                <th style="width: 25%; border: 1px solid #ddd; padding: 8px;">Paid To</th>
+                <th style="width: 25%; border: 1px solid #ddd; padding: 8px;">Amount</th>
+                <th style="width: 25%; border: 1px solid #ddd; padding: 8px;">From</th>
+                <th style="width: 25%; border: 1px solid #ddd; padding: 8px;">To</th>
+                <th style="width: 25%; border: 1px solid #ddd; padding: 8px;">Screenshot</th>
+                <th style="width: 25%; border: 1px solid #ddd; padding: 8px;">Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for payment in payments %}
+            <tr>
+                <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">{{ payment.transaction_id }}</td>
+                <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">{{ payment.paid_to }}</td>
+                <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">{{ payment.amount }}</td>
+                <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">{{ payment.from_date }}</td>
+                <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">{{ payment.to_date }}</td>
+                <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">
+                    <a href="{{ payment.screenshot.url }}" target="_blank">View Screenshot</a>
+                </td>
+                <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">{{ payment.created_at|date:"d M Y, H:i" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

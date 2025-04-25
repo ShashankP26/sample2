@@ -1,0 +1,29 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+{% load custom_filters %}
+<h1>Manage Submodule Visibility for {{ user.username }}</h1>
+
+<form method="post" action="{% url 'manage_submodule_visibility' user.id %}">
+    {% csrf_token %}
+    <ul>
+        {% for module, submodules in modules_with_submodules.items %}
+            <li>
+                <strong>{{ module.name }}</strong>
+                <ul>
+                    {% for sub in submodules %}
+                        <li>
+                            <label>
+                                <input type="checkbox" name="submodule_{{ sub.submodule.id }}" 
+                                       {% if sub.is_visible %}checked{% endif %}>
+                                {{ sub.submodule.name }}
+                            </label>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </li>
+        {% endfor %}
+    </ul>
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+</form>
+
+{% endblock %}

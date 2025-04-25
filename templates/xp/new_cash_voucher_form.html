@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+
+
+{% block content %}
+<form method="POST" enctype="multipart/form-data" style="margin: 20px; padding: 20px;">
+    {% csrf_token %}
+    <h3 class="text-center"><i>Cash Voucher</i></h3>
+    <div class="row mt-1">
+        <div class="col text-end">
+            <strong>Date:</strong> {{ current_date }}
+        </div>
+    </div>
+    
+    <div class="mb-3 row">
+        <div class="col-12 col-md-6">
+            <label for="voucher_number" class="form-label">Voucher Number</label>
+            <input type="text" id="voucher_number" name="voucher_number" class="form-control" value="{{ voucher_number }}" readonly>
+        </div>
+        <div class="col-12 col-md-6">
+            <label for="amount" class="form-label">Amount (₹)</label>
+            <input type="number" id="cvamount" name="cvamount" class="form-control" step="0.01" min="0" required>
+        </div>
+    </div>
+
+    <div class="mb-3 row">
+        <div class="col-12 col-md-6">
+            <label for="paid_to" class="form-label">Paid To</label>
+            <input type="text" id="paid_to" name="paid_to" class="form-control" required>
+        </div>
+
+        <div class="col-12 col-md-6">
+            <label for="item_name" class="form-label">Item Name</label>
+            <input type="text" id="item_name" name="item_name" class="form-control" required>
+        </div>
+    </div>
+    <div class="mb-3 row">
+    <div class="col-12 col-md-6">
+        <label for="proof_photo" class="form-label">Upload Proof (Optional)</label>
+        <input type="file" id="proof_photo" name="proof_photo" class="form-control">
+    </div>
+
+    <div class="col-12 col-md-6">
+        <label for="transaction_date" class="form-label">Transaction Date</label>
+        <input type="date" id="transaction_date" name="transaction_date" class="form-control" required>
+    </div>
+    </div>
+
+
+    <div class="mb-3 text-center">
+        <button type="submit" class="btn btn-primary">Submit</button>
+        <button type="reset" class="btn btn-secondary">Reset</button>
+    </div>
+</form>
+
+<!-- Bootstrap CSS -->
+<link href="path_to/bootstrap.min.css" rel="stylesheet">
+
+<!-- jQuery (required for Bootstrap 4) -->
+<script src="path_to/jquery.min.js"></script>
+
+<!-- Bootstrap JavaScript -->
+<script src="path_to/bootstrap.min.js"></script>
+
+
+{% endblock content %} 

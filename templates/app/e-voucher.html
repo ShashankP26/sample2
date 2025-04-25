@@ -1,0 +1,27 @@
+{% extends "base_nav.html" %}
+{% load static  %}
+{% block title %}E voucher{% endblock %}
+        {% block content %}
+        <h1 class="text-center">Welcome to the E-voucher Dashboard</h1>
+        {% if view_profile %}
+        <div class="text-center mt-4">
+            <!-- Add Button -->
+            {% if add_profile %}
+            <a href="#" class="btn btn-primary btn-lg mx-2">Add</a>
+            {% endif %}
+            <!-- Edit Button -->
+            {% if change_profile %}
+            <a href="#" class="btn btn-warning btn-lg mx-2">Edit</a>
+            {% endif %}
+            <!-- Delete Button -->
+            {% if delete_profile %}
+            <a href="#" class="btn btn-danger btn-lg mx-2">Delete</a>
+            {% endif %}    
+        </div>
+        {% endif %}
+    </div>
+    {% endblock content %}
+    {% block extra_scripts %} 
+
+    {% endblock  %}
+

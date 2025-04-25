@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <h2>Enquiries</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Company Name</th>
+                <th>Customer Name</th>
+                <th>Contact</th>
+                <th>Status</th>
+                <th>Products</th>
+                <th>Enquiry Date</th>
+                <th>Remarks</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for enquiry in enquiries %}
+            <tr>
+                <td>{{ enquiry.id }}</td>
+                <td>{{ enquiry.companyname }}</td>
+                <td>{{ enquiry.customername }}</td>
+                <td>{{ enquiry.contact }}</td>
+                <td>{{ enquiry.get_status_display }}</td>
+                <td>{{ enquiry.products.name }}</td>
+                <td>{{ enquiry.closuredate }}</td>
+                <td>{{ enquiry.remarks }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

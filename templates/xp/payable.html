@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4 mt-4 text-center">Payable</h2>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post" action="{% url 'payable' %}" id="filterForm">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="zone_id" class="form-label">Select Zone:</label>
+                    <select name="zone_id" id="zone_id" class="form-select">
+                        <option value="">--Select Zone--</option>
+                        {% for zone in zones %}
+                            <option value="{{ zone.id }}" {% if selected_zone and selected_zone.id == zone.id %}selected{% endif %}>
+                                {{ zone.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="user_id" class="form-label">Select User:</label>
+                    <select name="user_id" id="user_id" class="form-select">
+                        <option value="">--Select User--</option>
+                        {% for user in filtered_users %}
+                            <option value="{{ user.id }}" {% if selected_user and selected_user.id == user.id %}selected{% endif %}>
+                                {{ user.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="row">
+                    <div class="col-12 col-md-6 mb-3">
+                        <label for="from_date" class="form-label">From Date:</label>
+                        <input type="date" name="from_date" id="from_date" class="form-control" value="{{ from_date }}">
+                    </div>
+                    <div class="col-12 col-md-6 mb-3">
+                        <label for="to_date" class="form-label">To Date:</label>
+                        <input type="date" name="to_date" id="to_date" class="form-control" value="{{ to_date }}">
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap justify-content-start mt-3">
+                    <button type="submit" class="btn btn-primary me-2 mb-2">Show Vouchers</button>
+                    <button type="button" id="resetButton" class="btn btn-secondary mb-2">Reset</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if expenses %}
+        <div class="card mt-4">
+            <div class="card-body">
+                <h3 class="card-title">Vouchers for {{ selected_user.username }} in Zone {{ selected_zone.name }}</h3>
+                <div class="alert alert-info d-flex justify-content-between">
+                    <div>
+                    <strong>Total Payable Amount:</strong> ₹{{ total_amount_to_be_paid }}
+                    </div>
+                    {% if selected_user %}
+                    <div>
+                        <a href="{% url 'pay_now' selected_user.id %}?from_date={{ from_date }}&to_date={{ to_date }}&selected_filter={{ selected_filter }}&total_amount_to_be_paid={{ total_amount_to_be_paid }}" 
+                           class="btn btn-success" 
+                           onclick="return confirmPayNow('{{ total_amount_to_be_paid }}');">
+                            Pay Now
+                        </a>
+                    </div>
+                    </div>
+                {% endif %}
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Applied Date</th>
+                                <th>EV num</th>
+                                <th>Item Type</th>
+                                <th>Item Name</th>
+                                <th>Payment Category</th>
+                                <th>T Category</th>
+                                <th>T Details</th>
+                                <th>Amount</th>
+                                <th>Transaction Date</th>
+                                <th>Uploaded File</th>
+                                <th>Payment Mode</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for exp in expenses %}
+                                <tr>
+                                    <td>{{ exp.date }}</td>
+                                    <td>{{ exp.evoucher_number }}</td>
+                                    <td>{{ exp.item_type }}</td>
+                                    <td>{{ exp.item_name }}</td>
+                                    <td>
+                                        <div>
+                                            {% if exp.gst_photo %}
+                                                <p><strong>GST</strong></p>
+                                                <a href="{{ exp.gst_photo.url }}" class="btn btn-info btn-sm" target="_blank">Download GST</a>
+                                            {% elif exp.bill_photo %}
+                                                <p><strong>Bill</strong></p>
+                                                <a href="{{ exp.bill_photo.url }}" class="btn btn-info btn-sm" target="_blank">Download Bill</a>
+                                            {% elif exp.voucher_number %}
+                                                <p><strong>Voucher</strong></p>
+                                                <p>{{ exp.voucher_number }}</p>
+                                            {% else %}
+                                                <span class="text-muted">No File or Voucher</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>{{ exp.transaction_category }}</td>
+                                    <td>
+                                        {% if exp.transaction_category == 'internal' %}
+                                            {{ exp.internal_option }}
+                                        {% elif exp.transaction_category == 'external' %}
+                                            {{ exp.external_type }}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ exp.amount }}</td>
+                                    <td>{{ exp.transaction_date }}</td>
+                                    <td>
+                                        {% if exp.proof_photo %}
+                                            <a href="{{ exp.proof_photo.url }}" class="btn btn-info btn-sm" target="_blank">Download Proof</a>
+                                        {% else %}
+                                            <span class="text-muted">No Proof</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ exp.payment_mode }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="11" class="text-center text-muted">No records found.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+     
+    {% elif selected_user %}
+        <div class="alert alert-warning mt-4">
+            No vouchers found for {{ selected_user.username }} in the selected zone.
+        </div>
+    {% endif %}
+</div>
+<script>
+    function confirmPayNow(amount) {
+        // Show a confirmation popup
+        const confirmation = confirm(`Are you sure you want to pay the total amount of ${amount}?`);
+
+        // Return the user's choice
+        return confirmation;
+    }
+    document.getElementById('resetButton').addEventListener('click', function () {
+        const form = document.getElementById('filterForm');
+        form.reset();
+        location.reload();
+    });
+
+    document.getElementById('zone_id').addEventListener('change', function () {
+        const zone_id = this.value;
+        const userSelect = document.getElementById('user_id');
+        userSelect.innerHTML = '<option value="">--Select User--</option>';
+
+        if (zone_id) {
+            fetch('/website/get_users_by_zone/?zone_id=' + zone_id)
+                .then(response => response.json())
+                .then(data => {
+                    data.users.forEach(user => {
+                        const option = document.createElement('option');
+                        option.value = user.id;
+                        option.textContent = user.username;
+                        userSelect.appendChild(option);
+                    });
+                });
+        }
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4 mt-4 text-center text-md-start">Your Payment History</h2>
+    <div class="row mb-3 align-items-center">
+        <!-- Export Dropdown -->
+        <div class="col-md-4 col-12 mb-2 mb-md-0">
+            <div class="d-flex justify-content-between justify-content-md-start align-items-center">
+                <div class="dropdown me-2">
+                    <button class="btn btn-secondary dropdown-toggle w-100 w-md-auto" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        Export
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                        <li><a href="{% url 'export_payments' %}?format=xlsx" class="dropdown-item">Export as XLSX</a></li>
+                        <li><a href="{% url 'export_payments' %}?format=csv" class="dropdown-item">Export as CSV</a></li>
+                        <li><a href="{% url 'export_payments' %}?format=pdf" class="dropdown-item">Export as PDF</a></li>
+                    </ul>
+                </div>
+
+                {% if user.is_staff %}
+                <!-- User Dropdown for Admin -->
+                <div class="dropdown">
+                    <a href="#" class="btn btn-primary dropdown-toggle d-flex align-items-center gap-2 justify-content-center w-100 w-md-auto" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icon-tabler-user">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M12 2a5 5 0 1 1 -5 5l.005 -.217a5 5 0 0 1 4.995 -4.783z" fill="white" />
+                            <path d="M14 14a5 5 0 0 1 5 5v1a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-1a5 5 0 0 1 5 -5h4z" fill="white" />
+                        </svg>
+                        <span class="text-white" style="font-size: 14px">User</span>
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="userDropdown">
+                        <li>
+                            <a class="dropdown-item" href="?user_id=">--Select User--</a>
+                        </li>
+                        {% for user in users %}
+                            <li>
+                                <a class="dropdown-item {% if user.id == selected_user_id %}active{% endif %}" href="?user_id={{ user.id }}&transaction_date_from={{ transaction_date_from }}&transaction_date_to={{ transaction_date_to }}&item_type={{ item_type_filter }}&search={{ search_query }}">
+                                    {{ user.username }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="col-md-8 col-12">
+            <form method="get" action="{% url 'payments' %}" autocomplete="off" class="d-flex flex-column flex-md-row">
+                <input type="text" name="q" value="{{ request.GET.q }}" class="form-control me-md-2 mb-2 mb-md-0" placeholder="Search by Paid To or Transaction ID" style="max-width: 100%;">
+                <div class="d-flex">
+                    <button type="submit" class="btn btn-outline-primary me-2 w-100 w-md-auto">Search</button>
+                    <a href="{% url 'payments' %}" class="btn btn-outline-secondary w-100 w-md-auto">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+    {% if payments %}
+    <div class="table-responsive me-1 ms-1">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Transaction ID</th>
+                    <th>Paid To</th>
+                    <th>From</th>
+                    <th>To</th>
+                    <th>Amount</th>
+                    <th>Screenshot</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                    <tr>
+                        <td>{{ payment.transaction_id }}</td>
+                        <td>{{ payment.paid_to }}</td>
+                        <td>{{ payment.from_date }}</td>
+                        <td>{{ payment.to_date }}</td>
+                        <td>{{ payment.amount }}</td>
+                        <td>
+                            <a href="{{ payment.screenshot }}" target="_blank">View Screenshot</a>
+                        </td>
+                        <td>{{ payment.created_at|date:"d M Y, H:i" }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No payments found.</p>
+    {% endif %}
+</div>
+{% endblock %}

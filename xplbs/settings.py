@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-!ip69r!9&3sxprafv%2b+ojnzgd16l0u*s44q+nq#8jfas17e*
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -36,7 +36,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'apage'
+    'app',
+    'apage',
+    'website',
+    'Riva',		
 ]
 
 MIDDLEWARE = [
@@ -48,6 +51,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
 ]
 
 ROOT_URLCONF = 'xplbs.urls'
@@ -55,7 +59,7 @@ ROOT_URLCONF = 'xplbs.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'apage', 'templates')],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -63,6 +67,14 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'app.context_processors.group_buttons',
+                'app.context_processors.modules_with_submodules',
+                'app.context_processors.user_role',
+                'website.context_processors.dashboard_data',
+                'website.context_processors.pay_now_context',
+                'website.context_processors.generate_voucher_number',
+                'website.context_processors.notifications',
+                'Riva.context_processors.followups_context',
             ],
         },
     },
@@ -132,3 +144,27 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+LOGIN_URL = '/login/'  # URL for login view
+LOGIN_REDIRECT_URL = 'home'
+  
+
+
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+# EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'sudeepg2020@gmail.com'
+EMAIL_HOST_PASSWORD = 'cpgk diwz yfnq znwb'
+DEFAULT_FROM_EMAIL = 'sudeepg2020@gmail.com'
+
+

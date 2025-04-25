@@ -1,0 +1,516 @@
+{% extends 'base.html' %} {% block content %}
+
+<div class="container-fluid mt-5">
+  <div class="row mb-4 d-flex justify-content-between align-items-center">
+    <!-- Left-aligned Buttons Section (Cash Vouchers, Export) -->
+    <div class="col-12 col-md-auto d-flex gap-3 flex-wrap">
+      <!-- Cash Vouchers Dropdown -->
+      <div class="dropdown">
+        <button class="btn btn-primary btn-sm dropdown-toggle" type="button" id="voucherDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="padding: 7px 12px;">
+          Cash Vouchers
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="voucherDropdown">
+          <li><a class="dropdown-item" href="{% url 'new_cash_voucher_form' %}">Create New Cash Voucher</a></li>
+          <li><a class="dropdown-item" href="{% url 'approved_vouchers' %}">View Approved Vouchers</a></li>
+          <li><a class="dropdown-item" href="{% url 'rejected_vouchers' %}">View Rejected Vouchers</a></li>
+        </ul>
+      </div>
+
+      <!-- Export Dropdown -->
+      <div class="dropdown">
+        <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="padding: 7px 12px;">
+          Export
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+          <li><a href="{% url 'export_cash_vouchers' %}?format=xlsx" class="dropdown-item">Export as XLSX</a></li>
+          <li><a href="{% url 'export_cash_vouchers' %}?format=csv" class="dropdown-item">Export as CSV</a></li>
+          <li><a href="{% url 'export_cash_vouchers' %}?format=pdf" class="dropdown-item">Export as PDF</a></li>
+          <li><a href="javascript:void(0);" class="dropdown-item" onclick="window.print()">Print Page</a></li>
+        </ul>
+      </div>
+
+      {% if user_role == "Admin" %}
+      <form method="get" class="ms-3">
+        <div class="mb-3">
+          <div class="dropdown">
+            <a href="#" class="dropdown-toggle d-flex align-items-center gap-2 justify-content-center" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="text-decoration: none; border: none; padding: 6px 12px; border-radius: 5px; background-color: #0054a6; color: white; width: auto; height: 33px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color: white" class="icon icon-tabler icon-tabler-user">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <path d="M12 2a5 5 0 1 1 -5 5l.005 -.217a5 5 0 0 1 4.995 -4.783z" fill="white" />
+                <path d="M14 14a5 5 0 0 1 5 5v1a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-1a5 5 0 0 1 5 -5h4z" fill="white" />
+              </svg>
+              <span class="text-white" style="font-size: 14px"> User </span>
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="userDropdown">
+              <li><a class="dropdown-item" href="?user_id=">--Select User--</a></li>
+              {% for user in users %}
+              <li><a class="dropdown-item" href="?user_id={{ user.id }}">{{ user.username }}</a></li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </form>
+      {% endif %}
+    </div>
+
+    <!-- Right-aligned Buttons Section (Filter by Date, Search, and Clear) -->
+    <div class="col-12 col-md-auto d-flex gap-3 justify-content-end flex-wrap">
+      <!-- Filter by Date -->
+      <div class="col-12 col-md-auto d-flex gap-3 justify-content-end flex-wrap">
+        <!-- Filter by Date -->
+        <div class="dropdown">
+            <button class="btn btn-primary btn-sm" type="button" id="filterDateButton" data-bs-toggle="dropdown" aria-expanded="false" style="padding: 7px 12px;">
+                Filter by Date
+            </button>
+            <div id="dateFields" class="dropdown-menu dropdown-menu-end p-3" style="width: auto; display: none; z-index: 1050;">
+                <div class="d-flex flex-column gap-2">
+                    <label for="fromDateField" class="form-label mb-0">From:</label>
+                    <input type="date" name="transaction_date_from" class="form-control form-control-sm" id="fromDateField">
+                    <label for="toDateField" class="form-label mb-0">To:</label>
+                    <input type="date" name="transaction_date_to" class="form-control form-control-sm" id="toDateField">
+                    <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="applyFilterButton">Apply Filter</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+      <!-- Search Bar Section -->
+      <form method="get" action="{% url 'cash_voucher' %}" autocomplete="off" class="d-flex align-items-center gap-2">
+        <div class="input-group">
+          <span class="input-group-text bg-light">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+              <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"/>
+              <path d="M21 21l-6 -6"/>
+            </svg>
+          </span>
+          <input type="text" name="q" value="{{ request.GET.q }}" class="form-control form-control-sm" placeholder="Search…" aria-label="Search">
+        </div>
+      </form>
+
+      <!-- Clear Button -->
+      <button type="button" class="btn btn-outline-danger btn-sm" id="clearButton" style="padding: 7px 12px;">Clear</button>
+    </div>
+  </div>
+</div>
+
+        {% if vouchers %}
+        <div class="table-responsive ms-3">
+          <table class="table table-bordered table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Id</th>
+                <th>User</th>
+                <th>Voucher Number</th>
+                <th>Date</th>
+                <th>Paid To</th>
+                <th>Item Name</th>
+                <th>Amount (₹)</th>
+                <th>Proof</th>
+                <th>Transaction Date</th>
+                <th>Status</th>
+                <th>Approved On</th>
+                <th>Action</th>
+                {% if user_role == "Admin" %}
+                <th>Approve</th>
+                <th>Reject</th>
+                {% endif %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for voucher in vouchers %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ voucher.created_by }}</td>
+                <td>{{ voucher.voucher_number }}</td>
+                <td>{{ voucher.date }}</td>
+                <td>{{ voucher.paid_to }}</td>
+                <td>{{ voucher.item_name }}</td>
+                <td>{{ voucher.amount }}</td>
+                <td>{% if voucher.proof_photo %}
+                  <a href="{{ voucher.proof_photo.url }}" target="_blank">Download Proof</a>
+                {% else %}
+                  No file uploaded
+                {% endif %}</td>
+                <td>{{ voucher.transaction_date }}</td>
+                <td>{{ voucher.status }}</td>
+                <td>
+                  {% if voucher.verified_at %}
+                    {{ voucher.verified_at|date:"Y-m-d H:i:s" }}
+                  {% else %}
+                    N/A
+                  {% endif %}
+                </td>
+                <td>
+                  {% if voucher.status == 'approved' or voucher.status == 'paid' %}
+                  <button class="btn btn-primary btn-sm" disabled>Edit</button>
+                  {% else %}
+                  <a href="{% url 'edit_cash_voucher_form' voucher.id %}" class="btn btn-primary btn-sm">Edit</a>
+                  {% endif %}
+                </td>
+                {% if user_role == "Admin" %}
+                {% if voucher.status == "pending" %}
+                <td>
+                  <a href="?verify_id={{ voucher.id }}" class="btn btn-success btn-sm" onclick="return confirm('Approve voucher {{ voucher.voucher_number }}?');">Approve</a>
+                </td>
+                <td>
+                  <a href="#" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#rejectModal" onclick="setVoucherId({{ voucher.id }})">Reject</a>
+                </td>
+                {% elif voucher.status == "approved" %}
+                <td><button class="btn btn-success btn-sm" disabled>Approved</button></td>
+                <td><button class="btn btn-secondary btn-sm" disabled>Reject</button></td>
+                {% elif voucher.status == "rejected" %}
+                <td><button class="btn btn-secondary btn-sm" disabled>Approve</button></td>
+                <td><button class="btn btn-danger btn-sm" disabled>Rejected</button></td>
+                {% elif voucher.status == "paid" %}
+                <td colspan="2">
+                  <button class="btn btn-success btn-sm" disabled>Transaction Completed</button>
+                </td>
+                {% endif %}
+                {% endif %}
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="13" class="text-center">No records found.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-center text-muted">No vouchers available.</p>
+        {% endif %}
+    <!-- Reject Modal -->
+    <!-- Reject Modal -->
+    <div
+      class="modal modal-blur"
+      id="rejectModal"
+      tabindex="-1"
+      aria-labelledby="rejectModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="rejectModalLabel">Reject Voucher</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form
+              id="rejectForm"
+              method="post"
+              action="{% url 'reject_voucher' %}"
+            >
+              {% csrf_token %}
+              <input type="hidden" name="voucher_id" id="voucherId" />
+              <div class="mb-3">
+                <label for="rejectionReason" class="form-label"
+                  >Reason for Rejection:</label
+                >
+                <textarea
+                  class="form-control"
+                  id="rejectionReason"
+                  name="reason"
+                  rows="4"
+                  required
+                ></textarea>
+              </div>
+              <div class="mb-3">
+                <button type="submit" class="btn btn-danger">
+                  Reject Voucher
+                </button>
+              </div>
+            </form>
+         
+      </div>
+    </div>
+    <!-- Modify the Reject Button -->
+</div>
+  
+
+  <!-- Bootstrap CSS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+
+    {% comment %} $('.dropdown-item').on('click', function () {
+        $(this).closest('.dropdown-menu').removeClass('show');  // Hide the dropdown after selection
+    }); {% endcomment %}
+    
+    function setVoucherId(voucherId) {
+      // Set the voucher ID in the hidden input field
+      document.getElementById("voucherId").value = voucherId;
+    }
+    
+    
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const filterDateButton = document.getElementById('filterDateButton');
+      const dateFields = document.getElementById('dateFields');
+      const clearButton = document.getElementById('clearButton');
+      const applyFilterButton = document.getElementById('applyFilterButton');
+  
+      // Toggle the visibility of date fields
+      if (filterDateButton && dateFields) {
+          filterDateButton.addEventListener('click', function () {
+              const isHidden = dateFields.classList.contains('d-none');
+              dateFields.classList.toggle('d-none', !isHidden);
+              dateFields.style.display = isHidden ? 'flex' : 'none';
+          });
+      }
+  
+      // Clear date fields and search input
+      if (clearButton) {
+          clearButton.addEventListener('click', function () {
+              const fromDateField = document.getElementById('fromDateField');
+              const toDateField = document.getElementById('toDateField');
+              const searchField = document.querySelector('input[name="q"]');
+  
+              if (fromDateField) fromDateField.value = '';
+              if (toDateField) toDateField.value = '';
+              if (searchField) searchField.value = '';
+  
+              // Reload the page to reset the filters
+              window.location.href = window.location.pathname;
+          });
+      }
+  
+      // Apply the date filter
+      if (applyFilterButton) {
+          applyFilterButton.addEventListener('click', function () {
+              const fromDate = document.getElementById('fromDateField').value;
+              const toDate = document.getElementById('toDateField').value;
+  
+              if (fromDate || toDate) {
+                  const urlParams = new URLSearchParams();
+                  if (fromDate) urlParams.append('transaction_date_from', fromDate);
+                  if (toDate) urlParams.append('transaction_date_to', toDate);
+                  window.location.href = `?${urlParams.toString()}`;
+              } else {
+                  alert('Please enter valid dates!');
+              }
+          });
+      }
+  })
+    document
+      .getElementById("clearButton")
+      .addEventListener("click", function () {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("q");
+        window.location.href = url.toString();
+      });
+    document
+      .getElementById("clearButton")
+      .addEventListener("click", function () {
+        const url = new URL(window.location.href);
+
+        // Remove search query
+        url.searchParams.delete("q");
+
+        // Remove date filter parameters
+        url.searchParams.delete("transaction_date_from");
+        url.searchParams.delete("transaction_date_to");
+
+        // Reset date fields in the form (if visible)
+        const fromDateField = document.getElementById("fromDateField");
+        const toDateField = document.getElementById("toDateField");
+        if (fromDateField && toDateField) {
+          fromDateField.value = "";
+          toDateField.value = "";
+        }
+
+        // Redirect to the cleaned URL
+        window.location.href = url.toString();
+      });
+    function printPage() {
+      window.print(); // This will open the browser's print dialog
+    }
+    function setVoucherId(voucherId) {
+      document.getElementById("voucherId").value = voucherId;
+    }
+    
+  </script>
+  <style>
+    @media print {
+        /* Hide elements you don't want to print */
+        .dropdown, .dropdown-menu, .btn, .navbar, .header, .footer {
+            display: none !important;
+        }
+    
+      }
+    @media print {
+        
+      /* Ensure the entire page gets printed */
+      body {
+        font-size: 12pt;
+        margin: 0; /* Remove default margins */
+        padding: 0; /* Remove padding */
+        width: 100%;
+      }
+
+      /* Ensure the header, footer, and other content are printed */
+      .dropdown,
+      .dropdown-menu,
+      .btn,
+      .navbar,
+      .header,
+      .footer {
+        display: block !important; /* Make sure buttons and dropdowns are visible */
+      }
+
+      /* Prevent page break in between content */
+      .page-break {
+        page-break-before: always;
+      }
+
+      /* Ensure the content is not getting cut off */
+      .content-container {
+        width: 100%;
+        padding: 10px;
+        margin: 0;
+      }
+
+      /* Add spacing for tables */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 10px;
+      }
+
+      th,
+      td {
+        border: 1px solid black;
+        padding: 8px;
+        text-align: left;
+      }
+
+      h2 {
+        text-align: center;
+      }
+
+      /* Adjust page size to fit everything */
+      @page {
+        size: auto;
+        margin: 10mm;
+      }
+    }
+    /* General Styles */
+    #filterSection {
+      margin-top: 10px;
+    }
+
+    #filterContainer {
+      max-height: 160px;
+      overflow: hidden;
+    }
+
+    #filterContainer.open {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    /* Mobile Responsive Styles */
+    @media (max-width: 767px) {
+      .container {
+        padding-left: 15px;
+        padding-right: 15px;
+      }
+
+      .d-flex.justify-content-between {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .d-flex.align-items-center.mb-4 {
+        margin-bottom: 20px;
+      }
+
+      .d-flex.align-items-center.mb-3 {
+        margin-bottom: 20px;
+      }
+
+      .d-flex.align-items-center.mb-4.ms-2 {
+        margin-top: 10px;
+      }
+
+      #filterSection {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        margin-top: 10px;
+      }
+
+      #filterDateButton {
+        margin-bottom: 10px;
+        width: 100%;
+      }
+
+      #filterContainer {
+        width: 100%;
+        display: block;
+      }
+
+      #dateFields {
+        display: block;
+        gap: 5px;
+        width: 100%;
+      }
+
+      #dateFields .form-control {
+        width: 100%;
+        margin-right: 0;
+      }
+
+      #applyFilterButton {
+        width: 100%;
+      }
+
+      .input-group-text {
+        width: 35px;
+      }
+
+      .table-responsive {
+        margin-top: 20px;
+      }
+
+      table {
+        font-size: 12px;
+      }
+
+      th,
+      td {
+        padding: 5px;
+      }
+    }
+
+    /* Desktop and Tablet Responsive Styles */
+    @media (min-width: 768px) {
+      #dateFields {
+        display: flex;
+      }
+
+      #dateFields .form-control {
+        margin-right: 10px;
+        margin-bottom: 0;
+      }
+
+      #applyFilterButton {
+        display: inline-block;
+      }
+    }
+
+    /* Styling for Filter Container when expanded */
+    .filter-container-open {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+  </style>
+  {% endblock %}
+</div>

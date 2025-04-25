@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+
+{% block content %} 
+    <style>
+        .form-check-inline {
+            display: flex;
+            align-items: center;
+        }
+        .form-check-inline input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        .form-check-inline input[type="text"] {
+            flex: 1;
+        }
+    </style>
+    <div class="container-fluid mt-5 ">
+        <h2>Edit Techno-Commercial AMC Proposal</h2><br>
+
+        <form id="quotationForm"  method="POST">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label for="quotation_number" class="form-label">Quotation Number</label>
+                <input type="text" id="quotation_number" name="quotation_number" class="form-control" value="{{ quotation_data.quotation_number }}" readonly>
+            </div>
+            <h3>Contents</h3>
+            <div class="mb-4">
+                {% for content in quotation_data.contents %}
+                <div class="form-check-inline mb-2">
+                    <input type="hidden" name="content_select_{{ forloop.counter }}" value="0">
+                    <input type="checkbox" name="content_select_{{ forloop.counter }}" class="form-check-input" value="1" {% if content.is_checked %}checked{% endif %}>
+                    <input type="text" name="content_{{ forloop.counter }}" value="{{ content.value }}" class="form-control">
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- AMC Proposal Section -->
+            <h3>AMC Proposal</h3>
+            <div class="table-responsive">
+                <table class="table table-bordered ">
+                    <thead>
+                        <tr>
+                            <th>select</th>
+                            <th>Product on offer</th>
+                            <th>Capacity</th>
+                            <th>Total Needed Capacity</th>
+                            <th>Wastewater Type</th>
+                            <th>Total Number Of Machines</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inst in quotation_data.Amc_Proposal %}
+                        <tr>
+                            <td>
+                                <input type="hidden" name="select_amc_{{ forloop.counter }}" value="0">
+                                <input type="checkbox" name="select_amc_check_{{ forloop.counter }}" class="form-check-input" value="1" {% if inst.is_checked %}checked{% endif %}>
+                            </td>
+                            <td>
+                                <input type="text" name="pd_name_{{ forloop.counter }}" value="{{ inst.pd_name }}" class="form-control">
+                            </td>
+                            <td>
+                                <input type="text" name="capacity_{{ forloop.counter }}" value="{{ inst.capacity }}" class="form-control">
+                            </td>
+                            <td>
+                                <input type="text" name="total_needed_capacity_{{ forloop.counter }}" value="{{ inst.total_needed_capacity }}" class="form-control">
+                            </td>
+                            <td>
+                                <input type="text" name="waste_water_type_{{ forloop.counter }}" value="{{ inst.waste_water_type }}" class="form-control">
+                            </td>
+                            <td>
+                                <input type="text" name="total_no_machines_{{ forloop.counter }}" value="{{ inst.total_no_machines }}" class="form-control">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+
+            <!-- Inclusions Section -->
+            <h4>Inclusions: Comprehensive AMC</h4>
+            <h6>Maintenance Support Package</h6>
+            <div class="mb-4">
+                {% for line in quotation_data.maintenance_support %}
+                <div class="form-check-inline mb-2">
+                    <input type="hidden" name="maintenance_support_check_{{ forloop.counter }}" value="0">
+                    <input type="checkbox" name="maintenance_support_check_{{ forloop.counter }}" class="form-check-input" value="1" {% if line.is_checked %}checked{% endif %}>
+                    <input type="text" name="maintenance_support_{{ forloop.counter }}" value="{{ line.value }}" class="form-control">
+                </div>
+                {% endfor %}
+            </div>
+
+            <h6>Yearly Maintenance and Upkeep</h6>
+            <div class="mb-4">
+                {% for line in quotation_data.yearly_maintenance %}
+                <div class="form-check-inline mb-2">
+                    <input type="hidden" name="yearly_maintenance_check_{{ forloop.counter }}" value="0">
+                    <input type="checkbox" name="yearly_maintenance_check_{{ forloop.counter }}" class="form-check-input" value="1" {% if line.is_checked %}checked{% endif %}>
+                    <input type="text" name="yearly_maintenance_{{ forloop.counter }}" value="{{ line.value }}" class="form-control">
+                </div>
+                {% endfor %}
+            </div>
+
+            <h6>Running Consumables and Chemicals Required</h6>
+            <div class="mb-4">
+                {% for line in quotation_data.yearly_maintenance %}
+                <div class="form-check-inline mb-2">
+                    <input type="hidden" name="running_consumables_check_{{ forloop.counter }}" value="0">
+                    <input type="checkbox" name="running_consumables_check_{{ forloop.counter }}" class="form-check-input" value="1" {% if line.is_checked %}checked{% endif %}>
+                    <input type="text" name="running_consumables_{{ forloop.counter }}" value="{{ line.value }}" class="form-control">
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Exclusions Section -->
+            <h6>Exclusions: Comprehensive AMC</h6>
+            <div class="mb-4">
+                {% for line in quotation_data.exclusions %}
+                <div class="form-check-inline mb-2">
+                    <input type="hidden" name="exclusions_check_{{ forloop.counter }}" value="0">
+                    <input type="checkbox" name="exclusions_check_{{ forloop.counter }}" class="form-check-input" value="1" {% if line.is_checked %}checked{% endif %}>
+                    <input type="text" name="exclusions_{{ forloop.counter }}" value="{{ line.value }}" class="form-control">
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- AMC Pricing Section -->
+            <h3>AMC Pricing For One Year</h3>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>select</th>
+                            <th>Product on offer</th>
+                            <th>Capacity</th>
+                            <th>Total Needed Capacity</th>
+                            <th>Wastewater Type</th>
+                            <th>Total Number Of Machines</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inst in quotation_data.amc_pricing %}
+                        <tr>
+                            <td>
+                                <input type="hidden" name="select_amc_{{ forloop.counter }}" value="0">
+                                <input type="checkbox" name="select_amc_check_{{ forloop.counter }}" class="form-check-input" value="1" {% if inst.is_checked %}checked{% endif %}>
+                            </td>
+                            <td>
+                                <input type="text" name="pd_name_{{ forloop.counter }}" value="{{ inst.pd_name }}" class="form-control">
+                            </td>
+                            <td>
+                                <input type="text" name="capacity_{{ forloop.counter }}" value="{{ inst.capacity }}" class="form-control">
+                            </td>
+                            <td>
+                                <input type="text" name="total_needed_capacity_{{ forloop.counter }}" value="{{ inst.total_needed_capacity }}" class="form-control">
+                            </td>
+                            <td>
+                                <input type="text" name="waste_water_type_{{ forloop.counter }}" value="{{ inst.waste_water_type }}" class="form-control">
+                            </td>
+                            <td>
+                                <input type="text" name="total_no_machines_{{ forloop.counter }}" value="{{ inst.total_no_machines }}" class="form-control">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <br>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>select</th>
+                            <th>Particulars</th>
+                            <th>1st year (Excluding 18% GST)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for particular in quotation_data.Particulars %}
+                        <tr>
+                            <td>
+                                <input type="hidden" name="select_per_{{ forloop.counter }}" value="0">
+                                <input type="checkbox" name="select_per_check_{{ forloop.counter }}" class="form-check-input" value="1" {% if particular.is_checked %}checked{% endif %} >
+                            </td>
+                            <td>
+                                <input type="text" name="particulars_{{ forloop.counter }}" value="{{ particular.particulars }}" class="form-control">
+                            </td>
+                            <td>
+                                <input type="text" name="first_year_exgst_{{ forloop.counter }}" 
+                                       value="{{ particular.first_year_exgst }}" 
+                                       class="form-control first-year-exgst"
+                                       oninput="calculateTotals()">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <!-- Pricing Table -->
+            <div class="row mb-1">
+                <div class="col-auto">
+                    <p>
+                        <label>
+                            <input type="checkbox" class="form-check-input" name="content_select_sub" id="subtotal-checkbox">
+                            <strong>Subtotal:</strong> 
+                            <input type="hidden" name="Subtotal1" id="Subtotal1">
+                            <span id="subtotal"></span>
+                        </label>
+                    </p>
+                    <p>
+                        <label>
+                            <input type="checkbox" class="form-check-input" name="content_select_gst" id="gst-checkbox">
+                            <strong>GST (18%):</strong> 
+                            <input type="hidden" name="gst1" id="gst1">
+                            <span id="gst"></span>
+                        </label>
+                    </p>
+                    <p>
+                        <label>
+                            <input type="checkbox" class="form-check-input"  name="content_select_gtotal" id="grand-total-checkbox">
+                            <strong>Grand Total:</strong> 
+                            <input type="hidden" name="grand" id="grand">
+                            <span id="grand-total"></span>
+                        </label>
+                    </p>
+                </div>
+            </div>
+
+            
+    
+            <p>Subtotal Value: {{ quotation_data.Subtotal_list.0.value }}</p>
+            <p>GST Value: {{ quotation_data.GST.0.value }}</p>
+            <p>Grand Total Value: {{ quotation_data.Grand_Total.0.value }}</p>
+
+            
+            <!-- Terms and Conditions Section -->
+            <h3>Terms and Conditions</h3>
+            <div class="mb-4">
+                {% for line in quotation_data.terms %}
+                <div class="form-check-inline mb-2">
+                    <!-- Hidden input to store unchecked values -->
+                    <input type="hidden" name="terms_check_{{ forloop.counter }}" value="0">
+                    <!-- Checkbox with dynamic 'checked' status -->
+                    <input type="checkbox" name="terms_check_{{ forloop.counter }}" class="form-check-input" value="1" {% if line.is_checked %}checked{% endif %}>
+                    <!-- Input field pre-filled with value -->
+                    <input type="text" name="terms_{{ forloop.counter }}" id="term_{{ forloop.counter }}" value="{{ line.value }}" class="form-control">
+                </div>
+                {% endfor %}
+            </div>
+            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+            <button type="submit" id="ssaveButton" class="btn btn-primary">Save Changes</button>
+        </form>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        var enquiryId = {{ quotation_data.enquiry_id }}
+        console.log("enq");
+        console.log("enq",enquiryId);
+        $(document).ready(function () {
+            $('#ssaveButton').on('click', function (event) {
+                event.preventDefault();
+                    
+                // Create a FormData object from the form
+                const formElement = document.getElementById('quotationForm');
+                const formData = new FormData(formElement);
+                $.ajax({
+                    url: "{% url 'edit_quotation' enquiry_id=quotation_data.enquiry_id quotation_number=quotation_data.quotation_number %}",
+                    type: "POST",
+                    data: formData, // Convert to JSON string
+                    processData: false,  // Important: Don't process the data as a query string
+                    contentType: false,  // Important: Don't set content type to application/x-www-form-urlencoded
+                    headers: {
+                        "X-CSRFToken": getCSRFToken(),
+                        "X-Requested-With": "XMLHttpRequest",
+
+                    },
+                    success: function (response) {
+                        // Handle successful response
+                        console.log("Quotation saved successfully:", response);
+                        alert("Quotation Updated successfully!");
+                        console.log("enq",enquiryId);// Ensure your response contains `enquiry_id`
+                        window.location.href = `/riva/manage_quotation/${enquiryId}/`;
+
+                    },
+                    error: function (xhr, status, error) {
+                        // Handle error response
+                        console.error("Error savingd quotation:", error);
+                        alert("An error occurred while saving the quotation.");
+                    }
+                });
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Parse context data safely
+            const data = JSON.parse('{{ data|safe }}');
+
+            // Set Subtotal values
+            if (data.Subtotal_list && data.Subtotal_list.length > 0) {
+                const subtotalValue = data.Subtotal_list[0].value;
+                document.getElementById('subtotal').textContent = subtotalValue;
+                document.getElementById('Subtotal1').value = subtotalValue;
+                document.getElementById('subtotal-checkbox').checked = data.Subtotal_list[0].is_checked;
+            }
+
+            // Set GST values
+            if (data.GST && data.GST.length > 0) {
+                const gstValue = data.GST[0].value;
+                document.getElementById('gst').textContent = gstValue;
+                document.getElementById('gst1').value = gstValue;
+                document.getElementById('gst-checkbox').checked = data.GST[0].is_checked;
+            }
+
+            // Set Grand Total values
+            if (data.Grand_Total && data.Grand_Total.length > 0) {
+                const grandTotalValue = data.Grand_Total[0].value;
+                document.getElementById('grand-total').textContent = grandTotalValue;
+                document.getElementById('grand').value = grandTotalValue;
+                document.getElementById('grand-total-checkbox').checked = data.Grand_Total[0].is_checked;
+            }
+        });
+
+
+        // CSRF token setup for AJAX requests
+        function getCSRFToken() {
+            const name = 'csrftoken';
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith(name + '=')) {
+                    return cookie.substring(name.length + 1);
+                }
+            }
+            return null;  // Return null if the CSRF token isn't found
+        }
+
+
+
+
+        
+        function calculateTotals() {
+            // Get all input fields with the class 'first-year-exgst' and their corresponding checkboxes
+            console.log("Triggered")
+            const rows = document.querySelectorAll('tr');
+            let subtotal = 0;
+
+
+            rows.forEach(row => {
+                const input = row.querySelector('.first-year-exgst');
+                const checkbox = row.querySelector('[type="checkbox"]');
+                if (checkbox && checkbox.checked && input) {
+                    const value = parseFloat(input.value) || 0; // Convert to number or default to 0
+                    subtotal += value;
+                }
+            });
+
+            // Calculate GST and grand total
+            const gstRate = 0.18; // 18% GST
+            const gst = subtotal * gstRate;
+            const grandTotal = subtotal + gst;
+
+            // Update the values in the table
+            document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+            document.getElementById('Subtotal1').value = subtotal.toFixed(2);
+            document.getElementById('gst').textContent = gst.toFixed(2);
+            document.getElementById('gst1').value = gst.toFixed(2);
+            document.getElementById('grand-total').textContent = grandTotal.toFixed(2);
+            document.getElementById('grand').value = grandTotal.toFixed(2);
+        }
+
+        // Attach the event listener to checkboxes and input fields
+        document.querySelectorAll('.form-check-input').forEach(checkbox => {
+            checkbox.addEventListener('change', calculateTotals);
+        });
+        document.querySelectorAll('.first-year-exgst').forEach(input => {
+            input.addEventListener('input', calculateTotals);
+        });
+
+        // Call the function initially to set totals
+        calculateTotals();
+
+
+    </script>
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+/* Default Styles - Desktop First */
+
+/* Media Query for Small Screens */
+@media (max-width: 576px) {
+    .row-cards {
+        margin-bottom: 2rem;
+    }
+
+    /* Form and Alignment */
+    form.d-flex {
+        flex-direction: column; /* Stack items vertically */
+    }
+
+    .unique-controls > * {
+        margin-bottom: 1rem; /* Add spacing between elements */
+        width: 100%; /* Make elements take full width */
+    }
+
+    /* Adjust Dropdown */
+    .dropdown-menu  {
+        width: 100%; /* Ensure dropdown takes full width */
+        text-align: center; /* Center text inside dropdown */
+    }
+
+    /* Smaller Buttons and Input */
+    .btn, .form-control {
+        font-size: 12px; /* Reduce font size for smaller screens */
+        padding: 6px; /* Adjust padding */
+    }
+
+    /* Reduce Button Margins */
+    .btn.me-2, .form-control.me-2 {
+        margin-right: 0; /* Remove extra margin for stacking */
+    }
+}
+
+</style>
+<div class="container-fluid mt-5">
+    <h2>All General Reports</h2>
+    <div class="row row-cards mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form action="{% url 'generalreport' %}" method="GET" class="d-flex justify-content-between align-items-center">
+                        <!-- Left Section: Create Report and Export buttons -->
+                        <div class="d-flex unique-controls">
+                            <a href="{% url 'generalreportsnew' %}" class="btn btn-success me-2">Create Report</a>
+                            <!-- Export Button Section -->
+                                <div class="dropdown">
+                                    <button class="btn btn-info dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Export
+                                    </button>
+                                    <ul class="dropdown-menu exp" aria-labelledby="exportDropdown">
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'export_data' %}?type=general_report&format=csv">Export as CSV</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'export_data' %}?type=general_report&format=xlsx">Export as XLSX</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'export_data' %}?type=general_report&format=pdf">Export as PDF</a>
+                                        </li>
+                                    </ul>
+                        </div>  </div>                
+                        <!-- Right Section: Search and Clear Search buttons -->
+                        <div class="d-flex align-items-center">
+                            <input type="text" name="search" class="form-control me-2" placeholder="Search by site name, date, or...">
+                            <button type="submit" class="btn btn-primary me-2">Search</button>
+                            <a href="{% url 'generalreport' %}" class="btn btn-secondary">Clear Search</a>
+                        </div>
+                    </form>
+                </div>
+                                
+            </div>
+        </div>
+    </div>
+    <div class='table-responsive'>
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Site</th>
+                    <th>Date of Visit</th>
+                    <th>Point 1</th>
+                    <th>Point 2</th>
+                    <th>Point 3</th>
+                    <th>Point 4</th>
+                    <th>Notes</th>
+                    <th>Attachment</th>
+                    <th>Actions</th>
+                    {% if user_role == 'Admin' %}
+                        <th>Actions</th>
+                    {% endif %}
+                    
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports %}
+                <tr>
+                    <td>{{ report.site.name }}</td>
+                    <td>{{ report.date_of_visit }}</td>
+                    <td>{{ report.point1|truncatechars:30 }}</td>
+                    <td>{{ report.point2|truncatechars:30 }}</td>
+                    <td>{{ report.point3|truncatechars:30 }}</td>
+                    <td>{{ report.point4|truncatechars:30 }}</td>
+                    <td>{{ report.notes|truncatechars:50 }}</td>
+                    <td>
+                        {% if report.attachment %}
+                        <a href="{{ report.attachment.url }}" target="_blank">Download</a>
+                        {% else %}
+                        No Attachment
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'edit_general_report' report.id %}" class="btn btn-sm btn-warning">Edit</a>
+                        <a href="{% url 'generate_report_pdf' report.id %}" class="btn btn-primary btn-sm" target="_blank">Download PDF</a>
+                    </td>
+                    {% if user_role == 'Admin' %}
+                        <td>
+                            <a href="{% url 'view_edit_history' report.id %}" class="btn btn-sm btn-info">Edit History</a>
+                        </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center">No reports found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+
+{% endblock %}

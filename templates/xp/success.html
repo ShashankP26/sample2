@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2 class="text-center mt-5">Success</h2>
+    <p class="text-center">Your data has been successfully saved.</p>
+
+    <!-- Optional redirect link -->
+    <p class="text-center">
+        <a href="{% url 'home' %}">Return to Home</a>
+    </p>
+
+    <!-- JavaScript for the pop-up -->
+    <script>
+        window.onload = function() {
+            alert("Your data has been successfully saved!");
+        }
+    </script>
+</div>
+{% endblock %}

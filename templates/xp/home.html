@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .bodycss {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 50vh;
+        width: 50vw;
+        flex-direction: column;
+        text-align: center;
+        margin-top: 10vh;
+    }
+
+    .btn-custom {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        padding: 15px;
+        border: 2px solid #1976d2;
+        background: transparent;
+        color: #1976d2;
+        transition: 0.3s;
+        font-size: 18px;
+    }
+    .btn-custom:hover {
+        background: #1976d2;
+        color: #fff;
+    }
+    .btn-container {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin-top: 20px;
+    }
+    .svg-icon {
+        width: 24px;
+        height: 24px;
+    }
+</style>
+
+<div class="cards">
+    <div class="container-fluid bodycss card">
+        <h1 class="mb-4">🚧 Dashboard Under Construction 🚧</h1>
+        <p class="text-muted">We are working hard to bring you an amazing experience. Please check back soon!</p>
+        <div class="btn-container">
+            <a href="/riva/dashboard/" class="btn btn-custom">
+                <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"> 
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/> 
+                    <path d="M3 21v-13l9 -4l9 4v13" /> 
+                    <path d="M13 13h4v8h-10v-6h6v-2" />
+                </svg>
+                CRM Dashboard
+            </a>
+            <a href="/dashboard/" class="btn btn-custom">
+                <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"> 
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/> 
+                    <path d="M5 3m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z" /> 
+                    <path d="M9 8l1 0" /> 
+                    <path d="M9 12l1 0" /> 
+                    <path d="M9 16l1 0" /> 
+                    <path d="M12 8l4 0" /> 
+                    <path d="M12 12l4 0" /> 
+                    <path d="M12 16l4 0" />
+                </svg>
+                Reports Dashboard
+            </a>
+            <a href="/website/dashboard/" class="btn btn-custom">
+                <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"> 
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/> 
+                    <path d="M5 5h14v14h-14z" /> 
+                    <path d="M9 9l6 6m0 -6l-6 6" />
+                </svg>
+                Vouchers Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

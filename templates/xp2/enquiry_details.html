@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block content %}<br>
+<div class="container-fluid">
+    <h2 class="page-title text-center">Enquiry Details</h2><br>
+
+    <div class="input-icon d-flex mb-4 justify-content-center">
+        <div class="btn-group">
+            <!-- Add any buttons or actions here -->
+        </div>
+    </div>
+</div>
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <!-- Left column -->
+                <div class="col-12 col-md-6 mb-4">
+                    <p><strong>Company Name:</strong> {{ enquiry_data.companyname }}</p>
+                    <p><strong>Customer Name:</strong> {{ enquiry_data.customername }}</p>
+                    <p><strong>Reference:</strong> {{ enquiry_data.refrence }} </p>
+                    <p><strong>Email:</strong> {{ enquiry_data.email }}</p>
+                    <p><strong>Contact:</strong> {{ enquiry_data.contact }}</p>
+                    <p><strong>Location:</strong> {{ enquiry_data.location }}</p>
+                    <p><strong>Status:</strong> {{ enquiry_data.status }}</p>
+
+                    <h3>Revert Remarks</h3>
+                    <ul>
+                    {% for remark in revert_remarks %}
+                        <li>{{ remark.text }} - {{ remark.created_at }}</li>
+                    {% endfor %}
+                    </ul>
+                </div>
+
+                <!-- Right column -->
+                <div class="col-12 col-md-6 mb-4">
+                    <p><strong>Products:</strong> {{ enquiry_data.products }}</p>
+                    <p><strong>Sub Product:</strong> {{ enquiry_data.subproduct }}</p>
+                    <p><strong>Closure Date:</strong> {{ enquiry_data.closuredate }}</p>
+                    <p><strong>Executive:</strong> {{ enquiry_data.executive }}</p>
+                    <p><strong>Remarks:</strong> {{ enquiry_data.remarks }}</p>
+                    <p><strong>Files:</strong></p>
+                    {% if enquiry_data.files %}
+                        <p>Total Files: {{ enquiry_data.files.count }}</p>
+                        <ul>
+                        {% for file in enquiry_data.files %}
+                            <li>
+                                <a href="{{ file.file.url }}" download>{{ file.name }}</a>
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p>No files uploaded</p>
+                    {% endif %}<br>
+                </div>
+            </div>
+            <div class="d-flex flex-wrap justify-content-end mt-auto gap-2">
+                <div class="dropdown">
+                    <button class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        Export
+                    </button>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="{% url 'export_details_enquiries_pdf' enquiry_data.id %}">Export as PDF</a>
+                        <a class="dropdown-item" href="#" onclick="printPage()">Print</a>
+                    </div>
+                </div>
+                <a href="{% url 'enquries' %}" class="btn btn-dark">Back</a>
+                <a href="{% url 'edit-enquiry' enquiry_id=enquiry_data.id %}" class="btn btn-warning">Edit</a>
+                <a href="{% url 'managequotationpage' enquiry_data.id %}" class="btn btn-primary">Manage</a>
+                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmModal">Push to Lost Order</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Follow-up Box -->
+    <div class="card mt-4">
+        <div class="card-body">
+            <h3>Add Follow-Up</h3>
+            <form method="post" action="{% url 'add_followup' enquiry_data.id %}">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <label for="foname">Follow-up Details:</label>
+                        <input type="text" id="foname" name="foname" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="fodate">Follow-up Date:</label>
+                        <input type="date" id="fodate" name="fodate" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="fotime">Follow-up Time:</label>
+                        <input type="time" id="fotime" name="fotime" class="form-control" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success mt-3">Add Follow-Up</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Display Follow-Up Records -->
+    <div class="card mt-4">
+        <div class="card-body">
+            <h3>Follow-Up History</h3>
+            {% if followups %}
+                <ul>
+                    {% for followup in followups %}
+                        <li>
+                            <strong>Name:</strong> {{ followup.foname }},
+                            <strong>Date:</strong> {{ followup.fodate }},
+                            <strong>Time:</strong> {{ followup.fotime }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No follow-ups recorded yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Confirmation -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalLabel">Confirm Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to push this order to Lost Orders?</p>
+                <form id="confirmLostForm" method="POST" action="{% url 'push_to_lost_order' enquiry_data.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">Reason for Deleting</label>
+                        <textarea id="reason" name="reason" class="form-control" rows="3" required></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Yes, Move to Lost Orders</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media (max-width: 576px) {
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .btn {
+            font-size: 0.875rem;
+            padding: 0.5rem 1rem;
+        }
+
+        .form-control {
+            font-size: 0.875rem;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+    }
+</style>
+
+<script>
+    function printPage() {
+        const elementsToHide = document.querySelectorAll('.dropdown, .pagination, .page-header, .input-icon');
+        elementsToHide.forEach(element => element.style.display = 'none');
+        window.print();
+        setTimeout(() => {
+            elementsToHide.forEach(element => element.style.display = '');
+        }, 0);
+    }
+</script>
+{% endblock %}

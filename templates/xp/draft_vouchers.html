@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Draft Vouchers</h2>
+
+<div class="table-responsive shadow-sm rounded">
+    <table class="table table-striped table-hover align-middle" style="border-collapse: collapse;">
+        <thead class="table-dark">
+            <tr>
+                <th style="width: 12%; border: 1px solid #ddd; padding: 8px;">Applied Date</th>
+                <th style="width: 30%; border: 1px solid #ddd; padding: 8px;">User</th>
+                <th style="width: 22%; border: 1px solid #ddd; padding: 8px;">EV num</th>
+                <th style="width: 30%; border: 1px solid #ddd; padding: 8px;">Item Type</th>
+                <th style="width: 15%; border: 1px solid #ddd; padding: 8px;">Item Name</th>
+                <th style="width: 15%; border: 1px solid #ddd; padding: 8px;">Payment Category</th>
+                <th style="width: 10%; border: 1px solid #ddd; padding: 8px;">T Category</th>
+                <th style="width: 10%; border: 1px solid #ddd; padding: 8px;">T Details</th>
+                <th style="width: 10%; border: 1px solid #ddd; padding: 8px;">Amount</th>
+                <th style="width: 10%; border: 1px solid #ddd; padding: 8px;">Transaction Date</th>
+                <th style="width: 15%; border: 1px solid #ddd; padding: 8px;">Uploaded File</th>
+                <th style="width: 10%; border: 1px solid #ddd; padding: 8px;">Payment Mode</th>
+                <th style="width: 10%; border: 1px solid #ddd; padding: 8px;">Actions</th>
+                <th style="width: 10%; border: 1px solid #ddd; padding: 8px;"> Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for exp in expenses %}
+            <tr>
+                <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">{{ exp.date }}</td>
+                <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">{{ exp.created_by }}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">{{ exp.evoucher_number }}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">{{ exp.item_type }}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">{{ exp.item_name }}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">
+                    <div>
+                        {% if exp.gst_photo %}
+                            <p><strong>GST</strong></p>
+                            <a href="{{ exp.gst_photo.url }}" class="btn btn-info btn-sm" target="_blank">Download GST</a>
+                        {% elif exp.bill_photo %}
+                            <p><strong>Bill</strong></p>
+                            <a href="{{ exp.bill_photo.url }}" class="btn btn-info btn-sm" target="_blank">Download Bill</a>
+                        {% elif exp.voucher_number %}
+                            <p><strong>Voucher</strong></p>
+                            <p>{{ exp.voucher_number }}</p>
+                        {% else %}
+                            <span class="text-muted">No File or Voucher</span>
+                        {% endif %}
+                    </div>
+                </td>
+                <td style="border: 1px solid #ddd; padding: 8px;">{{ exp.transaction_category }}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">
+                    {% if exp.transaction_category == 'internal' %}
+                        {{ exp.internal_option }}
+                    {% elif exp.transaction_category == 'external' %}
+                        {{ exp.external_type }}
+                    {% endif %}
+                </td>
+                <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">{{ exp.amount }}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">{{ exp.transaction_date }}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">
+                    {% if exp.proof_photo %}
+                        <a href="{{ exp.proof_photo.url }}" class="btn btn-info btn-sm" target="_blank">Download Proof</a>
+                    {% else %}
+                        <button id="no-proof-button" class="btn btn-danger btn-sm" disabled>No Proof</button>
+                    {% endif %}
+                </td>
+                <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">{{ exp.payment_mode }}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">
+                    {% if exp.status == 'paid' %}
+                        <button class="btn btn-primary btn-sm" style="padding: 5px 20px;" disabled>Edit</button>
+                    {% else %}
+                        <a href="{% url 'edit_item' exp.id %}" class="btn btn-primary btn-sm" style="padding: 5px 20px;">Edit</a>
+                    {% endif %}
+                </td>
+                <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">
+                    <span class="stamp bg-warning text-white">
+                        <!-- Pending Tabler SVG Icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icon-tabler-pennant">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                            <path d="M10 2a1 1 0 0 1 .993 .883l.007 .117v.35l8.406 3.736c.752 .335 .79 1.365 .113 1.77l-.113 .058l-8.406 3.735v7.351h1a1 1 0 0 1 .117 1.993l-.117 .007h-4a1 1 0 0 1 -.117 -1.993l.117 -.007h1v-17a1 1 0 0 1 1 -1z"/>
+                        </svg>
+                        Draft
+                    </span>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="12" class="text-center text-muted">No records found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

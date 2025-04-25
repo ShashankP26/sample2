@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="page-wrapper d-flex flex-column justify-content-start">
+    <!-- Page header -->
+    <div class="page-body">
+        <div class="container-fluid">
+            <div class="row g-2 align-items-center">
+                <div class="col d-flex align-items-center justify-content-between">
+                    <h2 class="page-title">Expense Details</h2>
+                    <a href="{% url 'expense_form' %}" class="btn btn-primary" role="button">New Expense</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Expense details section -->
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-body">
+                <h4>Expense Information</h4>
+                <p><strong>Item Type:</strong> {{ expense.get_item_type_display }}</p>
+                <p><strong>Item Name:</strong> {{ expense.item_name }}</p>
+                <p><strong>Transaction Option:</strong> {{ expense.get_transaction_option_display }}</p>
+                <p><strong>Transaction Category:</strong> {{ expense.transaction_category }}</p>
+                <p><strong>Payment Mode:</strong> {{ expense.get_payment_mode_display }}</p>
+                <p><strong>Amount:</strong> {{ expense.amount }}</p>
+                <p><strong>Voucher Number:</strong> {{ expense.voucher_number }}</p>
+                <p><strong>Internal Option:</strong> {{ expense.internal_option }}</p>
+                <p><strong>External Type:</strong> {{ expense.external_type }}</p>
+                
+                <p><strong>Bill Photo:</strong> {% if expense.bill_photo %}<a href="{{ expense.bill_photo.url }}" download>Download</a>{% else %}No file uploaded{% endif %}</p>
+                <p><strong>Proof Photo:</strong> {% if expense.proof_photo %}<a href="{{ expense.proof_photo.url }}" download>Download</a>{% else %}No file uploaded{% endif %}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

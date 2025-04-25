@@ -1,0 +1,215 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quotation Preview - {{ quotation_number }}</title>
+    <style>
+        /* A4 Page Layout */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0 auto;
+            padding: 20px;
+            width: 21cm;
+            min-height: 29.7cm;
+            box-sizing: border-box;
+            background-color: #fff;
+            max-height: 99vh;
+        }
+    
+        header {
+            text-align: center;
+            margin-bottom: 10px;
+            margin-top: 0px;
+            padding-bottom: 10px;
+        }
+    
+        header h1 {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .details-section {
+            margin-bottom: 20px;
+        }
+
+        .details-section h3 {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .details-section p {
+            margin: 5px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: center;
+        }
+
+        table th {
+            background-color: #f4f4f4;
+            font-weight: bold;
+        }
+
+        /* Adjust column widths */
+        table th:nth-child(1), table td:nth-child(1) {
+            width: 10%;
+        }
+        table th:nth-child(2), table td:nth-child(2) {
+            width: 30%;
+        }
+        table th:nth-child(3), table td:nth-child(3),
+        table th:nth-child(4), table td:nth-child(4) {
+            width: 15%;
+        }
+        table th:nth-child(5), table td:nth-child(5) {
+            width: 20%;
+        }
+
+        .totals-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .totals-container .section {
+            width: 48%;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 12px;
+            page-break-inside: avoid;
+           
+        }
+
+        .line-border {
+            border-top: 1px solid #ddd;
+            margin-top: 20px;
+        }
+
+        @media print {
+            /* Print specific styles */
+            body {
+                width: 100%;
+                min-height: auto;
+                margin: 0;
+                padding: 20mm;
+            }
+
+            .details-section h3, .totals-container h3 {
+                font-size: 16px;
+                font-weight: normal;
+            }
+
+            .totals-container {
+                flex-direction: column;
+            }
+
+            table th, table td {
+                padding: 4px;
+            }
+
+            footer {
+                
+                font-size: 10px;
+            }
+
+            .print-button {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="{% static 'xpredictlogo.jpg' %}" width="110" height="32" alt="Xpredict" class="navbar-brand-image">
+    </header>
+
+
+
+    <hr>
+    <h1>HIDREC WASH</h1>
+    {% for comp in company %}
+      <p><strong>{{ comp.c_name }} </strong></p>
+      <p><strong>{{ comp.mail }} / {{ comp.phone }} </strong></p>
+    {% endfor %}
+    
+    {% for hid in hidrec %}
+    <table class="table table-bordered">
+        <tbody>
+            <tr>
+                <td><strong>Date</strong></td>
+                <td>{{ current_date }}</td>
+            </tr>
+            <tr>
+                <td><strong>Quotation No</strong></td>
+                <td>{{ hid.quotation_no }}</td>
+            </tr>
+            <tr>
+                <td><strong>Validity</strong></td>
+                <td>15 days</td>
+            </tr>
+            <tr>
+                <td><strong>Prepared by</strong></td>
+                <td>Kirti</td>
+            </tr>
+        </tbody>
+    </table>
+        
+        {% endfor %}<br>
+
+
+
+        {% for hid in hidrec %}
+
+        <p><strong>Contents : </strong></p>
+        <P>{{hid.contents|linebreaksbr}}</P>
+
+        <p><strong>Hidrec Wash: </strong></p>
+        <P>{{hid.hidrec_wash_text|linebreaksbr}}</P>
+
+        <p><strong>Price: </strong></p>
+        <P><strong>{{hid.price}}</strong></P>
+
+        <p><strong>Description: </strong></p>
+        <P>{{hid.carwash_text|linebreaksbr}}</P>
+
+        <p><strong>Price: </strong></p>
+        <P><strong>{{hid.priceoil_skimmer}}</strong></P>
+
+        <p><strong>Specifications : </strong></p>
+        <P>{{hid.specification|linebreaksbr}}</P>
+
+       
+        <p><strong>Terms and Conditions: </strong></p>
+        <P>{{hid.terms_conditions|linebreaksbr}}</P>
+
+        <p><strong>General Maintenance: </strong></p>
+        <P>{{hid.general_maintenance|linebreaksbr}}</P>
+
+        <p><strong>Total : </strong></p>
+        <P><strong>{{hid.total_price}} </strong></P>
+        {% endfor %}
+
+
+    <hr>
+    <!-- Footer Section -->
+    <footer>
+        <p>© Xpredict Labs. All rights reserved.</p>
+         <button class="print-button" onclick="window.print()">Print this quotation</button>
+    </footer>
+
+</body>
+</html>

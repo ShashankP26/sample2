@@ -1,0 +1,359 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quotation Preview - {{ quotation_number }}</title>
+    <style>
+        /* A4 Page Layout */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0 auto;
+            padding: 20px;
+            width: 21cm;
+            min-height: 29.7cm;
+            box-sizing: border-box;
+            background-color: #fff;
+            max-height: 99vh;
+        }
+    
+        header {
+            text-align: center;
+            margin-bottom: 10px;
+            margin-top: 0px;
+            padding-bottom: 10px;
+        }
+    
+        header h1 {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .details-section {
+            margin-bottom: 20px;
+        }
+
+        .details-section h3 {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .details-section p {
+            margin: 5px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: center;
+        }
+
+        table th {
+            background-color: #f4f4f4;
+            font-weight: bold;
+        }
+
+        /* Adjust column widths */
+        table th:nth-child(1), table td:nth-child(1) {
+            width: 10%;
+        }
+        table th:nth-child(2), table td:nth-child(2) {
+            width: 30%;
+        }
+        table th:nth-child(3), table td:nth-child(3),
+        table th:nth-child(4), table td:nth-child(4) {
+            width: 15%;
+        }
+        table th:nth-child(5), table td:nth-child(5) {
+            width: 20%;
+        }
+
+        .totals-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .totals-container .section {
+            width: 48%;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 12px;
+            page-break-inside: avoid;
+           
+        }
+
+        .line-border {
+            border-top: 1px solid #ddd;
+            margin-top: 20px;
+        }
+
+        @media print {
+            /* Print specific styles */
+            body {
+                width: 100%;
+                min-height: auto;
+                margin: 0;
+                padding: 20mm;
+            }
+
+            .details-section h3, .totals-container h3 {
+                font-size: 16px;
+                font-weight: normal;
+            }
+
+            .totals-container {
+                flex-direction: column;
+            }
+
+            table th, table td {
+                padding: 4px;
+            }
+
+            footer {
+                
+                font-size: 10px;
+            }
+
+            .print-button {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="{% static 'xpredictlogo.jpg' %}" width="110" height="32" alt="Xpredict" class="navbar-brand-image">
+    </header>
+
+
+
+        <hr>
+        <h1>AMC Proposal</h1>
+        {% for comp in company  %}
+        <p><strong>{{ comp.c_name }} </strong></p>
+        <p><strong>{{ comp.mail }} / {{ comp.phone }} </strong></p>
+        
+        <table class="table table-bordered">
+            <tbody>
+                <tr>
+                    <td><strong>Date</strong></td>
+                    <td>{{ current_date }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Quotation No</strong></td>
+                    <td>{{ quotation_no }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Validity</strong></td>
+                    <td>15 days</td>
+                </tr>
+                <tr>
+                    <td><strong>Prepared by</strong></td>
+                    <td>Kirti</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        {% endfor %}
+
+
+    <!-- Contents Section -->
+    <div class="details-section">
+        <h3>Contents:</h3>
+        <ul>
+            {% for item in data.contents %}
+                {% if item.is_checked %}
+                    <li>{{ item.value }}</li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </div>
+
+   
+
+    <!-- AMC Proposal Section -->
+    {% with data.Amc_Proposal|length as proposal_count %}
+        {% if proposal_count > 0 and data.Amc_Proposal|yesno:"yes,no" == "yes" %}
+            <div class="details-section">
+                <h3>AMC Proposal:</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Capacity</th>
+                            <th>Total Capacity Needed</th>
+                            <th>Waste Water Type</th>
+                            <th>No. of Machines</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in data.Amc_Proposal %}
+                            {% if item.is_checked %}
+                                <tr>
+                                    <td>{{ item.pd_name }}</td>
+                                    <td>{{ item.capacity }}</td>
+                                    <td>{{ item.total_needed_capacity }}</td>
+                                    <td>{{ item.waste_water_type }}</td>
+                                    <td>{{ item.total_no_machines }}</td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    {% endwith %}
+
+
+    <!-- Maintenance Support Section -->
+    <div class="details-section">
+        <h3>Maintenance Support:</h3>
+        <ul>
+            {% for item in data.maintenance_support %}
+                {% if item.is_checked %}
+                    <li>{{ item.value }}</li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Yearly Maintenance Section -->
+    <div class="details-section">
+        <h3>Yearly Maintenance:</h3>
+        <ul>
+            {% for item in data.yearly_maintenance %}
+                {% if item.is_checked %}
+                    <li>{{ item.value }}</li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Running Consumables Section -->
+    <div class="details-section">
+        <h3>Running Consumables:</h3>
+        <ul>
+            {% for item in data.running_consumables %}
+                {% if item.is_checked %}
+                    <li>{{ item.value }}</li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Exclusions Section -->
+    <div class="details-section">
+        <h3>Exclusions:</h3>
+        <ul>
+            {% for item in data.exclusions %}
+                {% if item.is_checked %}
+                    <li>{{ item.value }}</li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </div>
+
+<!-- Pricing: AMC For One Year Section -->
+{% if data.amc_pricing|length > 0 and data.amc_pricing|yesno:"yes,no" == "yes" %}
+    <div class="details-section">
+        <h2>Pricing: AMC For One Year</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Capacity</th>
+                    <th>Total Capacity Needed</th>
+                    <th>Waste Water Type</th>
+                    <th>No. of Machines</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in data.amc_pricing %}
+                    {% if item.is_checked %}
+                        <tr>
+                            <td>{{ item.pd_name }}</td>
+                            <td>{{ item.capacity }}</td>
+                            <td>{{ item.total_needed_capacity }}</td>
+                            <td>{{ item.waste_water_type }}</td>
+                            <td>{{ item.total_no_machines }}</td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
+
+<!-- Particulars Section -->
+{% if data.Particulars|length > 0 and data.Particulars|yesno:"yes,no" == "yes" %}
+    <div class="details-section">
+        <h3>Particulars:</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Particular</th>
+                    <th>First Year (ExGST)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in data.Particulars %}
+                    {% if item.is_checked %}
+                        <tr>
+                            <td>{{ item.particulars }}</td>
+                            <td>{{ item.first_year_exgst }}</td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
+
+
+    <div class="totals-container">
+        <!-- First Line -->
+        <div style="display: flex; justify-content: space-between; gap: 40px;">
+            <span><strong>Subtotal : {{ data.Subtotal_list.0.value }}</strong></span>
+                <span><strong>GST :{{ data.GST.0.value }}</strong> </span>
+            <span><strong>Total : {{ data.Grand_Total.0.value }}</strong></span>
+        </div>
+    </div>
+    <br>
+    <!-- Total Amount in Words -->
+    <div style="margin-top: 10px;">
+        <strong>Total Amount in Words:</strong>
+        <br>
+        <strong>{{ g_total_in_words }}</strong>
+    </div>
+     
+     <div class="details-section">
+        <h3>Terms and Conditions:</h3>
+        <ul>
+            {% for item in data.terms %}
+                {% if item.is_checked %}
+                    <li>{{ item.value }}</li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </div>
+    <hr>
+    <!-- Footer Section -->
+    <footer>
+        <p>© Xpredict Labs. All rights reserved.</p>
+         <button class="print-button" onclick="window.print()">Print this quotation</button>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container-fluid mt-5">
+      <h2>Minutes of Meeting Records</h2>
+      <div class="row row-cards mb-4">
+          <div class="col-12">
+              <div class="card">
+                <div class="card-body">
+                  <form action="{% url 'mom' %}" method="GET" class="row g-2 d-flex justify-content-between">
+                      <!-- Left side: Create Report and Export buttons -->
+                      <div class="col-md-6 d-flex justify-content-start">
+                          <a href="{% url 'mom_new' %}" class="btn btn-success me-2">Create Report</a>
+                          <div class="dropdown">
+                              <button class="btn btn-info dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                  Export
+                              </button>
+                              <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                                  <li><a class="dropdown-item" href="{% url 'export_mom' %}?format=csv">Export as CSV</a></li>
+                                  <li><a class="dropdown-item" href="{% url 'export_mom' %}?format=xlsx">Export as XLSX</a></li>
+                                  <li><a class="dropdown-item" href="{% url 'export_mom' %}?format=pdf">Export as PDF</a></li>
+                              </ul>
+                          </div>
+                      </div>
+              
+                      <!-- Right side: Search input and buttons -->
+                      <div class="col-md-6 d-flex justify-content-end">
+                          <input type="text" name="search" class="form-control me-2" placeholder="Search reports by site name, date, or keywords...">
+                          <button type="submit" class="btn btn-primary me-2">Search</button>
+                          <a href="{% url 'mom' %}" class="btn btn-secondary">Clear Search</a>
+                      </div>
+                  </form>
+              </div>    
+              </div>
+          </div>
+      </div>
+    <div class="row row-cards">
+      <div class="col-12">
+        {% comment %} <div class="card"> {% endcomment %}
+          <div class="card-body table-responsive">
+            <table class="table table-bordered table-striped">
+              <thead>
+                <tr>
+                  <th>Topic</th>
+                  <th>Organized By</th>
+                  <th>Date</th>
+                  <th>Location</th>
+                  <th>Meeting Chair</th>
+                  <th>Attachments</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for mom in mom_records %}
+                <tr>
+                  <td>{{ mom.topic }}</td>
+                  <td>{{ mom.organize }}</td>
+                  <td>{{ mom.date }}</td>
+                  <td>{{ mom.location }}</td>
+                  <td>{{ mom.meeting_chair }}</td>
+                  <td>
+                    {% if mom.attachments.all %}
+                    <ul class="list-unstyled">
+                      {% for attachment in mom.attachments.all %}
+                      <li><a href="{{ attachment.file.url }}" target="_blank">{{ attachment.file.name }}</a></li>
+                      {% endfor %}
+                    </ul>
+                    {% else %}
+                    No attachments
+                    {% endif %}
+                  </td>
+                  <td>
+                    <a href="{% url 'mom_detail' mom.id %}" class="btn btn-info btn-sm">View Details</a>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="8" class="text-center">No MOM records found.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% comment %} </div> {% endcomment %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-5">
+    <h2>Maintenance Checklist Details for {{ checklist.machine.name }}</h2>
+
+    <div class="card">
+        <div class="card-body">
+            <!-- Checklist Details -->
+            <h4>Inspector: {{ checklist.inspector_name }}</h4>
+            <p><strong>Date:</strong> {{ checklist.date }}</p>
+            <p><strong>Visit Date:</strong> {{ checklist.visit_date }}</p>
+            <p><strong>Supply Voltage:</strong> 
+                {{ checklist.get_supply_voltage_display }}
+            </p>
+            <p><strong>Current Load:</strong> 
+                {{ checklist.get_current_load_display }}
+            </p>
+            <p><strong>Observations:</strong></p>
+            <p>{{ checklist.observations|linebreaks }}</p>
+
+            <!-- Attachments -->
+            <h5>Attachments</h5>
+            {% if checklist.attachments.all %}
+                <ul>
+                    {% for attachment in checklist.attachments.all %}
+                        <li>
+                            <a href="{{ attachment.file.url }}" target="_blank">{{ attachment.file.name }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No Attachments</p>
+            {% endif %}
+
+            <!-- Edit History -->
+            <h5>Edit History</h5>
+            <div>
+                {% if checklist.edit_history %}
+                    <textarea class="form-control" rows="10" readonly>{{ checklist.edit_history }}</textarea>
+                {% else %}
+                    <textarea class="form-control" rows="2" placeholder="No changes have been made to the checklist." readonly></textarea>
+                {% endif %}
+            </div>
+            <!-- Navigation -->
+            <div class="mt-3">
+                <a href="{% url 'maintenance_checklist' %}" class="btn btn-secondary">Back to Checklist Records</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

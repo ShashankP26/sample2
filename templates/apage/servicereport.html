@@ -1,0 +1,632 @@
+{% extends "base.html" %}
+{% block content%}
+<div class="page-wrapper">
+    <!-- Page header -->
+    <div class="page-header d-print-none">
+        <div class="container-fluid">
+            <div class="row g-2 align-items-center">
+                <div class="col">
+                    <h2 class="page-title">
+                        SITE VISIT
+                    </h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Page body -->
+    <div class="page-body">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-start mb-3">
+                <a href="{% url 'servicereport' %}" class="btn btn-primary">
+                    View Service Report Records
+                </a>
+            </div>
+            <form action="{% url 'service_report_new' %}" method="post" class="card">
+                {% csrf_token %}
+                <div class="row row-cards">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <!-- Service Information -->
+                            <div class="card-header">
+                                <h4 class="card-title">SERVICE INFORMATION</h4>
+                            </div>
+                            <div class="container-fluid">
+                                <div class="mb-3">
+                                    <label class="form-label">NAME</label>
+                                    <input type="text" class="form-control" name="service_name"
+                                        value="{{user.username}}" placeholder="Enter name.... " readonly>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">DATE OF VISIT</label>
+                                    <input type="date" class="form-control" id="date-of-visit" name="date_of_visit"placeholder="Enter date of visit">
+                                    <div id="date-error" class="text-danger" style="display: none;">Future dates are not allowed. "Data Will not be stored"</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">ZONE</label>
+                                    <select class="form-select" id="select-zone" name="zone">
+                                        <option value="G">GKN</option>
+                                        <option value="C">CHP</option>
+                                        <option value="S">SRS</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">PHONE NO</label>
+                                    <input type="number" class="form-control" name="phone_no"
+                                        placeholder="Enter number...">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">REASON OF VISIT</label>
+                                    <input type="text" class="form-control" name="reason_of_visit" placeholder="">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">IN TIME</label>
+                                    <input type="time" class="form-control" name="in_time" placeholder="">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">OUT TIME</label>
+                                    <input type="time" class="form-control" name="out_time" placeholder="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Customer Information -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title">CUSTOMER INFORMATION</h4>
+                            </div>
+                            <div class="container-fluid">
+                                <div class="mb-3">
+                                    <label class="form-label">CUSTOMER NAME</label>
+                                    <input type="text" class="form-control" name="customer_name"
+                                        placeholder="Enter customer name....">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">CONTACT NUMBER</label>
+                                    <input type="number" class="form-control" name="contact_number"
+                                        placeholder="Enter contact number...">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">LOCATION</label>
+                                    <input type="text" class="form-control" name="location"
+                                        placeholder="Enter location...">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="state">State:</label>
+                                    <select id="state" name="state" class="form-control">
+                                        <option value="">Select State</option>
+                                        {% for state in states %}
+                                        <option value="{{ state.name }}">{{ state.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">DATE OF COMPLAINT</label>
+                                    <input type="date" class="form-control" name="date_of_complaint"
+                                        value="{{ service_report.date_of_visit|date:" Y-m-d" }}"
+                                        placeholder="Enter date of complaint...">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">STATUS OF CALL (WARRANTY/AMC)</label>
+                                    <input type="text" class="form-control" name="status_of_call" placeholder="...">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- -----elecctronic items -------- -->
+                <div class="card">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h2>ELECTRONIC ITEMS</h2>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Item names</th>
+                                            <th>Checked</th>
+                                            <th>Repair</th>
+                                            <th>Replacement</th>
+                                            <th>Remark</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in electronic_items %}
+                                        <tr>
+                                            <td>{{ item.name }}</td>
+                                            <td><input type="checkbox" name="checked_{{ item.id }}"></td>
+                                            <td><input type="checkbox" name="repair_{{ item.id }}"></td>
+                                            <td><input type="checkbox" name="replacement_{{ item.id }}"></td>
+                                            <td>
+                                                <textarea class="form-control" name="remark_eitems_{{ item.id }}"
+                                                    placeholder="Remark"></textarea>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                        <div>
+                    </div>
+                </div>
+                <!-- -------Electronic Panels-------- -->
+                <div class="container-fluid">
+                    <h2>ELECTRONIC PANELS</h2>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <h4>Electronic Panel Names</h4>
+                                    </th>
+                                    <th>
+                                        <h4>Checked</h4>
+                                    </th>
+                                    <th>
+                                        <h4>Repair</h4>
+                                    </th>
+                                    <th>
+                                        <h4>Replacement</h4>
+                                    </th>
+                                    <th>
+                                        <h4>Remark</h4>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for panel in electronic_panels %}
+                                <tr>
+                                    <td>{{ panel.name }}</td>
+                                    <td><input type="checkbox" name="checked_{{ panel.id }}"></td>
+                                    <td><input type="checkbox" name="repair_{{ panel.id }}"></td>
+                                    <td><input type="checkbox" name="replacement_{{ panel.id }}"></td>
+                                    <td>
+                                        <div class="mb-3">
+                                            <textarea class="form-control" name="remark_epanels_{{ panel.id }}"
+                                                placeholder="Remark"></textarea>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- ---------Chemical Items ----------- -->
+                <div class="container-fluid">
+                    <h2>CHEMICAL ITEMS</h2>
+                    <div class='table-responsive'>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <h4>Chemical Item Names</h4>
+                                    </th>
+                                    <th>
+                                        <h4>Checked</h4>
+                                    </th>
+                                    <th>
+                                        <h4>Repair</h4>
+                                    </th>
+                                    <th>
+                                        <h4>Replacement</h4>
+                                    </th>
+                                    <th>
+                                        <h4>Remark</h4>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in chemical_items %}
+                                <tr>
+                                    <td>{{ item.name }}</td>
+                                    <td><input type="checkbox" name="checked_chemical_{{ item.id }}"></td>
+                                    <td><input type="checkbox" name="repair_chemical_{{ item.id }}"></td>
+                                    <td><input type="checkbox" name="replacement_chemical_{{ item.id }}"></td>
+                                    <td><textarea class="form-control" name="remark_chemical_{{ item.id }}"
+                                            placeholder="Remark"></textarea></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- PUMP / FILTERS / AIRBLOWERS -->
+                <div class="container-fluid table-responsive">
+                    <h2>PUMP / FILTERS / AIRBLOWERS</h2>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Pump Item Names</th>
+                                <th>Checked</th>
+                                <th>Repair</th>
+                                <th>Replacement</th>
+                                <th>Remark</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pump in pumps %}
+                            <tr>
+                                <td>{{ pump.name }}</td>
+                                <td><input type="checkbox" name="checked_pump_{{ pump.id }}"></td>
+                                <td><input type="checkbox" name="repair_pump_{{ pump.id }}"></td>
+                                <td><input type="checkbox" name="replacement_pump_{{ pump.id }}"></td>
+                                <td>
+                                    <textarea class="form-control" name="remark_pump_{{ pump.id }}" rows="2"
+                                        placeholder="Remark"></textarea>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Miscellaneous Item names -->
+                <div class="container-fluid table-responsive">
+                    <h2>MISCELLANEOUS ITEMS</h2>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Miscellaneous Item Names</th>
+                                <th>Checked</th>
+                                <th>Repair</th>
+                                <th>Replacement</th>
+                                <th>Remark</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in miscellaneous_items %}
+                            <tr>
+                                <td>{{ item.name }}</td>
+                                <td><input type="checkbox" name="checked_miscellaneous_{{ item.id }}"></td>
+                                <td><input type="checkbox" name="repair_miscellaneous_{{ item.id }}"></td>
+                                <td><input type="checkbox" name="replacement_miscellaneous_{{ item.id }}">
+                                </td>
+                                <td>
+                                    <textarea class="form-control" name="remark_miscellaneous_{{ item.id }}" rows="2"
+                                        placeholder="Remark"></textarea>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <!-- WASTEWATER PARAMETER -->
+                <div class="container-fluid table-responsive">
+                    <h2>WASTEWATER PARAMETERS</h2>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Water Parameter</th>
+                                <th>Checked</th>
+                                <th>Repair</th>
+                                <th>Replacement</th>
+                                <th>Remark</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for parameter in wastewater_parameters %}
+                            <tr>
+                                <td>{{ parameter.name }}</td>
+                                <td><input type="checkbox" name="checked_wastewater_{{ parameter.id }}">
+                                </td>
+                                <td><input type="checkbox" name="repair_wastewater_{{ parameter.id }}"></td>
+                                <td><input type="checkbox" name="replacement_wastewater_{{ parameter.id }}">
+                                </td>
+                                <td>
+                                    <textarea class="form-control" name="remark_wastewater_{{ parameter.id }}" rows="2"
+                                        placeholder="Remark"></textarea>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <!-- MACHINE RUN TIMES -->
+                <div class="container-fluid table-responsive">
+                    <h2>MACHINE RUN TIMES</h2>
+                    <table class="table table-bordered" id="machineRunTable">
+                        <thead>
+                            <tr>
+                                <th>Run Type</th>
+                                <th>Run Time</th>
+                                <th>End Time</th>
+                                <th>Checked</th>
+                                <th>Pass</th>
+                                <th>Fail</th>
+                                <th>Remark</th>
+                            </tr>
+                        </thead>
+                        <tbody id="runCycleRows">
+                            <tr id="run_cycle_1">
+                                <td>Run cycle 1</td>
+                                <td><input type="time" class="form-control" name="run_time_1"></td>
+                                <td><input type="time" class="form-control" name="end_time_1"></td>
+                                <td><input type="checkbox" class="form-check-input" name="checked_run_1">
+                                </td>
+                                <td><input type="checkbox" class="form-check-input" name="pass_run_1"></td>
+                                <td><input type="checkbox" class="form-check-input" name="fail_run_1"></td>
+                                <td><textarea class="form-control" name="remark_run_1" rows="2"
+                                        placeholder="Remark"></textarea>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="mt-3 mb-3">
+                        <button type="button" id="addRunCycleBtn" class="btn btn-primary">Add More Run
+                            Cycles</button>
+                        <button type="button" id="removeAllBtn" class="btn btn-danger">Remove</button>
+                    </div>
+                    <input type="hidden" name="run_cycle_count" id="runCycleCount" value="1">
+                </div>
+
+
+                <!-- Tool Kits  -->
+                <div class="container-fluid table-responsive">
+                    <h2>TOOLS KITS</h2>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Tools Name</th>
+                                <th>Details</th>
+                                <th>Qty</th>
+                                <th>Remark</th>
+                                <th>Taken Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tool in tools %}
+                            <tr>
+                                <td>{{ tool.name }}</td>
+                                <td>{{ tool.details }}</td>
+                                <td><input type="number" name="quantity_{{ tool.id }}" class="form-control"
+                                        placeholder="Enter quantity"></td>
+                                <td><input type="text" name="remark_tools_{{ tool.id }}" class="form-control"
+                                        placeholder="Enter remark">
+                                </td>
+                                <td><input type="checkbox" name="taken_status_{{ tool.id }}"></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="container-fluid table-responsive">
+                    <h2>OTHER REMARKS</h2>
+                    <table class="table table-bordered" id="remarks-table">
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>
+                                    <div class="mb-3">
+                                        <textarea class="form-control" name="remark_orm_1" rows="2"
+                                            placeholder="Remark"></textarea>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>
+                                    <div class="mb-3">
+                                        <textarea class="form-control" name="remark_orm_2" rows="2"
+                                            placeholder="Remark"></textarea>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td>
+                                    <div class="mb-3">
+                                        <textarea class="form-control" name="remark_orm_3" rows="2"
+                                            placeholder="Remark"></textarea>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <button type="button" id="add-remark-btn" class="btn btn-primary mb-3 ">Add
+                        Remark</button>
+                </div>
+                <div class="container-fluid table-responsive">
+                    <h2>SPARES DETAILS</h2>
+                    <table class="table table-bordered" id="spares-table">
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>
+                                    <div class="mb-3">
+                                        <textarea class="form-control" name="spare_1" rows="2"
+                                            placeholder="Enter spare details"></textarea>
+                                    </div>
+                                </td>
+
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>
+                                    <div class="mb-3">
+                                        <textarea class="form-control" name="spare_2" rows="2"
+                                            placeholder="Enter spare details"></textarea>
+                                    </div>
+                                </td>
+
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td>
+                                    <div class="mb-3">
+                                        <textarea class="form-control" name="spare_3" rows="2"
+                                            placeholder="Enter spare details"></textarea>
+                                    </div>
+                                </td>
+
+                            </tr>
+                        </tbody>
+                    </table>
+                    <button type="button" id="add-spare-btn" class="btn btn-primary mb-3">Add Spare</button>
+                </div>
+                <div class="container-fluid table-responsive">
+                    <div class="container-fluid mt-3">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5>Service Person</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="servicePersonSignature" style="border: 1px solid #000; width: 100%; height: 200px;"></canvas>
+                                        <button type="button" class="btn btn-secondary btn-sm mt-2" onclick="clearCanvas('servicePersonSignature')">Clear</button> 
+                                        <input type="hidden" id="servicePersonSignatureData" name="service_person_signature">
+                                        <div>
+                                            <label for="service_person_name" class="mt-3">Name:</label>
+                                            <input type="text" id="service_person_name" class="form-control" name="service_person_name" placeholder="Enter service person's name...">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                    
+                            <div class="col-md-6 mb-3">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5>Client</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="clientSignature" style="border: 1px solid #000; width: 100%; height: 200px;"></canvas>
+                                        <button type="button" class="btn btn-secondary btn-sm mt-2" onclick="clearCanvas('clientSignature')">Clear</button> 
+                                        <input type="hidden" id="clientSignatureData" name="client_signature">
+                                        <div>
+                                            <label for="client_name" class="mt-3">Name:</label>
+                                            <input type="text" id="client_name" class="form-control" name="client_name" placeholder="Enter client's name...">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                        <button type="reset" class="btn btn-secondary">Reset</button>
+                    </div>
+                </div>
+        </div>
+    </div>
+</div>
+</form>
+<script>
+    function initializeCanvas(canvasId) {
+        const canvas = document.getElementById(canvasId);
+        const ctx = canvas.getContext("2d");
+    
+        // Resize the canvas to match its display size
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+    
+        let drawing = false;
+    
+        // Start drawing
+        canvas.addEventListener("mousedown", startDrawing);
+        canvas.addEventListener("touchstart", startDrawing);
+    
+        // Draw on the canvas
+        canvas.addEventListener("mousemove", draw);
+        canvas.addEventListener("touchmove", draw);
+    
+        // Stop drawing
+        canvas.addEventListener("mouseup", stopDrawing);
+        canvas.addEventListener("mouseout", stopDrawing);
+        canvas.addEventListener("touchend", stopDrawing);
+    
+        // Clear the canvas
+        document.querySelector(`button[onclick="clearCanvas('${canvasId}')"]`).addEventListener("click", function () {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const hiddenInput = document.getElementById(`${canvasId}Data`);
+            if (hiddenInput) hiddenInput.value = ""; // Clear hidden input value
+        });
+    
+        function startDrawing(event) {
+            drawing = true;
+            ctx.beginPath();
+            const pos = getPosition(event);
+            ctx.moveTo(pos.x, pos.y);
+        }
+    
+        function draw(event) {
+            if (!drawing) return;
+            const pos = getPosition(event);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.strokeStyle = "black"; // Drawing color
+            ctx.lineWidth = 2; // Line width
+            ctx.stroke();
+        }
+    
+        function stopDrawing() {
+            drawing = false;
+    
+            // Save the canvas data to the hidden input
+            const hiddenInput = document.getElementById(`${canvasId}Data`);
+            if (hiddenInput) hiddenInput.value = canvas.toDataURL();
+        }
+    
+        function getPosition(event) {
+            const rect = canvas.getBoundingClientRect();
+            const touch = event.touches ? event.touches[0] : null;
+    
+            return {
+                x: (touch ? touch.clientX : event.clientX) - rect.left,
+                y: (touch ? touch.clientY : event.clientY) - rect.top,
+            };
+        }
+    }
+    
+    // Call this function for each canvas element on page load
+    window.onload = function () {
+        initializeCanvas("servicePersonSignature");
+        initializeCanvas("clientSignature");
+    };
+    
+
+    // Initialize both canvases
+    document.addEventListener("DOMContentLoaded", function () {
+        initializeCanvas("servicePersonSignature");
+        initializeCanvas("clientSignature");
+    });
+
+    // Save canvas data to hidden input on form submission
+    document.querySelector("form").addEventListener("submit", function () {
+        saveCanvasData("servicePersonSignature", "servicePersonSignatureData");
+        saveCanvasData("clientSignature", "clientSignatureData");
+    });
+
+    function saveCanvasData(canvasId, inputId) {
+        const canvas = document.getElementById(canvasId);
+        const input = document.getElementById(inputId);
+        input.value = canvas.toDataURL("image/png"); // Save as base64 image
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        console.log("JavaScript Loaded");
+    
+        // Get the input element and error message container-fluid by ID
+        const dateInput = document.getElementById("date-of-visit");
+        const errorDiv = document.getElementById("date-error");
+    
+        // Add event listener for the 'input' event on the date field
+        dateInput.addEventListener("input", function () {
+            const selectedDate = new Date(dateInput.value); // Convert selected date to Date object
+            const today = new Date(); // Get today's date
+            today.setHours(0, 0, 0, 0);  // Set today's time to 00:00:00 for comparison
+    
+            // Check if the selected date is in the future
+            if (selectedDate > today) {
+                errorDiv.style.display = "block"; // Show error message
+                dateInput.classList.add("is-invalid"); // Add 'is-invalid' class to the input field for styling
+            } else {
+                errorDiv.style.display = "none"; // Hide error message
+                dateInput.classList.remove("is-invalid"); // Remove the 'is-invalid' class
+            }
+        });
+    });
+    
+</script>
+{% endblock content%}

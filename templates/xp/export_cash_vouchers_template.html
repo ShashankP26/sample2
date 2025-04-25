@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cash Vouchers</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <h1>Cash Voucher Report</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>User</th>
+                <th>Voucher Number</th>
+                <th>Date</th>
+                <th>Paid To</th>
+                <th>Item Name</th>
+                <th>Amount (₹)</th>
+                <th>Transaction Date</th>
+                <th>Status</th>
+
+                
+              </tr>
+            </thead>
+            <tbody>
+              {% for voucher in vouchers %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ voucher.created_by }}</td>
+                <td>{{ voucher.voucher_number }}</td>
+                <td>{{ voucher.date }}</td>
+                <td>{{ voucher.paid_to }}</td>
+                <td>{{ voucher.item_name }}</td>
+                <td>{{ voucher.amount }}</td>
+                <td>{{ voucher.transaction_date }}</td>
+                <td>{{ voucher.status }}</td>
+
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

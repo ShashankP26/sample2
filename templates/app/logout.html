@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logout</title>
+    <!-- Tabler CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-dark text-white d-flex flex-column justify-content-center align-items-center min-vh-100">
+    <!-- Header Section -->
+    <div class="text-center">
+        <h1 class="display-2 fw-bold mb-4">Goodbye!</h1>
+        <p class="fs-4">You have been successfully logged out.</p>
+        <p class="text-muted">We hope to see you again soon.</p>
+    </div>
+
+    <!-- Buttons Section -->
+    <div class="mt-4">
+        <a href="{% url 'login' %}" class="btn btn-primary btn-lg px-5 me-3">Log In Again</a>
+        <a href="{% url 'login' %}" class="btn btn-outline-light btn-lg px-5">Go to Home</a>
+    </div>
+
+    <!-- Footer Section -->
+    <footer class="mt-5 text-muted text-center">
+        <p>&copy; {{ current_year }} XpredictLabs. All Rights Reserved.</p>
+    </footer>
+
+    <!-- Tabler JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js"></script>
+</body>
+
+</html>

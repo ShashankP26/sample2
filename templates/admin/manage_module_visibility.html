@@ -1,0 +1,10 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+  <h1>Manage Module Visibility for {{ user.username }}</h1>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="default-btn">Save Changes</button>
+  </form>
+{% endblock %}

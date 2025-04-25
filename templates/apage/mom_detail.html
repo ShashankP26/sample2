@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+  /* General styles for the button group */
+ .d-flex {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+button, a {
+  white-space: nowrap; /* Prevent buttons from breaking text */
+}
+
+/* Small Devices (phones, <576px) */
+@media (max-width: 575.98px) {
+  .cusbt {
+    justify-content: center; /* Center buttons for smaller screens */
+  }
+  .cusbt {
+    width: 100%; /* Make buttons take full width on small screens */
+    margin-bottom: 10px; /* Add space between buttons */
+  }
+}
+
+/* Medium Devices (tablets, 576px to 767px) */
+@media (min-width: 576px) and (max-width: 767.98px) {
+  .cusbt {
+    justify-content: space-between; /* Spread buttons across available space */
+  }
+  .cusbt {
+    width: auto; /* Buttons take up natural size on medium screens */
+    margin-bottom: 10px; /* Ensure there's space between buttons if stacked */
+  }
+}
+
+/* Large Devices (desktops, 768px and above) */
+@media (min-width: 768px) {
+  .cusbt {
+    justify-content: flex-start; /* Align buttons to the left for larger screens */
+  }
+  .cusbt {
+    width: auto; /* Buttons retain their natural size */
+  }
+} 
+.cusbt_a {
+    word-wrap: break-word; /* Allows breaking long words */
+    white-space: normal; /* Ensures wrapping */
+    display: block; /* Makes sure it takes full width */
+    max-width: 100%; /* Prevents overflowing */
+    overflow-wrap: break-word;
+}
+</style>
+<div class="container-fluid mt-5">
+  <div class="page-body">
+    <div class="row row-cards">
+      <div class="col-12">
+        <div class="card mb-4">
+          <div class="card-body">
+            <h3>{{ mom.topic }}</h3>
+            <p><strong>Organized By:</strong> {{ mom.organize }}</p>
+            <p><strong>Meeting Chair:</strong> {{ mom.meeting_chair }}</p>
+            <p><strong>meeting Date:</strong> {{ mom.date }}</p>
+            <p><strong>Location:</strong> {{ mom.location }}</p>
+            <p><strong>Start Time:</strong> {{ mom.start_time }}</p>
+            <p><strong>End Time:</strong> {{ mom.end_time }}</p>
+            <p><strong>Duration:</strong> {{ mom.duration }}</p>
+            <p><strong>Meeting Conclusion:</strong> {{ mom.meeting_conclusion }}</p>
+            <p><strong>Summary of Discussion:</strong> {{ mom.summary_of_discussion }}</p>
+
+            <h5>Attendees</h5>
+            <ul>
+              {% if mom.attendees %}
+                {% for attendee in mom.attendees %}
+                  <li>{{ attendee }}</li>
+                {% endfor %}
+              {% else %}
+                <li>None</li>
+              {% endif %}
+            </ul>
+              
+
+            <h5>Apologies</h5>
+            <ul>
+              {% if mom.apologies %}
+                {% for apology in mom.apologies %}
+                  <li>{{ apology }}</li>
+                {% endfor %}
+              {% else %}
+                <li>None</li>
+              {% endif %}
+            </ul>
+
+            <h5>Agenda</h5>
+            <ul>
+              {% for agenda_item in mom.agenda %}
+                <li>{{ agenda_item }}</li>
+              {% endfor %}
+            </ul>
+
+            <h5>Attachments</h5>
+            <ul>
+              {% for attachment in mom.attachments.all %}
+                <li><a href="{{ attachment.file.url }}" class ="cusbt_a"target="_blank">{{ attachment.file.name }}</a></li>
+              {% endfor %}
+            </ul>
+            <div class="d-flex justify-content-start align-items-center gap-2 mt-3">
+              <a href="{% url 'mom' %}" class="cusbt btn btn-secondary">Back to Records</a>
+              <button class="btn btn-primary cusbt" onclick ="window.print()">Print</button>
+              <a href="{% url 'mom_edit' mom.id %}" class="cusbt btn btn-warning">Edit</a>
+              <a href="{% url 'pdf_mom' mom.id %}" class="cusbt btn btn-primary">Download PDF</a>
+              {% if user_role == "Admin" %}
+              <a href="{% url 'mom_details_with_history' mom.id %}" class="btn btn-info">Edit History</a>
+              {% endif %}
+            </div>            
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+                

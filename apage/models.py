@@ -1,4 +1,18 @@
 from django.db import models
+import datetime
+from django.utils.timezone import now
+import json
+from django.contrib.auth.models import User
+from django.utils import timezone
+
+
+from django.core.exceptions import ValidationError
+from datetime import date
+
+def no_future_dates(value):
+    print(f"Validating date: {value}")
+    if value > date.today():
+        raise ValidationError("Future dates are not allowed.")
 
 class Site(models.Model):
     name = models.CharField(max_length=100)
@@ -8,13 +22,61 @@ class Site(models.Model):
 
 class GeneralReport(models.Model):
     site = models.ForeignKey(Site, on_delete=models.CASCADE)
-    date_of_visit = models.DateField()
+    date_of_visit = models.DateField(validators=[no_future_dates])
     point1 = models.TextField()
     point2 = models.TextField()
     point3 = models.TextField()
     point4 = models.TextField()
     notes = models.TextField()
     attachment = models.FileField(upload_to='attachments/', null=True, blank=True)
+    edit_history = models.TextField(blank=True, null=True)  # To store edit history
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_date = models.DateField(default=timezone.now)
+    
+    def update_history(self, field_name, old_value, new_value):
+        import datetime
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        history_entry = f"- {field_name} changed from '{old_value}' to '{new_value}' on {timestamp}\n"
+        
+        if self.edit_history:
+            self.edit_history += history_entry  # Append new entry
+        else:
+            self.edit_history = history_entry
+
+    def save(self, *args, **kwargs):
+        # We add a flag to prevent recursion when saving the object
+        if not hasattr(self, '_updating_history'):  # Check if the flag is set
+            self._updating_history = True  # Set the flag to True
+
+            if self.pk:  # If it's not a new object, track changes
+                original = GeneralReport.objects.get(pk=self.pk)
+                
+                # Track changes in each field
+                if self.site != original.site:
+                    self.update_history("Site", original.site.name, self.site.name)
+                if self.point1 != original.point1:
+                    self.update_history("Point 1", original.point1, self.point1)
+                if self.point2 != original.point2:
+                    self.update_history("Point 2", original.point2, self.point2)
+                if self.point3 != original.point3:
+                    self.update_history("Point 3", original.point3, self.point3)
+                if self.point4 != original.point4:
+                    self.update_history("Point 4", original.point4, self.point4)
+                if self.notes != original.notes:
+                    self.update_history("Notes", original.notes, self.notes)
+                if self.date_of_visit != original.date_of_visit:
+                    self.update_history("Date of Visit", original.date_of_visit, self.date_of_visit)
+                if self.attachment != original.attachment:
+                    old_attachment = original.attachment.url if original.attachment else "No Attachment"
+                    new_attachment = self.attachment.url if self.attachment else "No Attachment"
+                    self.update_history("Attachment", old_attachment, new_attachment)
+
+            super().save(*args, **kwargs)  # Now it will save without recursion
+            del self._updating_history  # Remove the flag after saving
+        else:
+            # If the flag is set, skip saving to prevent recursion
+            super().save(*args, **kwargs)
+
 
     def __str__(self):
         return f"Report for {self.site.name} on {self.date_of_visit}"
@@ -33,14 +95,115 @@ class MaintenanceChecklist(models.Model):
     inspector_name = models.CharField(max_length=255, null=True, blank=True)  # Auto-filled by logged-in user
     date = models.DateField()  # Stores the current date
     machine = models.ForeignKey(Machine, on_delete=models.CASCADE)
-    visit_date = models.DateField()
-    notes = models.TextField(blank=True, null=True)
+    visit_date = models.DateField(validators=[no_future_dates])
+    created_by = models.ForeignKey(User,on_delete=models.SET_NULL,null=True,blank=True)
+    # Supply Voltage choices (useful for retrieving and editing)
+    SUPPLY_VOLTAGE_CHOICES = [
+        ('checked', 'Checked'),
+        ('repair', 'Repair'),
+        ('replacement', 'Replacement'),
+    ]
+    supply_voltage = models.CharField(
+        max_length=20, choices=SUPPLY_VOLTAGE_CHOICES, blank=True, null=True
+    )
+    
+    # Current Load choices (useful for retrieving and editing)
+    CURRENT_LOAD_CHOICES = [
+        ('checked', 'Checked'),
+        ('repair', 'Repair'),
+        ('replacement', 'Replacement'),
+    ]
+    current_load = models.CharField(
+        max_length=20, choices=CURRENT_LOAD_CHOICES, blank=True, null=True
+    )
+    
+    # Observations (useful for retrieving and editing)
+    observations = models.TextField(blank=True, null=True)
+    # Edit history field to track changes
+    edit_history = models.TextField(blank=True, null=True)  # To store edit history
+
+    def update_history(self, field_name, old_value, new_value):
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        history_entry = f"- {field_name} changed from '{old_value}' to '{new_value}' on {timestamp}\n"
+        
+        if self.edit_history:
+            self.edit_history += history_entry  # Append new entry
+        else:
+            self.edit_history = history_entry
+    
+    def save(self, *args, **kwargs):
+        if self.pk:  # If it's not a new object, track changes
+            original = MaintenanceChecklist.objects.get(pk=self.pk)
+
+            # Track changes in fields
+            if self.machine != original.machine:
+                self.update_history("Machine", original.machine.name, self.machine.name)
+            if self.visit_date != original.visit_date:
+                self.update_history("Visit Date", original.visit_date, self.visit_date)
+            if self.supply_voltage != original.supply_voltage:
+                self.update_history("Supply Voltage", original.supply_voltage, self.supply_voltage)
+            if self.current_load != original.current_load:
+                self.update_history("Current Load", original.current_load, self.current_load)
+            if self.observations != original.observations:
+                self.update_history("Observations", original.observations, self.observations)
+
+            # Track changes to attachments
+            original_attachments = set(original.attachments.all())
+            current_attachments = set(self.attachments.all())
+
+            added_attachments = current_attachments - original_attachments
+            removed_attachments = original_attachments - current_attachments
+
+            for attachment in added_attachments:
+                self.update_history("Attachment Added", "None", attachment.file.name)
+
+            for attachment in removed_attachments:
+                self.update_history("Attachment Removed", attachment.file.name, "None")
+
+        super().save(*args, **kwargs)
+
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default='pending'
+    )
+
+    def approve(self):
+        self.status = 'approved'
+        self.save()
+
+    def reject(self):
+        self.status = 'rejected'
+        self.save()
+
     def __str__(self):
-        return f"{self.inspector_name} - {self.machine.name} on {self.visit_date}"
+        return f"{self.machine.name} - {self.visit_date} ({self.get_status_display()})"
     
 class MaintenanceChecklistAttachment(models.Model):
     checklist = models.ForeignKey(MaintenanceChecklist, on_delete=models.CASCADE, related_name='attachments')
     file = models.FileField(upload_to='attachments/')
+    edit_history = models.TextField(blank=True, null=True)  # Edit history for file changes
+
+    def update_history(self, field_name, old_value, new_value):
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        history_entry = f"- {field_name} changed from '{old_value}' to '{new_value}' on {timestamp}\n"
+        
+        if self.edit_history:
+            self.edit_history += history_entry  # Append new entry
+        else:
+            self.edit_history = history_entry
+
+    def save(self, *args, **kwargs):
+        if self.pk:  # If it's not a new object, track changes
+            original = MaintenanceChecklistAttachment.objects.get(pk=self.pk)
+            if self.file != original.file:
+                self.update_history("File", original.file.name if original.file else 'None', self.file.name)
+        
+        super().save(*args, **kwargs)
 
     
 # ----------------------------------------mom---------------------------------
@@ -49,10 +212,9 @@ from django.db import models
 class MOM(models.Model):
     topic = models.CharField(max_length=255)
     organize = models.CharField(max_length=255)
-    client = models.CharField(max_length=255)
     meeting_chair = models.CharField(max_length=255)
     location = models.CharField(max_length=255)
-    date = models.DateField()
+    date = models.DateField(validators=[no_future_dates])
     start_time = models.TimeField()
     end_time = models.TimeField()
     duration = models.CharField(max_length=255, blank=True)
@@ -64,6 +226,42 @@ class MOM(models.Model):
     agenda = models.JSONField(default=list)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    edit_history = models.TextField(blank=True, null=True)
+    created_by = models.ForeignKey(User,on_delete=models.SET_NULL,null=True,blank=True)
+    created_date = models.DateField(default=timezone.now)
+
+    def update_history(self, field_name, old_value, new_value, editor): 
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        history_entry = f"[{timestamp}] {field_name} changed by {editor} from '{old_value}' to '{new_value}'\n"
+
+        if self.edit_history:
+            self.edit_history += history_entry
+        else:
+            self.edit_history = history_entry
+
+    def save(self, *args, **kwargs):
+        if self.pk:  # If this is an update
+            original = MOM.objects.get(pk=self.pk)
+
+            # Track changes for relevant fields
+            fields_to_check = [
+                'topic', 'organize', 'meeting_chair', 'location',
+                'date', 'start_time', 'end_time', 'duration',
+                'meeting_conclusion', 'summary_of_discussion',
+                'attendees', 'apologies', 'agenda'
+            ]
+            for field in fields_to_check:
+                old_value = getattr(original, field)
+                new_value = getattr(self, field)
+                if old_value != new_value:
+                    self.update_history(
+                        field_name=field.replace('_', ' ').capitalize(),
+                        old_value=json.dumps(old_value, default=str) if isinstance(old_value, list) else old_value,
+                        new_value=json.dumps(new_value, default=str) if isinstance(new_value, list) else new_value,
+                        editor=self.updated_by
+                    )
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.topic
@@ -135,18 +333,20 @@ class ServiceReport(models.Model):
     out_time = models.TimeField()
     other_remarks = models.TextField(blank=True, null=True, help_text="Store all other remarks concatenated.")
     spares_details = models.TextField(blank=True, null=True, help_text="Concatenated spares details")
-    certified_by = models.CharField(max_length=255, blank=True, null=True)
-    certified_by_name = models.CharField(max_length=255, blank=True, null=True)
-
+    service_person_signature = models.TextField(blank=True, null=True, help_text="Base64-encoded signature of the service person.")
+    service_person_name = models.CharField(max_length=255, blank=True, null=True, help_text="Name of the service person.")
+    client_signature = models.TextField(blank=True, null=True, help_text="Base64-encoded signature of the client.")
+    client_name = models.CharField(max_length=255, blank=True, null=True, help_text="Name of the client.")
+    created_by = models.ForeignKey(User,on_delete=models.SET_NULL,null=True,blank=True)
+    created_date = models.DateField(default=timezone.now)
     # Customer Information
     customer_name = models.CharField(max_length=255)
     contact_number = models.CharField(max_length=15)
     location = models.CharField(max_length=255)
     state = models.ForeignKey(State, on_delete=models.SET_NULL, null=True)
-    date_of_complaint = models.DateField()
+    date_of_complaint = models.DateField(validators=[no_future_dates])
     status_of_call = models.CharField(max_length=100)
 
-    # Dynamic Fields for Electronic Items
     electronic_items = models.ManyToManyField(ElectronicItem, through='ElectronicItemStatus')
     electronic_panels = models.ManyToManyField(ElectronicPanel, through='ElectronicPanelStatus')
     chemical_items = models.ManyToManyField(ChemicalItem, through='ChemicalItemStatus')
@@ -154,9 +354,28 @@ class ServiceReport(models.Model):
     miscellaneous_items = models.ManyToManyField(MiscellaneousItem, through='MiscellaneousItemStatus')
     wastewater_parameters = models.ManyToManyField(WastewaterParameter, through='WastewaterParameterStatus')
 
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+    )
+
+    def approve(self):
+        self.status = 'approved'
+        self.save()
+
+    def reject(self):
+        self.status = 'rejected'
+        self.save()
 
     def __str__(self):
-        return f"Service Report for {self.service_name} - {self.customer_name}"
+        return f"Service Report for {self.service_name} - {self.customer_name} ({self.get_status_display()})"
 
     class Meta:
         verbose_name = 'Service Report'
@@ -255,3 +474,17 @@ class ToolStatus(models.Model):
 
     def __str__(self):
         return f"{self.tool.name} - {self.service_report.id}"
+
+
+
+
+class ServiceReportEditLog(models.Model):
+    report = models.ForeignKey(ServiceReport, on_delete=models.CASCADE)
+    edited_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    edit_timestamp = models.DateTimeField(auto_now_add=True)
+    field_changed = models.CharField(max_length=255)
+    old_value = models.TextField()
+    new_value = models.TextField()
+
+    def __str__(self):
+        return f"Edit log for {self.report} on {self.edit_timestamp}"

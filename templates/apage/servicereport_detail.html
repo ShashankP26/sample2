@@ -1,0 +1,409 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  /* General styles for the button group */
+.custb {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.custb {
+  white-space: nowrap; /* Prevent buttons from breaking text */
+}
+
+/* Small Devices (phones, <576px) */
+@media (max-width: 575.98px) {
+  .custb {
+    justify-content: center; /* Center buttons for smaller screens */
+  }
+  .custb {
+    width: 100%; /* Make buttons take full width on small screens */
+    margin-bottom: 10px; /* Add space between buttons */
+  }
+}
+
+/* Medium Devices (tablets, 576px to 767px) */
+@media (min-width: 576px) and (max-width: 767.98px) {
+  .custb {
+    justify-content: space-between; /* Spread buttons across available space */
+  }
+  .custb {
+    width: auto; /* Buttons take up natural size on medium screens */
+    margin-bottom: 10px; /* Ensure there's space between buttons if stacked */
+  }
+}
+
+/* Large Devices (desktops, 768px and above) */
+@media (min-width: 768px) {
+  .custb {
+    justify-content: flex-start; /* Align buttons to the left for larger screens */
+  }
+  .custb {
+    width: auto; /* Buttons retain their natural size */
+  }
+}
+
+</style>
+    <div class="container-fluid mt-5">
+        <h2 class="page-title mb-3">Service Report Details</h2>
+        <div class="card">
+            <div id ="cardd"class="card-header">
+                <h4>Service Information</h4>
+            </div>
+            <div class="card-body">
+                <p><strong>Name:</strong> {{ service_report.service_name }}</p>
+                <p><strong>Date of Visit:</strong> {{ service_report.date_of_visit|date:"Y-m-d" }}</p>
+                <p><strong>Zone:</strong> {{ service_report.zone }}</p>
+                <p><strong>Phone No:</strong> {{ service_report.phone_no }}</p>
+                <p><strong>Reason of Visit:</strong> {{ service_report.reason_of_visit }}</p>
+                <p><strong>In Time:</strong> {{ service_report.in_time }}</p>
+                <p><strong>Out Time:</strong> {{ service_report.out_time }}</p>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h4>Customer Information</h4>
+            </div>
+            <div class="card-body">
+                <p><strong>Customer Name:</strong> {{ service_report.customer_name }}</p>
+                <p><strong>Contact Number:</strong> {{ service_report.contact_number }}</p>
+                <p><strong>Location:</strong> {{ service_report.location }}</p>
+                <p><strong>State:</strong> {{ service_report.state }}</p>
+                <p><strong>Date of Complaint:</strong> {{ service_report.date_of_complaint|date:"Y-m-d" }}</p>
+                <p><strong>Status of Call:</strong> {{ service_report.status_of_call }}</p>
+            </div>
+        </div>
+        {% comment %} <div class="col-sm-12 col-lg-12"> {% endcomment %}
+
+            {% comment %} <div class="card mt-4"> {% endcomment %}
+                <div class="card-header">
+                    <h4>Electronic Items</h4>
+                </div>
+                <div class="card-body table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Item Name</th>
+                                <th>Checked</th>
+                                <th>Repair</th>
+                                <th>Replacement</th>
+                                <th>Remark</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for status in electronic_item_statuses %}
+                            <tr>
+                                <td>{{ status.item.name }}</td>
+                                <td>{{ status.checked|yesno:"Yes,No" }}</td>
+                                <td>{{ status.repair|yesno:"Yes,No" }}</td>
+                                <td>{{ status.replacement|yesno:"Yes,No" }}</td>
+                                <td>{{ status.remark }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5">No electronic items recorded for this report.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-header">
+                    <h4>Electronic Panel Status</h4>
+                </div>
+                <div class="card-body table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Panel Name</th>
+                                <th>Checked</th>
+                                <th>Repair</th>
+                                <th>Replacement</th>
+                                <th>Remark</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for panel_status in panel_statuses %}
+                            <tr>
+                                <td>{{ panel_status.panel.name }}</td>
+                                <td>{{ panel_status.checked|yesno:"Yes,No" }}</td>
+                                <td>{{ panel_status.repair|yesno:"Yes,No" }}</td>
+                                <td>{{ panel_status.replacement|yesno:"Yes,No" }}</td>
+                                <td>{{ panel_status.remark }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5">No electronic panel statuses available.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-header">
+                    <h4>Chemical Item Status</h4>
+                </div>
+                <div class="card-body table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Item Name</th>
+                                <th>Checked</th>
+                                <th>Repair</th>
+                                <th>Replacement</th>
+                                <th>Remark</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item_status in chemical_item_statuses %}
+                            <tr>
+                                <td>{{ item_status.item.name }}</td>
+                                <td>{{ item_status.checked|yesno:"Yes,No" }}</td>
+                                <td>{{ item_status.repair|yesno:"Yes,No" }}</td>
+                                <td>{{ item_status.replacement|yesno:"Yes,No" }}</td>
+                                <td>{{ item_status.remark }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5">No chemical item statuses available.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-header">
+                    <h4>Pump Status</h4>
+                </div>
+                <div class="card-body table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Pump Name</th>
+                                <th>Checked</th>
+                                <th>Repair</th>
+                                <th>Replacement</th>
+                                <th>Remark</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pump_status in pump_statuses %}
+                            <tr>
+                                <td>{{ pump_status.pump.name }}</td>
+                                <td>{{ pump_status.checked|yesno:"Yes,No" }}</td>
+                                <td>{{ pump_status.repair|yesno:"Yes,No" }}</td>
+                                <td>{{ pump_status.replacement|yesno:"Yes,No" }}</td>
+                                <td>{{ pump_status.remark }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5">No pump statuses available.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-header">
+                    <h4>Miscellaneous Item Status</h4>
+                </div>
+                <div class="card-body table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Item Name</th>
+                                <th>Checked</th>
+                                <th>Repair</th>
+                                <th>Replacement</th>
+                                <th>Remark</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for misc_item_status in miscellaneous_item_statuses %}
+                            <tr>
+                                <td>{{ misc_item_status.item.name }}</td>
+                                <td>{{ misc_item_status.checked|yesno:"Yes,No" }}</td>
+                                <td>{{ misc_item_status.repair|yesno:"Yes,No" }}</td>
+                                <td>{{ misc_item_status.replacement|yesno:"Yes,No" }}</td>
+                                <td>{{ misc_item_status.remark }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5">No miscellaneous item statuses available.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-header">
+                    <h4>Wastewater Parameter Status</h4>
+                </div>
+                <div class="card-body table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Parameter Name</th>
+                                <th>Checked</th>
+                                <th>Repair</th>
+                                <th>Replacement</th>
+                                <th>Remark</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for wastewater_param_status in wastewater_parameter_statuses %}
+                            <tr>
+                                <td>{{ wastewater_param_status.parameter.name }}</td>
+                                <td>{{ wastewater_param_status.checked|yesno:"Yes,No" }}</td>
+                                <td>{{ wastewater_param_status.repair|yesno:"Yes,No" }}</td>
+                                <td>{{ wastewater_param_status.replacement|yesno:"Yes,No" }}</td>
+                                <td>{{ wastewater_param_status.remark }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5">No wastewater parameter statuses available.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-header">
+                    <h4>Machine Run Times</h4>
+                </div>
+                <div class="card-body table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Run Type</th>
+                                <th>Run Time</th>
+                                <th>End Time</th>
+                                <th>Checked</th>
+                                <th>Pass Status</th>
+                                <th>Fail Status</th>
+                                <th>Remark</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for run_time in machine_run_times %}
+                            <tr>
+                                <td>{{ run_time.run_type }}</td>
+                                <td>{{ run_time.run_time }}</td>
+                                <td>{{ run_time.end_time }}</td>
+                                <td>{{ run_time.checked|yesno:"Yes,No" }}</td>
+                                <td>{{ run_time.pass_status|yesno:"Yes,No" }}</td>
+                                <td>{{ run_time.fail_status|yesno:"Yes,No" }}</td>
+                                <td>{{ run_time.remark }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7">No machine run times available.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-header">
+                    <h4>Tool Status</h4>
+                </div>
+                <div class="card-body table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Tool Name</th>
+                                <th>Quantity</th>
+                                <th>Taken Status</th>
+                                <th>Remark</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tool_status in tool_statuses %}
+                            <tr>
+                                <td>{{ tool_status.tool.name }}</td>
+                                <td>{{ tool_status.quantity }}</td>
+                                <td>{{ tool_status.taken_status|yesno:"Yes,No" }}</td>
+                                <td>{{ tool_status.remark }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4">No tools recorded for this service report.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-header">
+                    <h4>Service Report Details</h4>
+                </div>
+                <div class="card-body">
+                    <p><strong>Other Remarks:</strong></p>
+                    <p>{{ service_report.other_remarks }}</p>
+            
+                    <p><strong>Spares Details:</strong></p>
+                    <p>{{ service_report.spares_details }}</p>
+            
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Service Person Name:</strong></p>
+                        <p>{{ service_report.service_person_name }}</p>
+
+                        <p><strong>Service Person Signature:</strong></p>
+                        <img src="{{ service_report.service_person_signature }}" alt="Service Person Signature" style="max-width: 100%; height: auto;">
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Client Name:</strong></p>
+                        <p>{{ service_report.client_name }}</p>
+
+                        <p><strong>Client Signature:</strong></p>
+                        <img src="{{ service_report.client_signature }}" alt="Client Signature" style="max-width: 100%; height: auto;">
+                    </div>
+                </div>
+
+                </div>
+            </div>
+            <div class="card-footer text-center mt-4">
+                <a href="{% url 'service_report_edit' service_report.id %}" class=" custb btn btn-primary">Edit</a>
+                <a href="{% url 'servicereport' %}" class=" custb btn btn-secondary">Back to List</a>
+                <a href="{% url 'service_report_pdf' service_report.id %}" class=" custb btn btn-success">Download PDF</a>
+                {% if user_role == 'Admin' %}
+                <a href="{% url 'servireport_edithistory' service_report.id %}" class=" custb btn btn-success">Edit History</a>
+                {% endif %}
+            </div>
+            
+        </div>
+    </div>
+
+<script>
+    $('#updateChangesButton').on('click', function() { 
+        var updatedFields = {};  // Object to store the changed fields and their new values
+    
+        // Loop over input, select, and textarea elements to detect changes
+        $('input, select, textarea').each(function() {
+            var fieldName = $(this).attr('name');
+            var newValue = $(this).val();
+    
+            // Compare the current value with the original value (stored in data-original-value)
+            if (newValue !== $(this).data('original-value')) {
+                updatedFields[fieldName] = newValue;  // Store only changed fields
+            }
+        });
+    
+        // AJAX request to send data to Django
+        $.ajax({
+            url: '/update-field/',  // Django endpoint to handle the update
+            method: 'POST',
+            data: {
+                updated_fields: updatedFields,
+                csrfmiddlewaretoken: '{{ csrf_token }}',  // CSRF token for security
+            },
+            success: function(response) {
+                console.log('Fields updated successfully');
+                alert('Changes have been updated!');
+                // Optionally, you could reload the page or update the page dynamically here
+            },
+            error: function(xhr, status, error) {
+                console.log('Error:', error);
+                alert('An error occurred while updating the fields.');
+            }
+        });
+    });
+    
+</script>
+{% endblock content %}
+

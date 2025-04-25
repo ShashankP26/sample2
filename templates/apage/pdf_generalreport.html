@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>General Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>General Report</h1>
+    <table class="report-info">
+        <tr>
+            <td><strong>Site:</strong> {{ report.site.name }}</td>
+        </tr>
+        <tr>
+            <td><strong>Date of Visit:</strong> {{ report.date_of_visit }}</td>
+        </tr>
+        <tr>
+            <td><strong>Point 1:</strong> {{ report.point1 }}</td>
+        </tr>
+        <tr>
+            <td><strong>Point 2:</strong> {{ report.point2 }}</td>
+        </tr>
+        <tr>
+            <td><strong>Point 3:</strong> {{ report.point3 }}</td>
+        </tr>
+        <tr>
+            <td><strong>Point 4:</strong> {{ report.point4 }}</td>
+        </tr>
+        <tr>
+            <td><strong>Notes:</strong> {{ report.notes }}</td>
+        </tr>
+        <tr>
+            <td>
+                <strong>Attachment:</strong>
+                {% if report.attachment %}
+                    <a href="{{ report.attachment.url }}" target="_blank">View</a>
+                {% else %}
+                    None
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

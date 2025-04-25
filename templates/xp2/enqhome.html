@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+    
+{% load static %}
+
+{% block content %}
+
+<div class="page-wrapper d-flex flex-column justify-content-start">
+    <!-- Page header -->
+    <div class="page-body">
+        <div class="container-fluid">
+            <div class="row g-2 align-items-center">
+                <div class="col d-flex align-items-center justify-content-between">
+                    <h1 class="page-title">Enquiries</h1>
+                 
+                    <div class="input-icon d-flex">
+                        <form method="GET" action="" class="d-flex">
+                            <!-- Search Input -->
+                            <input type="text" name="search" value="{{ search_query }}" class="form-control me-2" placeholder="Search…" aria-label="Search in website">
+                            
+                            <!-- Search Button -->
+                            <button type="submit" class="btn btn-primary me-2">Search</button>
+                    
+                            <!-- Clear Button -->
+                            <button type="button" class="btn btn-secondary" onclick="clearSearch()">Clear</button>
+                        </form>
+                    </div>
+                </div>
+            </div><br>
+            <div class="btn-group">
+                <button class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    Export
+                </button>
+                <div class="dropdown-menu">
+                    <a class="dropdown-item" href="{% url 'export_enquiries_pdf' %}">Export  as PDF</a>
+                    <a class="dropdown-item" href="{% url 'export_enquiries_csv' %}">Export  as CSV</a>
+                    <a class="dropdown-item" href="{% url 'export_enquiries_xlsx' %}">Export  as XLSX</a>
+                    <a class="dropdown-item" href="#" onclick="printPage()">Print</a>
+                </div>
+            </div>
+            <a href="{% url 'newenquirypage' %}" class="btn btn-primary" role="button">New Enquiry</a>
+        </div>
+    </div>
+    {% comment %} <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta14/dist/css/tabler.min.css" rel="stylesheet"> {% endcomment %}
+    {% comment %} <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta14/dist/js/tabler.min.js"></script> {% endcomment %}
+   
+    
+    
+
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-body">
+                <div id="table-default" class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th><label>ID</label></th>
+                                <th><label>Company Name</label></th>
+                                <th><label>Cust Name</label></th>
+                                {% comment %} <th><label>Email</label></th> {% endcomment %}
+                                <th><label>Contact</label></th>
+                                {% comment %} <th><label>Location</label></th> {% endcomment %}
+                                <th><label>Status</label></th>
+                                <th><label>Product</label></th>
+                                <th><label>Enquiry Date</label></th>
+                                {% comment %} <th><label>Executive</label></th> {% endcomment %}
+                                <th><label>Remarks</label></th>
+                                {% comment %} <th><label>Order Status</th> {% endcomment %}
+                                <th><label>Action</label></th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-table">
+                            {% for data in page_obj %}
+                            <tr id="profile-{{ data.id }}" class="selectable-row" data-id="{{ data.id }}">
+                                <td>{{ data.id }}</td>
+                                <td>{{ data.companyname }}</td>
+                                <td>{{ data.customername }}</td>
+                                {% comment %} <td>{{ data.email }}</td> {% endcomment %}
+                                <td>{{ data.contact }}</td>
+                                {% comment %} <td>{{ data.location }}</td> {% endcomment %}
+                                <td>{{ data.get_status_display }}</td>
+                                <td>{{ data.products.name }}</td> 
+                                <td>{{ data.closuredate }}</td>
+                                
+                                {% comment %} <td>{{ data.get_executive_display }}</td> {% endcomment %}
+                                <td>{{ data.remarks }}</td>
+                                {% comment %} <td>{{ data.is_lost}}</td> {% endcomment %}
+                                <td>
+                                    <a class="btn btn-info" href="{% url 'enquiry_details' data.id %}">
+                                        View Details
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+  
+    <div class="d-flex justify-content-end mt-4">
+        <nav aria-label="Pagination" class="pagination">
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+    
+                <li class="page-item disabled">
+                    <span class="page-link fw-bold text-dark"> <!-- Added classes -->
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+    
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>
+    {% comment %} <!-- Section to display enquiry details -->
+    <div id="enquiryDetails" style="display:none; margin-top:20px;">
+        <h4>Enquiry Details</h4>
+        <p><strong>Company Name:</strong> <span id="companyName"></span></p>
+        <p><strong>Customer Name:</strong> <span id="customerName"></span></p>
+        <p><strong>Email:</strong> <span id="email"></span></p>
+        <p><strong>Contact:</strong> <span id="contact"></span></p>
+        <p><strong>Location:</strong> <span id="location"></span></p>
+        <p><strong>Status:</strong> <span id="status"></span></p>
+        <p><strong>Products:</strong> <span id="products"></span></p>
+        <p><strong>Closure Date:</strong> <span id="closureDate"></span></p>
+        <p><strong>Executive:</strong> <span id="executive"></span></p>
+        <p><strong>Remarks:</strong> <span id="remarks"></span></p>
+        <p><strong>File:</strong> <span id="file"></span></p>
+    </div>
+</div> {% endcomment %}
+
+
+
+<script>
+    // Hover selection functionality
+    const rows = document.querySelectorAll('.selectable-row');
+    rows.forEach(row => {
+        row.addEventListener('mouseover', () => {
+            row.style.backgroundColor = '#f0f0f0';  // Change background on hover
+        });
+        row.addEventListener('mouseout', () => {
+            row.style.backgroundColor = '';  // Reset background on mouseout
+        });
+    });
+
+    // Function to display enquiry details in the page
+    function viewDetails(id) {
+        const enquiryDetails = document.getElementById('enquiryDetails');
+        const companyName = document.getElementById('companyName');
+        const customerName = document.getElementById('customerName');
+        const email = document.getElementById('email');
+        const contact = document.getElementById('contact');
+        const location = document.getElementById('location');
+        const status = document.getElementById('status');
+        const products = document.getElementById('products');
+        const closureDate = document.getElementById('closureDate');
+        const executive = document.getElementById('executive');
+        const remarks = document.getElementById('remarks');
+        const file = document.getElementById('file');
+
+        fetch(`/enquiry/${id}/details/`)  // Fetch the details based on ID
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Failed to fetch enquiry details");
+                }
+                return response.json();
+            })
+            .then(data => {
+                companyName.textContent = data.companyname;
+                customerName.textContent = data.customername;
+                email.textContent = data.email;
+                contact.textContent = data.contact;
+                location.textContent = data.location;
+                status.textContent = data.status;
+                products.textContent = data.products;
+                closureDate.textContent = data.closuredate;
+                executive.textContent = data.executive;
+                remarks.textContent = data.remarks;
+                file.innerHTML = data.file_url ? `<a href="${data.file_url}" download>Download</a>` : 'No file uploaded';
+
+                // Show the enquiry details section
+                enquiryDetails.style.display = 'block';
+            })
+            .catch(error => {
+                alert("An error occurred while fetching the enquiry details.");
+            });
+    }
+</script>
+<script>
+    document.querySelectorAll('.dropdown-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const url = this.getAttribute('href');
+            window.location.href = url; // Redirect to download file
+        });
+    });
+</script>
+<script>
+    function printPage() {
+        // Hide non-printable elements like the export dropdown, search bar, etc., if needed
+        const elementsToHide = document.querySelectorAll('.dropdown, .pagination, .page-header, .input-icon');
+        elementsToHide.forEach(element => element.style.display = 'none');
+
+        // Trigger the browser's print functionality
+        window.print();
+
+        // Restore hidden elements after printing
+        setTimeout(() => {
+            elementsToHide.forEach(element => element.style.display = '');
+        }, 0);
+    }
+</script>
+<style>
+    @media print {
+        /* Hide unnecessary UI elements */
+        .btn-group, 
+        .page-header, 
+        .pagination, 
+        .navbar, 
+        .footer {
+            display: none !important;
+        }
+        
+        /* Adjust table layout for better printing */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+        }
+
+        /* Ensure the content takes up the full width of the print page */
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+        }
+
+        /* Hide other unnecessary elements */
+        .dropdown-menu {
+            display: none !important;
+        }
+    }
+</style>
+<script>
+    // JavaScript function to clear the search field
+    function clearSearch() {
+        // Get the search input field
+        var searchInput = document.querySelector('input[name="search"]');
+        // Clear the value of the search input field
+        searchInput.value = '';
+        // Optionally, submit the form to reset the search query on the page
+        searchInput.form.submit();
+    }
+</script>
+{% endblock content %}

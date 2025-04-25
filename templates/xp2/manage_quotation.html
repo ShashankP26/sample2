@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+
+{% block content %}
+<p>{{hidrec.quotation_no}}</p>
+<!-- manage_quotation.html -->
+<div class="page-wrapper d-flex flex-column justify-content-start">
+    <!-- Page header -->
+    <div class="page-body">
+        <div class="container-xl">
+            <div class="row g-2 align-items-center">
+                <div class="col d-flex align-items-center justify-content-between">
+                    <h1 class="page-title">Quotations</h1>
+                </div>
+            </div><br>
+            <div class="btn-group">
+                <button class="btn btn-primary dropdown-toggle mr-3" data-bs-toggle="dropdown" aria-expanded="false">
+                    Export
+                </button>
+                <div class="dropdown-menu">
+                    <a class="dropdown-item" href="{% url 'export_quotation_data' enquiry.id %}">Export as CSV</a> 
+                    <a class="dropdown-item" href="{% url 'export_pdf' enquiry.id %}" >Export as PDF</a>
+                    <a  class="dropdown-item"href="{% url 'export_excel' enquiry.id %}" >Export as Excel</a>
+                    <a class="dropdown-item" href="#" onclick="printPage()">Print</a>
+                </div>
+            </div>
+            <a href="{% url 'confirm_order' enquiry.id %}" class="btn btn-success ml-2">Push to confirm</a>
+            <a href="{% url 'enquiry_details' enquiry.id %}" class="btn btn-dark me-3 ml-2">Back</a>
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary dropdown-toggle mt-2" data-bs-toggle="dropdown" aria-expanded="false">
+                    Create New Quotation
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{% url 'create_commercial_quote' enquiry.id %}">Commercial Quote</a></li>
+                    <li><a class="dropdown-item" href="{% url 'Hidrec_wash' enquiry.id %}">Hidrec Wash Quote</a></li>
+                    <li><a class="dropdown-item" href="{% url 'product_list' enquiry_id=enquiry.id %}">Techno-Com AMC</a></li>
+                    <li><a class="dropdown-item" href="{% url 'product_pr' enquiry_id=enquiry.id %}">Techno-Com Proposal</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quotations Table -->
+    <div class="container-xl mt-4">
+        <h2>Commercial Quotes</h2>
+
+        <div class="card">
+            
+                <div id="table-default" class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Sl.</th>
+                                <th>Quotation No</th>
+                                <th>Bill To Company Name</th>
+                                <th>Sub Total</th>
+                                <th>Grand Total</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for quote in quotations %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ quote.quotation_no }}</td>
+                                <td>{{ quote.bill_to_company_name }}</td>
+                                <td>{{ quote.subtotal }}</td>
+                                <td>{{ quote.grand_total }}</td>
+                                <td>
+                                    <a href="{% url 'preview_quotation' quotation_no=quote.quotation_no %}" class="btn btn-primary btn-sm">View</a>
+
+                                    <a href="{% url 'Edit_commercial' quotation_no=quote.quotation_no %}" class="btn btn-warning btn-sm">Edit</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">No quotations available.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+        </div>
+    </div>
+            <!-- Display JSON Data -->
+    <div class="container-xl mt-4">
+        <h2>Techno Commercial AMC Quotes</h2>
+        <div class="card">
+            <div id="table-default" class="table-responsive">
+                <table class="table">
+                    {% if stored_data %}
+                    <thead>
+                        <tr>
+                            <th>Sl.</th>
+                            <th>Quotation No</th>
+                            <th>Subtotal</th>
+                            <th>Grand Total</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for filename, file_data_list in stored_data.items %}
+                            {% for file_data in file_data_list %}
+                                {% if not file_data.error %}
+                                    <tr>
+                                        <td>{{ forloop.parentloop.counter }}</td>
+                                        <td>{{ file_data.quotation_number }}</td>
+                                        <td>{{ file_data.Subtotal_list.0.value|default:"N/A" }}</td>
+                                        <td>{{ file_data.Grand_Total.0.value|default:"N/A" }}</td>
+                                        <td>
+                                            <div class="d-flex flex-column flex-sm-row">
+                                                <a href="{% url 'amc_preview' quotation_no=file_data.quotation_number %}" class="btn btn-primary btn-sm mb-2 mb-sm-0 me-sm-2">View</a>
+                                                <a href="{% url 'edit_quotation' enquiry_id=file_data.enquiry_id quotation_number=file_data.quotation_number %}" class="btn btn-warning btn-sm">Edit</a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            {% endfor %}
+                        {% endfor %}
+                    </tbody>
+                    
+                    </table>
+                    {% else %}
+                    <p>No Stored Data available.</p>
+                    {% endif %}
+            </div>
+        </div>
+    </div><br>
+
+    <div class="container-xl mt-4">
+        <h2>Draft - AMC Quotes</h2>
+        <div class="card">
+            <div id="table-default" class="table-responsive">
+                <table class="table">
+                    {% if draft_data %}
+                    <thead>
+                        <tr>
+                            <th>Sl.</th>
+                            <th>Quotation No</th>
+                            <th>Subtotal</th>
+                            <th>Grand Total</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for filename, file_data_list in draft_data.items %}
+                            {% for file_data in file_data_list %}
+                                {% if not file_data.error %}
+                                    <tr>
+                                        <td>{{ forloop.parentloop.counter }}</td>
+                                        <td>{{ file_data.quotation_number }}</td>
+                                        <td>{{ file_data.Subtotal_list.0.value|default:"N/A" }}</td>
+                                        <td>{{ file_data.Grand_Total.0.value|default:"N/A" }}</td>
+                                        <td>
+                                            <div class="d-flex flex-column flex-sm-row">
+                                                <a href="{% url 'amc_preview' quotation_no=file_data.quotation_number %}" class="btn btn-primary btn-sm mb-2 mb-sm-0 me-sm-2">View</a>
+                                                <a href="{% url 'draft_edit_quotationpage' enquiry_id=file_data.enquiry_id quotation_number=file_data.quotation_number %}" class="btn btn-warning btn-sm">Edit</a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            {% endfor %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>No Stored Data available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="container-xl mt-4">
+        <h2>Techno Commercial Proposal Quotes</h2>
+        <div class="card">
+            <div id="table-default" class="table-responsive">
+                {% if proposal_data %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Sl.</th>
+                            <th>Quotation No</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for filename, file_data_list in proposal_data.items %}
+                        {% for file_data in file_data_list %}
+                        {% if not file_data.error %}
+                        <tr>
+                            <td>{{ forloop.parentloop.counter }}</td>
+                            <td>{{ file_data.quotation_number }}</td>
+                            <td>
+                                <a href="{% url 'proposal_preview' quotation_no=file_data.quotation_number %}" class="btn btn-primary btn-sm">View</a>
+                                <a href="{% url 'edit_quotation_pr' enquiry_id=file_data.enquiry_id quotation_number=file_data.quotation_number %}" class="btn btn-warning btn-sm">Edit</a>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>No Proposal Data available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="container-xl mt-4">
+        <h2>Draft - Proposal Quotes</h2>
+        <div class="card">
+            <div id="table-default" class="table-responsive">
+                {% if proposal_draft_data %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Sl.</th>
+                            <th>Quotation No</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for filename, file_data_list in proposal_draft_data.items %}
+                        {% for file_data in file_data_list %}
+                        {% if not file_data.error %}
+                        <tr>
+                            <td>{{ forloop.parentloop.counter }}</td>
+                            <td>{{ file_data.quotation_number }}</td>
+                            <td>
+                                <a href="{% url 'proposal_preview' quotation_no=file_data.quotation_number %}" class="btn btn-primary btn-sm">View</a>
+                                <a href="{% url 'draft_edit_quotation_page' enquiry_id=file_data.enquiry_id quotation_number=file_data.quotation_number %}" class="btn btn-warning btn-sm">Edit</a>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>No Proposal Data available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="container-xl mt-4">
+        <h2>Hidrec Wash Quotes</h2>
+        <div class="card">
+            <div id="table-default" class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Sl.</th>
+                            <th>Quotation No</th>
+                            <th>Grand Total</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for hid in hidrec %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ hid.quotation_no }}</td>
+                            <td>{{ hid.total_price }}</td>
+                            <td>
+                                <a href="{% url 'wash_preview' quotation_no=hid.quotation_no %}" class="btn btn-primary btn-sm">View</a>
+                                <a href="{% url 'edit_wash' quotation_no=hid.quotation_no enquiry_id=hid.enquiry_id %}" class="btn btn-warning btn-sm">Edit</a>
+                                
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">No quotations available.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    
+
+
+
+</div>
+        
+   
+
+
+
+<script>
+    // JavaScript to filter the table dynamically based on search input
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        let searchQuery = this.value.toLowerCase();
+        let tableRows = document.querySelectorAll('#quotationsTable tbody tr');
+        
+        tableRows.forEach(row => {
+            let cells = row.getElementsByTagName('td');
+            let match = false;
+    
+            // Check if any cell contains the search query
+            for (let i = 0; i < cells.length; i++) {
+                if (cells[i].textContent.toLowerCase().includes(searchQuery)) {
+                    match = true;
+                    break; // Exit the loop if match is found
+                }
+            }
+    
+            // Show or hide row based on search match
+            if (match) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+    </script>
+    <script>
+        function printPage() {
+            // Hide non-printable elements like the export dropdown, search bar, etc., if needed
+            const elementsToHide = document.querySelectorAll('.dropdown, .pagination, .page-header, .input-icon');
+            elementsToHide.forEach(element => element.style.display = 'none');
+    
+            // Trigger the browser's print functionality
+            window.print();
+    
+            // Restore hidden elements after printing
+            setTimeout(() => {
+                elementsToHide.forEach(element => element.style.display = '');
+            }, 0);
+        }
+    </script>
+    <style>
+        @media print {
+            /* Hide unnecessary UI elements */
+            .btn-group, 
+            .page-header, 
+            .pagination, 
+            .navbar, 
+            .footer {
+                display: none !important;
+            }
+            
+            /* Adjust table layout for better printing */
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+    
+            th, td {
+                border: 1px solid #000;
+                padding: 8px;
+                text-align: left;
+            }
+    
+            /* Ensure the content takes up the full width of the print page */
+            body {
+                margin: 0;
+                padding: 0;
+                width: 100%;
+            }
+    
+            /* Hide other unnecessary elements */
+            .dropdown-menu {
+                display: none !important;
+            }
+        }
+    </style>
+    
+
+{% endblock %}

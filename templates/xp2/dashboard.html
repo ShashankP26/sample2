@@ -1,0 +1,323 @@
+{% extends 'base.html' %}
+{% block content %}
+{% comment %} <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta14/dist/js/tabler.min.js"></script> {% endcomment %}
+<div class="container-fluid mt-4">
+    <h1 class="text-center mb-5">Dashboard</h1>
+    {% if user.is_superuser %} <!-- Check if the logged-in user is an admin -->
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="user" class="font-weight-bold" style="font-weight: bold;">Select User</label> <!-- Label for the dropdown -->
+                <div class="col-3"> <!-- Reduced size to 1/4 -->
+                    <select name="user" id="user" class="form-select" onchange="this.form.submit()">
+                        {% for user in users %}
+                            <option value="{{ user.id }}" {% if user.id == selected_user.id %}selected{% endif %}>
+                                {{ user.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </form>
+    {% endif %}
+
+     <!-- New Target Card -->
+        <div class="row mt-4">
+            <div class="col-sm-2 mb-3 col-lg-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="subheader">Your Target</div>
+                        </div>
+                        {% if target %}
+                            <div class="h1 mb-3">{{ target.value }}</div>
+                            <div class="d-flex align-items-center">
+                                <div>Target Deadline: {{ target.deadline }}</div>
+                            </div>
+                        {% else %}
+                            <div class="h1 mb-3">No Target Assigned</div>
+                            <div class="d-flex align-items-center">
+                                <div>Your target will be assigned soon.</div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-4 mb-3 col-lg-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="subheader">Target Ratio</div>
+                        </div>
+                        <div class="h1 mb-3">{{ target_ratio|floatformat:2 }}%</div>
+                        <div class="d-flex mb-2">
+                            <div>Conversion rate</div>
+                        </div>
+                        <div class="progress progress-sm">
+                            <div class="progress-bar bg-primary" style="width: {{ target_ratio }}%" role="progressbar" aria-valuenow="{{ target_ratio }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ target_ratio }}% Complete">
+                                <span class="visually-hidden">{{ target_ratio }}% Complete</span>
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4 col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="subheader">Target pending</div>
+                    </div>
+                    <div class="h1 mb-3">{{ target_to_reach }}</div>
+                    <div class="d-flex align-items-center">
+                        <div>Give your Best !!</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        
+    
+
+
+    <div class="row">
+        <div class="col-sm-4 col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="subheader">Total Enquiries</div>
+                    </div>
+                    <div class="h1 mb-3">{{ total_enquiries }}</div>
+                    <div class="d-flex align-items-center">
+                        <div>All enquiries received to date.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-4 col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="subheader">Confirmed Orders</div>
+                    </div>
+                    <div class="h1 mb-3">{{ confirmed_orders }}</div>
+                    <div class="d-flex align-items-center">
+                        <div>Orders that were successfully converted.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-4 col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="subheader">Lost Orders</div>
+                    </div>
+                    <div class="h1 mb-3">{{ lost_orders }}</div>
+                    <div class="d-flex align-items-center">
+                        <div>Orders that could not be finalized.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-sm-4 col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="subheader">Conversion Ratio</div>
+                    </div>
+                    <div class="h1 mb-3">{{ conversion_ratio|floatformat:2 }}%</div>
+                    <div class="d-flex mb-2">
+                        <div>Conversion rate</div>
+                    </div>
+                    <div class="progress progress-sm">
+                        <div class="progress-bar bg-primary" style="width: {{ conversion_ratio }}%" role="progressbar" aria-valuenow="{{ conversion_ratio }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ conversion_ratio }}% Complete">
+                            <span class="visually-hidden">{{ conversion_ratio }}% Complete</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-4 col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="subheader">Total Quotes</div>
+                    </div>
+                    <div class="h1 mb-3">{{ total_quotes }}</div>
+                    <div class="d-flex align-items-center">
+                        <div>Total Quotes Generated.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-4 col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="subheader">Revenue</div>
+                    </div>
+                    <div class="h1 mb-3">₹ {{ total_revenue }}</div>
+                    <div class="d-flex align-items-center">
+                        <div>Total Revenue Generated.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+       
+    <!-- Bar Chart Section -->
+    <div class="row mt-4">
+        <div class="col-sm-4 col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Dashboard Metrics</h3>
+            </div>
+            <div class="card-body">
+                <!-- Set the size of the chart -->
+                <canvas id="barChart" style="width: 80%; height: 80%;"></canvas>
+            </div>
+        </div>
+        </div>
+
+            <div class="col-sm-8 col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Target Progress</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="barChartTarget" style="width: 100%; height: 300px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    function changeUser() {
+        const selectedUserId = document.getElementById('userSelect').value;
+        // You can either reload the page with the selected user as a parameter or make an AJAX call.
+        window.location.href = '/dashboard/?user_id=' + selectedUserId;  // Example of a page reload
+    }
+    // Data for the bar chart
+    const ctxTarget = document.getElementById('barChartTarget').getContext('2d');
+    const barChartTarget = new Chart(ctxTarget, {
+        type: 'bar', // Bar chart
+        data: {
+            labels: ['Target','Confirmed Orders', 'Pending Orders'], // Labels for the chart
+            datasets: [{
+                label: 'Target Progress', // Label for the dataset
+                data: [
+                    {{ target.value }},
+                    {{ confirmed_orders }}, // Target Confirmed Orders
+                    {{ target_to_reach }}  // Target Pending
+                ], // Data for the bar segments
+                backgroundColor: [
+                    '#FF6384', // Red for 'Target'
+                    '#36A2EB', // Blue for 'Confirmed Orders'
+                    '#FFCE56', // Yellow for 'Pending Orders'
+                ], // Different colors for each bar
+                borderColor: [
+                    '#FF6384', // Red border for 'Target'
+                    '#36A2EB', // Blue border for 'Confirmed Orders'
+                    '#FFCE56', // Yellow border for 'Pending Orders'
+                ], // Border colors matching the bar colors
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1, // Step size for the y-axis
+                    },
+                },
+            },
+            plugins: {
+                legend: {
+                    position: 'top', // Position of the legend
+                },
+            },
+        }
+    });
+</script>
+<script>
+    // Chart Data for Donut Chart
+    const ctx = document.getElementById('barChart').getContext('2d');
+    const donutChart = new Chart(ctx, {
+        type: 'doughnut', // Donut chart
+        data: {
+            labels: ['Enquiries', 'Confirmed Orders', 'Lost Orders'], // Labels for the chart segments
+            datasets: [{
+                label: 'Dashboard Metrics', // Label for the dataset
+                data: [
+                    {{ total_enquiries }},
+                    {{ confirmed_orders }},
+                    {{ lost_orders }},
+                ], // Data for the donut segments
+                backgroundColor: [
+                    '#FF6384', // Red
+                    '#36A2EB', // Blue
+                    '#FFCE56', // Yellow
+                ], // Segment colors
+                borderColor: [
+                    '#FF6384', // Red
+                    '#36A2EB', // Blue
+                    '#FFCE56', // Yellow
+                ], // Border colors
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            cutout: '50%', // Adjust this to make the center hole smaller (less than 70%)
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(tooltipItem) {
+                            return tooltipItem.raw + ' value'; // Display value on hover
+                        }
+                    }
+                },
+                legend: {
+                    position: 'top', // Position of the legend
+                }
+            }
+        }
+    });
+
+    document.getElementById('userSelect').addEventListener('change', function() {
+        const userId = this.value;
+        // Fetch updated dashboard data for the selected user
+        fetch(`/dashboard/${userId}/`)
+            .then(response => response.json())
+            .then(data => {
+                // Update the dashboard content with the new data
+                document.getElementById('targetValue').textContent = data.target.value;
+                document.getElementById('targetRatio').textContent = data.target_ratio;
+                document.getElementById('targetToReach').textContent = data.target_to_reach;
+
+                // Update other parts of the dashboard as necessary (like metrics, charts, etc.)
+                // Make sure to update other elements based on the new data.
+            })
+            .catch(error => console.error('Error fetching dashboard data:', error));
+    });
+</script>
+
+<!-- Canvas element to define chart size -->
+<canvas id="barChart" width="250" height="250"></canvas>
+
+{% endblock %} 

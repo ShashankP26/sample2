@@ -1,0 +1,472 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid mt-5">
+    <h3>Welcome, {{ user.username }}!</h3>
+    <form method="get" class="mb-4">
+        <div class="row">
+            <!-- From Date Field -->
+            <div class="col-md-4">
+                <label for="from_date">From Date:</label>
+                <input type="date" id="from_date" name="from_date" class="form-control" value="{{ from_date }}">
+            </div>
+    
+            <!-- To Date Field with margin-bottom for gap -->
+            <div class="col-md-4 mb-3 mb-md-0"> <!-- Added mb-3 here -->
+                <label for="to_date">To Date:</label>
+                <input type="date" id="to_date" name="to_date" class="form-control" value="{{ to_date }}">
+            </div>
+    
+            <!-- Buttons (Filter and Clear) -->
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Filter</button>
+                <a href="{% url 'vouchers_dashboard' %}" class="btn btn-secondary ms-2 w-100">Clear</a>
+            </div>
+        </div>
+    </form>
+
+    <div class="row mt-4 ">
+        <h3>E-Vouchers</h3>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="card" id="ch">
+                <div class="card-header">
+                    <h3 class="card-title">Total E-Vouchers</h3>
+                </div>
+                <div class="card-body">
+                    <h1 class="text-center">{{ total_evouchers }}</h1>
+                    <p class="text-center">Total number of e-vouchers created.</p>
+                </div>
+            </div>
+        </div>
+        <!-- Total Claiming Amount -->
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="card" id="ch">
+                <div class="card-header">
+                    <h3 class="card-title">Total Claiming Amount</h3>
+                </div>
+                <div class="card-body">
+                    <h1 class="text-center">{{ total_claiming_amount|floatformat:2 }}</h1>
+                    <p class="text-center">Total amount of all E-vouchers Claimed.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="card" id="ch">
+                <div class="card-header">
+                    <h3 class="card-title">Paid Amount</h3>
+                </div>
+                <div class="card-body">
+                    <h1 class="text-center">{{ total_paid_amount|floatformat:2 }}</h1>
+                    <p class="text-center">Total amount paid for E-vouchers.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Difference Card -->
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="card" id="ch">
+                <div class="card-header">
+                    <h3 class="card-title">Difference Amount</h3>
+                </div>
+                <div class="card-body">
+                    <h1 class="text-center">{{ claiming_approved_diff|floatformat:2 }}</h1>
+                    <p class="text-center">Claimed - Approved.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- First Row: Vouchers Statistics -->
+    <div class="row mb-4">
+        <div class="mt-5">
+            <h3>Cash Vouchers</h3>
+        </div>
+        <!-- Total Cash Vouchers -->
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="card" id="ch">
+                <div class="card-header">
+                    <h3 class="card-title">Total Cash Vouchers</h3>
+                </div>
+                <div class="card-body">
+                    <h1 class="text-center">{{ total_vouchers }}</h1>
+                    <p class="text-center">Total number of cash vouchers created.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Approved Vouchers -->
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="card" id="ch">
+                <div class="card-header">
+                    <h3 class="card-title">Approved Vouchers</h3>
+                </div>
+                <div class="card-body">
+                    <h1 class="text-center">{{ approved_vouchers }}</h1>
+                    <p class="text-center">Number of vouchers that are approved.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rejected Vouchers -->
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="card" id="ch">
+                <div class="card-header">
+                    <h3 class="card-title">Rejected Vouchers</h3>
+                </div>
+                <div class="card-body">
+                    <h1 class="text-center">{{ rejected_vouchers }}</h1>
+                    <p class="text-center">Number of vouchers that were rejected.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Vouchers -->
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="card" id="ch">
+                <div class="card-header">
+                    <h3 class="card-title">Pending Vouchers</h3>
+                </div>
+                <div class="card-body">
+                    <h1 class="text-center">{{ pending_vouchers_count }}</h1>
+                    <p class="text-center">Vouchers are yet to be processed.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="card" id="ch">
+                <div class="card-header">
+                    <h3 class="card-title">Total Cleared Vouchers</h3>
+                </div>
+                <div class="card-body">
+                    <h1 class="text-center">{{ cleared_vouchers_count }}</h1>
+                    <p class="text-center">Total cleared vouchers.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="card" id="ch">
+                <div class="card-header">
+                    <h3 class="card-title">Total Claiming Amount</h3>
+                </div>
+                <div class="card-body">
+                    <h1 class="text-center">{{ total_claiming_amount_cv|floatformat:2 }}</h1>
+                    <p class="text-center">Total Claiming Amount.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Second Row: Financial Data and Additional Stats -->
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="card" id="ch">
+                <div class="card-header">
+                    <h3 class="card-title">Total Approved Amount</h3>
+                </div>
+                <div class="card-body">
+                    <h1 class="text-center">{{ total_approved_amount|floatformat:2 }}</h1>
+                    <p class="text-center">Total approved amount.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="card" id="ch">
+                <div class="card-header">
+                    <h3 class="card-title">Paid Amount</h3>
+                </div>
+                <div class="card-body">
+                    <h1 class="text-center">{{ total_paid_amount_cv|floatformat:2 }}</h1>
+                    <p class="text-center">Paid Amount.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart Section -->
+<div class="row mt-4 ms-0">
+    <!-- Existing Chart Section for Voucher Status and Month-wise Data -->
+    <div class="col-12 col-md-4 mb-4">
+        <div class="card" id="donut">
+            <div class="card-header">
+                <h3 class="card-title">Cash Voucher Status Chart</h3>
+            </div>
+            <div class="card-body">
+                <canvas id="voucherStatusChart" width="300" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Line Chart Section for E-Vouchers -->
+    <div class="col-12 col-md-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">E-Voucher Count Chart</h3>
+            </div>
+            <div class="card-body">
+                <!-- Chart.js Line Chart for E-Vouchers -->
+                <canvas id="evoucherChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4 ms-0">
+    <div class="col-12">
+        <div class="card" id="evoucher-item-types">
+            <div class="card-header">
+                <h3 class="card-title text-center">E-Voucher Item Types</h3>
+            </div>
+            <div class="card-body">
+                <canvas id="itemTypeChart" width="800" height="600"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+    {% comment %} <div class="col-12 col-md-4">
+        <div class="card gf">
+            <div class="card-header">
+                <h3 class="card-title">Month-wise Total Amount (Claimed vs Approved)</h3>
+            </div>
+            <div class="card-body">
+                <canvas id="monthWiseChart" width="400" height="250"></canvas>
+            </div>
+        </div>
+    </div> {% endcomment %}
+</div>
+<style>
+    #donut{
+        height: 477px;
+        overflow: hidden; 
+        padding: 30px;/* Prevent overflow */
+    }
+    
+   
+    .chart-container {
+        width: 100%;  /* Full width */
+        height: 100%;  /* Full height */
+    }
+
+ 
+    
+    canvas {
+        display: block; /* Prevent unwanted scrollbars */
+        max-width: 100%; /* Ensure the chart doesn't exceed the card width */
+        height: auto; /* Maintain aspect ratio */
+    }
+    #evoucher-item-types .card-header {
+        font-size: 18px; /* Increase font size of the header */
+        padding: 5px 10px; /* Adjust padding */
+        text-align: center;
+        font-weight: bold;
+    }
+    
+    #evoucher-item-types .card-body {
+        padding: 10px;
+        height: 600px; /* Adjust height if needed */
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        font-weight: bold;
+    }
+    
+    #evoucher-item-types .chart-container {
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+    }
+</style>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const doughnutCtx = document.getElementById('voucherStatusChart').getContext('2d');
+        const barCtx = document.getElementById('evoucherChart').getContext('2d');
+        const voucherStatusChart = new Chart(doughnutCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Approved', 'Rejected', 'Pending'],
+                datasets: [{
+                    data: [
+                        {{ approved_vouchers|default:0 }},
+                        {{ rejected_vouchers|default:0 }},
+                        {{ pending_vouchers_count|default:0 }}
+                    ],
+                    backgroundColor: ['#28a745', '#dc3545', '#ffc107']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                }
+            }
+        });
+        
+        // Line Chart for E-Vouchers
+        const evoucherChart = new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Claiming Amount', 'Paid Amount', 'Claiming vs Paid Diff'],  // X-axis labels
+                datasets: [{
+                    data: [
+                        {{ total_claiming_amount|default:0 }},
+                        {{ total_paid_amount|default:0 }},
+                        {{ claiming_approved_diff|default:0 }}
+                    ],
+                    backgroundColor: ['#36a2eb', '#ffcd56', '#ff6384'],  // Color for each bar
+                    borderColor: ['#36a2eb', '#ffcd56', '#ff6384'],  // Border color for each bar
+                    borderWidth: 1,
+                    // You can use label to give each bar a name in the dataset
+                    label: '',  // Remove general label (we have individual labels on x-axis)
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false,  // Disable legend, as the x-axis labels provide sufficient info
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { 
+                            display: true, 
+                            text: 'Amount (₹)'  // Y-axis label
+                        }
+                    },
+                    x: {
+                        title: { 
+                            display: true, 
+                            text: 'Categories'  // X-axis label
+                        }
+                    }
+                }
+            }
+        });
+    });
+    document.addEventListener('DOMContentLoaded', function () {
+        const ctx = document.getElementById('itemTypeChart').getContext('2d');
+        
+        const colors = [
+            '#36a2eb', '#ffcd56', '#ff6384', '#4bc0c0', '#9966ff', '#ff9f40', '#ffbf00', '#c4001d', '#5d4037',
+            '#607d8b', '#cddc39', '#009688', '#9c27b0', '#8bc34a', '#ffc107', '#f44336'
+        ];
+    
+        const itemTypeChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [
+                    'Fright/Transportation', 'Fuel and Oil', 'Food/Grocery', 'Others', 'Vendor', 'Reimbursement',
+                    'Site Services', 'Advances', 'Travelling', 'Electricity Bill', 'Internet Bill', 'Postage and Telegram',
+                    'Machine Repair', 'Conveyance', 'Stationary and Printing', 'Hospitality'
+                ],
+                datasets: [
+                    {
+                        label: 'Number of Vouchers',
+                        data: [
+                            {{ item_type_data.fright_transportation.count }},
+                            {{ item_type_data.fuel_oil.count }},
+                            {{ item_type_data.food_grocery.count }},
+                            {{ item_type_data.others.count }},
+                            {{ item_type_data.vendor.count }},
+                            {{ item_type_data.reimbursement.count }},
+                            {{ item_type_data.site_services.count }},
+                            {{ item_type_data.advances.count }},
+                            {{ item_type_data.travelling.count }},
+                            {{ item_type_data.electricity_bill.count }},
+                            {{ item_type_data.internet_bill.count }},
+                            {{ item_type_data.postage_telegram.count }},
+                            {{ item_type_data.machine_repair.count }},
+                            {{ item_type_data.conveyance.count }},
+                            {{ item_type_data.stationary_printing.count }},
+                            {{ item_type_data.hospitality.count }},
+                        ],
+                        backgroundColor: colors,
+                        barThickness: 12,
+                    },
+                    {
+                        label: 'Total Amount (₹)',
+                        data: [
+                            {{ item_type_data.fright_transportation.total_amount }},
+                            {{ item_type_data.fuel_oil.total_amount }},
+                            {{ item_type_data.food_grocery.total_amount }},
+                            {{ item_type_data.others.total_amount }},
+                            {{ item_type_data.vendor.total_amount }},
+                            {{ item_type_data.reimbursement.total_amount }},
+                            {{ item_type_data.site_services.total_amount }},
+                            {{ item_type_data.advances.total_amount }},
+                            {{ item_type_data.travelling.total_amount }},
+                            {{ item_type_data.electricity_bill.total_amount }},
+                            {{ item_type_data.internet_bill.total_amount }},
+                            {{ item_type_data.postage_telegram.total_amount }},
+                            {{ item_type_data.machine_repair.total_amount }},
+                            {{ item_type_data.conveyance.total_amount }},
+                            {{ item_type_data.stationary_printing.total_amount }},
+                            {{ item_type_data.hospitality.total_amount }},
+                        ],
+                        backgroundColor: colors,
+                        barThickness: 15,
+                    }
+                ]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { 
+                        display: true,
+                        position: 'bottom',
+                        labels: {
+                            font: { size: 14, weight: 'bold' } // Bold the legend font
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (tooltipItem) {
+                                if (tooltipItem.datasetIndex === 0) { // Number of Vouchers
+                                    return tooltipItem.label + ': ' + tooltipItem.raw + ' Vouchers';
+                                } else { // Total Amount
+                                    return tooltipItem.label + ': ₹' + tooltipItem.raw.toFixed(2);
+                                }
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: { 
+                            display: true, 
+                            text: 'Values',
+                            font: { size: 16, weight: 'bold' } // Bold the x-axis title
+                        },
+                        ticks: {
+                            font: { size: 14, weight: 'bold' } // Bold the x-axis ticks
+                        }
+                    },
+                    y: {
+                        title: { 
+                            display: true, 
+                            text: 'Item Types',
+                            font: { size: 16, weight: 'bold' } // Bold the y-axis title
+                        },
+                        ticks: {
+                            font: { size: 14, weight: 'bold' }, // Bold the y-axis ticks
+                            padding: 10
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+{% endblock %}

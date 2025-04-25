@@ -1,0 +1,642 @@
+{% extends "base.html" %}
+{% block content  %}
+<script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta14/dist/js/tabler.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<form id="proposal" method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="container-fluid mt-5">
+        <h1>Proposal Details</h1>
+        <h2>Enquiry ID: {{ proposal_data.enquiry_id }}</h2>
+        <h3>
+            Quotation Number: 
+            <input type="text" name="quotation_number" value="{{ proposal_data.quotation_number }}" class="form-control" readonly>
+        </h3>
+
+        <!-- Contents Section -->
+        <h3 class="mt-4">Contents</h3>
+        <div class="mb-4" id="contentsSection">
+            {% for cont in proposal_data.contents %}
+            <div class="d-flex align-items-center mb-2" id="content_{{ forloop.counter }}">
+                <input type="checkbox" name="content_select_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if cont.is_checked %}checked{% endif %}>
+                <input type="text" name="content_{{ forloop.counter }}" value="{{ cont.value }}" class="form-control">
+            </div>
+            {% endfor %}
+        </div>
+        <button type="button" class="btn btn-primary mt-3" onclick="addContent()">Add Line</button>
+
+        <!-- Site Information Section -->
+        <h2 class="mt-4">Site Information</h2>
+        <ul>
+            {% for item in proposal_data.site_info %}
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="site_select_info_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if item.is_checked %}checked{% endif %}>
+                <textarea name="site_info_{{ forloop.counter }}" class="form-control" rows="3">{{ item.info_text }}</textarea>
+            </li>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="site_select_standard_{{ forloop.counter }}" class="form-check-input me-2 mt-2" value="1" {% if item.is_standard_checked %}checked{% endif %}>
+                <textarea name="site_standard_{{ forloop.counter }}" class="form-control" rows="3">{{ item.standard_text }}</textarea>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <!-- Table 1 -->
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped" id="table1">
+                <thead>
+                    <tr>
+                        <th>Select</th>
+                        <th>Sl. No</th>
+                        <th>Raw Sewage Characteristics</th>
+                        <th>Unit</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t1 in proposal_data.table_data %}
+                    <tr id="row_t1_{{ forloop.counter }}">
+                        <td>
+                            <input type="hidden" name="select_row_t1_{{ forloop.counter }}" value="0">
+                            <input type="checkbox" class="select-row" name="select_row_t1_{{ forloop.counter }}" value="1" {% if t1.is_checked %}checked{% endif %}>
+                        </td>
+                        <td>
+                            <input type="text" name="sl_no_value_t1_{{ forloop.counter }}" value="{{ t1.sl_no }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="raw_sewage_characteristics_value_t1_{{ forloop.counter }}" value="{{ t1.raw_sewage_characteristics }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="unit_value_t1_{{ forloop.counter }}" value="{{ t1.unit }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="value_value_t1_{{ forloop.counter }}" value="{{ t1.value }}" class="form-control">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Treatment Processes -->
+        <h2 class="mt-4">Treatment Processes and Purpose of Each Process in a Treatment System</h2>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped" id="treatmentProcessTable">
+                <thead>
+                    <tr>
+                        <th>Select</th>
+                        <th>Principal Purpose Unit Process</th>
+                        <th>Unit Processes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in proposal_data.treatment_processes %}
+                    <tr id="treatment_process_row_{{ forloop.counter }}">
+                        <td>
+                            <input type="hidden" name="standard_select_{{ forloop.counter }}" value="0">
+                            <input type="checkbox" name="standard_select_{{ forloop.counter }}" value="1" class="form-check-input" {% if row.is_checked %}checked{% endif %}>
+                        </td>
+                        <td>
+                            <input type="text" name="principal_purpose_{{ forloop.counter }}" value="{{ row.principal_purpose_unit_process }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="unit_processes_{{ forloop.counter }}" value="{{ row.unit_processes }}" class="form-control">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <!-- Observations and Suggestions -->
+        <h2 class="mt-4">Observations and Suggestions</h2>
+        <ul>
+            {% for product in proposal_data.observations_and_suggestions %}
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="observation_select_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if product.observation_checked %}checked{% endif %}>
+                <textarea name="observation_{{ forloop.counter }}" class="form-control" rows="3">{{ product.observation }}</textarea>
+            </li>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="suggestion_select_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if product.suggestion_checked %}checked{% endif %}>
+                <textarea name="suggestion_{{ forloop.counter }}" class="form-control" rows="3">{{ product.suggestion }}</textarea>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <!-- Requirement and Specifications -->
+        <h2 class="mt-4">Requirement and Specifications</h2>
+        <ul>
+            {% for requirement in proposal_data.requirements_and_specifications %}
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="requirement_select_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if requirement.requirement_checked %}checked{% endif %}>
+                <textarea name="requirement_{{ forloop.counter }}" class="form-control" rows="3">{{ requirement.requirement_text }}</textarea>
+            </li>
+            {% endfor %}
+        </ul>
+    
+        <h2 class="mt-4">Specs</h2>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped" id="specsTable">
+                <thead>
+                    <tr>
+                        <th>Select</th>
+                        <th>Specs for 25 KLD</th>
+                        <th>HIDREC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for specs in proposal_data.specifications %}
+                    <tr id="spec_row_{{ forloop.counter }}">
+                        <input type="hidden" name="spec_select_{{ forloop.counter }}" value="0">
+                        <td>
+                            <input type="checkbox" name="spec_select_{{ forloop.counter }}" value="1" class="form-check-input" {% if specs.spec_checked %}checked{% endif %}>
+                        </td>
+                        <td>
+                            <input type="text" name="specs_for_25kld_{{ forloop.counter }}" value="{{ specs.specs_for_25kld }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="hidrec_{{ forloop.counter }}" value="{{ specs.hidrec }}" class="form-control">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <h2 class="mt-4">Process Diagram</h2>
+        <ul>
+            {% for rq in proposal_data.process_diagram %}
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="process_diagram_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if rq.process_diagram_checked %}checked{% endif %}>
+                <textarea name="req_text_{{ forloop.counter }}" class="form-control" rows="3">{{ rq.req_text }}</textarea>
+            </li>
+            <br>
+            <p class="text-danger">Note: Adding both images is mandatory. Please upload two valid process diagrams to proceed.</p>
+            <li><strong> <span class="text-danger">* </span> Process Diagram 1:</strong></li>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="process_diagram1_checked_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if rq.process_diagram1_checked %}checked{% endif %}>
+                <input type="file" name="process_diagram1_url_{{ forloop.counter }}" class="form-control mt-2">
+                {% if rq.process_diagram1_path %}
+                <span>Current File: <a href="{{ rq.process_diagram1_path }}">Download</a></span>
+                {% endif %}
+            </li>
+            <br>
+
+            <li><strong> <span class="text-danger">* </span>  Process Diagram 2:</strong></li>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="process_diagram2_checked_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if rq.process_diagram2_checked %}checked{% endif %}>
+                <input type="file" name="process_diagram2_url_{{ forloop.counter }}" class="form-control mt-2">
+                {% if rq.process_diagram1_path %}
+                <span>Current File: <a href="{{ rq.process_diagram2_path }}">Download</a></span>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+
+        <h2 class="mt-4">Process Description</h2>
+        <h3>Output Treated Water Quality as per KSPCB</h3>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped" id="outputTable">
+                <thead>
+                    <tr>
+                        <th>Select</th>
+                        <th>Sl. No</th>
+                        <th>Treated Water Characteristics</th>
+                        <th>Unit</th>
+                        <th>Standard Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in proposal_data.output_table %}
+                    <tr id="output_row_{{ forloop.counter }}">
+                        <td>
+                            <input type="hidden" name="select_row_op_{{ forloop.counter }}" value="0">
+                            <input type="checkbox" name="select_row_op_{{ forloop.counter }}" value="1" class="select-row" data-row="{{ forloop.counter }}" {% if item.is_checked %}checked{% endif %}>
+                        </td>
+                        <td>
+                            <input type="text" name="sl_no_value_op_{{ forloop.counter }}" value="{{ item.sl_no }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="treated_water_characteristics_value_op_{{ forloop.counter }}" value="{{ item.treated_water_characteristics }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="unit_value_op_{{ forloop.counter }}" value="{{ item.unit }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="standard_value_op_{{ forloop.counter }}" value="{{ item.standard_value }}" class="form-control">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <ul>
+            {% for pro in proposal_data.process_description %}
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="process_description_text_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if pro.process_data.process_description_checked %}checked{% endif %}>
+                <textarea name="process_description_{{ forloop.counter }}" class="form-control" rows="3">{{ pro.process_data.process_description }}</textarea>
+            </li>
+            <h3><strong>ETP Treatment:</strong></h3>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="etp_text_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if pro.process_data.is_checked %}checked{% endif %}>
+                <textarea name="etp_text_value_{{ forloop.counter }}" class="form-control" rows="3">{{ pro.process_data.etp_text }}</textarea>
+            </li>
+            <br>
+
+            <h3><strong>STP Treatment:</strong></h3>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="stp_text_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if pro.process_data.is_standard_checked %}checked{% endif %}>
+                <textarea name="stp_text_value_{{ forloop.counter }}" class="form-control" rows="3">{{ pro.process_data.stp_text }}</textarea>
+            </li><br>
+
+            <h3><strong>Sludge Handling System:</strong></h3>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="shs_text_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if pro.process_data.is_shs_checked %}checked{% endif %}>
+                <textarea name="shs_text_value_{{ forloop.counter }}" class="form-control" rows="3">{{ pro.process_data.shs_text }}</textarea>
+            </li><br>
+
+            <h3><strong>Automation:</strong></h3>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="automation_text_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if pro.process_data.is_atm_checked %}checked{% endif %}>
+                <textarea name="automation_text_value_{{ forloop.counter }}" class="form-control" rows="3">{{ pro.process_data.automation_text }}</textarea>
+            </li><br>
+
+            <h3><strong>Footprint/Area required:</strong></h3>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="footprint_area_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if pro.process_data.is_foot_checked %}checked{% endif %}>
+                <textarea name="footprint_area_value_{{ forloop.counter }}" class="form-control" rows="3">{{ pro.process_data.footprint_area }}</textarea>
+            </li><br>
+
+            <h3><strong>Tentative BOM:</strong></h3>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="tentative_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if pro.process_data.is_tentative_checked %}checked{% endif %}>
+                <textarea name="tentative__value_{{ forloop.counter }}" class="form-control" rows="3">{{ pro.process_data.tentative_BOM }}</textarea>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <h2 class="mt-4">Pricing: Machine Costs</h2>
+        <ul>
+            {% for p in proposal_data.pricing %}
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="machine_cost_text_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if p.is_machine_checked %}checked{% endif %}>
+                <textarea name="machine_cost_value_{{ forloop.counter }}" class="form-control" rows="3">{{ p.machine_cost_text }}</textarea>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <h3 class="mt-4">Machine Specifications</h3>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped" id="machineSpecTable">
+                <thead>
+                    <tr>
+                        <th>Select</th>
+                        <th>Product Name</th>
+                        <th>Capacity</th>
+                        <th>Total Needed Capacity</th>
+                        <th>Waste Water Type</th>
+                        <th>Total Number of Machines</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for instal in proposal_data.installation %}
+                    <tr id="machine_spec_row_{{ forloop.counter }}">
+                        <td>
+                            <input type="hidden" name="select_row_spe_{{ forloop.counter }}" value="0">
+                            <input type="checkbox" name="select_row_spe_{{ forloop.counter }}" value="1" class="form-check-input" {% if instal.is_checked %}checked{% endif %}>
+                        </td>
+                        <td>
+                            <input type="text" name="product_name_spe_{{ forloop.counter }}" value="{{ instal.product_name }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="capacity_value_spe_{{ forloop.counter }}" value="{{ instal.capacity }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="total_needed_capacity_value_spe_{{ forloop.counter }}" value="{{ instal.total_needed_capacity }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="waste_water_type_value_spe_{{ forloop.counter }}" value="{{ instal.waste_water_type }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="total_no_machines_value_spe_{{ forloop.counter }}" value="{{ instal.total_no_machines }}" class="form-control">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+
+        <h3 class="mt-4">Detailed Specifications</h3>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped" id="detailedSpecTable">
+                <thead>
+                    <tr>
+                        <th>Select</th>
+                        <th>Sl. No</th>
+                        <th>Specification</th>
+                        <th>Quantity</th>
+                        <th>Unit</th>
+                        <th>Unit Rate</th>
+                        <th>Price (Excluding GST)</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in proposal_data.specification %}
+                    <tr id="detailed_spec_row_{{ forloop.counter }}">
+                        <td>
+                            <input type="hidden" name="select_row_det_{{ forloop.counter }}" value="0">
+                            <input type="checkbox" name="select_row_det_{{ forloop.counter }}" value="1" class="form-check-input" {% if item.is_checked %}checked{% endif %}>
+                        </td>
+                        <td>
+                            <input type="text" name="sl_no_value_det_{{ forloop.counter }}" value="{{ item.sl_no }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="specification_value_det_{{ forloop.counter }}" value="{{ item.specification }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="qnty_value_det_{{ forloop.counter }}" value="{{ item.qnty }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="unit_value_det_{{ forloop.counter }}" value="{{ item.unit }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="unit_rate_value_det_{{ forloop.counter }}" value="{{ item.unit_rate }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="price_exgst_value_det_{{ forloop.counter }}" value="{{ item.price_exgst }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="total_value_det_{{ forloop.counter }}" value="{{ item.total }}" class="form-control">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>            
+            </table>
+        </div>
+        <h3 class="mt-4">Optional Hardware Specifications</h3>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped" id="hardwareSpecTable">
+                <thead>
+                    <tr>
+                        <th>Select</th>
+                        <th>Specification</th>
+                        <th>Quantity</th>
+                        <th>Unit</th>
+                        <th>Unit Rate</th>
+                        <th>Price (Excluding GST)</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for hardware_item in proposal_data.hardware %}
+                    <tr id="hardware_spec_row_{{ forloop.counter }}">
+                        <td>
+                            <input type="hidden" name="select_row_hardware_{{ forloop.counter }}" value="0">
+                            <input type="checkbox" name="select_row_hardware_{{ forloop.counter }}" value="1" class="form-check-input" {% if hardware_item.is_checked %}checked{% endif %}>
+                        </td>
+                        <td>
+                            <input type="text" name="hardware_specification_{{ forloop.counter }}" value="{{ hardware_item.specification }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="hardware_quantity_{{ forloop.counter }}" value="{{ hardware_item.qnty }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="hardware_unit_{{ forloop.counter }}" value="{{ hardware_item.unit }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="hardware_unit_rate_{{ forloop.counter }}" value="{{ hardware_item.unit_rate }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="hardware_price_exgst_{{ forloop.counter }}" value="{{ hardware_item.price_exgst }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="hardware_total_{{ forloop.counter }}" value="{{ hardware_item.total }}" class="form-control">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <h2>Terms and Conditions</h2>
+        <div class="mb-2" id="termsSection">
+            {% for term in proposal_data.terms %}
+            <div class="d-flex align-items-center mb-2" id="term_{{ forloop.counter }}">
+                <input type="hidden" name="terms_check_{{ forloop.counter }}" value="0">
+                <input type="checkbox" 
+                    name="terms_check_{{ forloop.counter }}" 
+                    class="form-check-input me-2" 
+                    value="1" 
+                    {% if term.is_checked %}checked{% endif %}>
+                <input type="text" 
+                    name="terms_{{ forloop.counter }}" 
+                    id="term_{{ forloop.counter }}" 
+                    value="{{ term.text }}" 
+                    class="form-control flex-grow-1">
+            </div>
+            {% endfor %}
+        </div>
+        <h2 class="mt-4">General Terms and Conditions</h2>
+        <ul>
+            {% for general in proposal_data.general_terms_conditions %}
+            <h3><strong>Performance:</strong></h3>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="performance_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if general.performance_checked %}checked{% endif %}>
+                <textarea name="performance_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.performance_text }}</textarea>
+            </li><br>
+            
+            <h3><strong>Flow and Characteristics:</strong></h3>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="flow_characteristics_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if general.flow_characteristics_checked %}checked{% endif %}>
+                <textarea name="flow_characteristics_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.flow_characteristics_text }}</textarea>
+            </li><br>
+            
+            <h3><strong>Trial run and Quality check before dispatch:</strong></h3>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="trial_quality_check_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if general.trial_quality_check_checked %}checked{% endif %}>
+                <textarea name="trial_quality_check_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.trial_quality_check_text }}</textarea>
+            </li><br>
+            
+            <h3><strong>Virtual Completion:</strong></h3>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="virtual_completion_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if general.virtual_completion_checked %}checked{% endif %}>
+                <textarea name="virtual_completion_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.virtual_completion_text }}</textarea>
+            </li><br>
+            
+            <h3><strong>Limitations of Liability:</strong></h3>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="limitation_liability_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if general.limitation_liability_checked %}checked{% endif %}>
+                <textarea name="limitation_liability_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.limitation_liability_text }}</textarea>
+            </li><br>
+            
+            <h3><strong>Force Majeure Clause:</strong></h3>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="force_clause_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if general.force_clause_checked %}checked{% endif %}>
+                <textarea name="force_clause_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.force_clause_text }}</textarea>
+            </li><br>
+            
+            <h3><strong>Additional Works:</strong></h3>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="additional_works_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if general.additional_works_checked %}checked{% endif %}>
+                <textarea name="additional_works_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.additional_works_text }}</textarea>
+            </li><br>
+            
+            <h3><strong>Warranty/Guaranty:</strong></h3>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="warranty_guaranty_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if general.warranty_guaranty_checked %}checked{% endif %}>
+                <textarea name="warranty_guaranty_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.warranty_guaranty_text }}</textarea>
+            </li><br>
+            
+            <h3><strong>Arbitration:</strong></h3>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="arbitration_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if general.arbitration_checked %}checked{% endif %}>
+                <textarea name="arbitration_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.arbitration_text }}</textarea>
+            </li><br>
+            
+            <h3><strong>Validity:</strong></h3>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="validity_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if general.validity_checked %}checked{% endif %}>
+                <textarea name="validity_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.validity_text }}</textarea>
+            </li><br>
+            
+            {% endfor %}
+        </ul>
+        <h2 class="mt-4">Appendix A</h2>
+        <h3>Scope of Work</h3>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped" id="machineSpecTable">
+                <thead>
+                    <tr>
+                        <th>Select</th>
+                        <th>Product Name</th>
+                        <th>Capacity</th>
+                        <th>Total Needed Capacity</th>
+                        <th>Waste Water Type</th>
+                        <th>Total Number of Machines</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for instal in proposal_data.installation %}
+                    <tr id="machine_spec_row_{{ forloop.counter }}">
+                        <td>
+                            <input type="hidden" name="select_row_spe_{{ forloop.counter }}" value="0">
+                            <input type="checkbox" name="select_row_spe_{{ forloop.counter }}" value="1" class="form-check-input" {% if instal.is_checked %}checked{% endif %}>
+                        </td>
+                        <td>
+                            <input type="text" name="product_name_spe_{{ forloop.counter }}" value="{{ instal.product_name }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="capacity_value_spe_{{ forloop.counter }}" value="{{ instal.capacity }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="total_needed_capacity_value_spe_{{ forloop.counter }}" value="{{ instal.total_needed_capacity }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="waste_water_type_value_spe_{{ forloop.counter }}" value="{{ instal.waste_water_type }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="total_no_machines_value_spe_{{ forloop.counter }}" value="{{ instal.total_no_machines }}" class="form-control">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <ul>
+            {% for ape in proposal_data.appendix %}
+            <h3>Inclusions: Supply of Equipment</h3>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="supply_eq_{{ forloop.counter }}" value="1" class="form-check-input me-2" {% if ape.supply_eq_checked %}checked{% endif %}>
+                <textarea name="supply_eq_text_{{ forloop.counter }}" class="form-control" rows="3">{{ ape.supply_eq_text }}</textarea>
+            </li><br>
+
+            <h3><strong>Installation & Commissioning of Equipment:</strong></h3>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="instal_commissioning_{{ forloop.counter }}" value="1" class="form-check-input me-2" {% if ape.instal_commissioning_checked %}checked{% endif %}>
+                <textarea name="instal_commissioning_text_{{ forloop.counter }}" class="form-control" rows="3">{{ ape.instal_commissioning_text }}</textarea>
+            </li><br>
+
+            <h3><strong>Client's Scope - Installation & Commissioning of Equipment:</strong></h3>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="clients_scope_{{ forloop.counter }}" value="1" class="form-check-input me-2" {% if ape.clients_scope_checked %}checked{% endif %}>
+                <textarea name="clients_scope_text_{{ forloop.counter }}" class="form-control" rows="4">{{ ape.clients_scope_text }}</textarea>
+            </li><br>
+
+            <h3><strong>Note:</strong></h3>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="note_{{ forloop.counter }}" value="1" class="form-check-input me-2" {% if ape.note_checked %}checked{% endif %}>
+                <textarea name="note_text_{{ forloop.counter }}" class="form-control" rows="3">{{ ape.note_text }}</textarea>
+            </li><br>
+            {% endfor %}
+        </ul>
+
+        <ul>
+            {% for pr in proposal_data.appendix %}
+            <h3>DRISTI Software Subscription and XHUB</h3>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="dristi_{{ forloop.counter }}" value="1" class="form-check-input me-2" {% if pr.dristi_checked %}checked{% endif %}>
+                <textarea name="dristi_subscription_text_{{ forloop.counter }}" class="form-control" rows="4">{{ pr.dristi_subscription_text }}</textarea>
+            </li>
+            <br>
+
+            <h3>IoT Hardware</h3>
+            <li class="d-flex align-items-center mb-2">
+                <input type="checkbox" name="iot_{{ forloop.counter }}" value="1" class="form-check-input me-2" {% if pr.iot_checked %}checked{% endif %}>
+                <textarea name="iot_hardware_{{ forloop.counter }}" class="form-control" rows="4">{{ pr.iot_hardware_text }}</textarea>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <button type="button" id="ssaveButton" class="btn btn-primary">Save Proposal</button>
+    </div>
+</form>
+<script>
+var enquiryId = {{ proposal_data.enquiry_id }};
+
+$(document).ready(function () {
+    $('#ssaveButton').on('click', function (event) {
+        event.preventDefault();
+        console.log("enquiryId", enquiryId);
+        
+        // Create a FormData object from the form
+        const formElement = document.getElementById('proposal');
+        const formData = new FormData(formElement);
+        
+        $.ajax({
+            url: "{% url 'edit_quotation_pr' enquiry_id=proposal_data.enquiry_id quotation_number=proposal_data.quotation_number %}",  // Update URL to your view
+            type: "POST",
+            data: formData, // Send the form data
+            processData: false,  // Don't process the data as a query string
+            contentType: false,  // Don't set content type to application/x-www-form-urlencoded
+            headers: {
+                "X-CSRFToken": getCSRFToken(),
+                "X-Requested-With": "XMLHttpRequest", // Standard header for AJAX
+            },
+            success: function (response) {
+                // Handle successful response
+                console.log("Proposal saved successfully:", response);
+                alert("Proposal Updated successfully!");
+                window.location.href = `/riva/manage_quotation/${enquiryId}/`;
+            },
+            error: function (xhr, status, error) {
+                // Handle error response
+                console.error("Error saving proposal:", error);
+                alert("An error occurred while saving the proposal.");
+            }
+        });
+    });
+});
+// CSRF token setup for AJAX requests
+function getCSRFToken() {
+    const name = 'csrftoken';
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.startsWith(name + '=')) {
+            return cookie.substring(name.length + 1);
+        }
+            }
+    return null;  // Return null if the CSRF token isn't found
+}
+</script>
+{% endblock %}
+

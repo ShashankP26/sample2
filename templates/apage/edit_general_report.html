@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-5">
+  <h2>Edit General Report</h2>
+  <div class="row row-cards">
+    <div class="col-12">
+      <form action="{% url 'edit_general_report' report.id %}" method="POST" class="card" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="card-body">
+          <!-- Site Selection and Date of Visit -->
+          <div class="mb-3 row g-3">
+            <div class="col-md-6">
+              <label for="site" class="form-label">SITE</label>
+              <select id="site" name="site" class="form-select is-valid" required>
+                <option value="" disabled>Select a site</option>
+                {% for site in sites %}
+                <option value="{{ site.id }}" {% if site.id == report.site.id %}selected{% endif %}>{{ site.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+<div class="col-md-6">
+    <label for="date-of-visit" class="form-label">DATE OF VISIT</label>
+    <input 
+        type="date" 
+        id="date-of-visit" 
+        name="date_of_visit" 
+        class="form-control" 
+        value="{{ report.date_of_visit|date:'Y-m-d' }}" 
+        required>
+</div>
+
+          </div>
+
+          <!-- Points Section -->
+          <div class="mb-3">
+            <label class="form-label">POINTS</label>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <input type="text" class="form-control mb-2" name="point1" value="{{ report.point1 }}" placeholder="Point 1">
+              </div>
+              <div class="col-md-6">
+                <input type="text" class="form-control mb-2" name="point2" value="{{ report.point2 }}" placeholder="Point 2">
+              </div>
+              <div class="col-md-6">
+                <input type="text" class="form-control mb-2" name="point3" value="{{ report.point3 }}" placeholder="Point 3">
+              </div>
+              <div class="col-md-6">
+                <input type="text" class="form-control mb-2" name="point4" value="{{ report.point4 }}" placeholder="Point 4">
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes Section -->
+          <div class="mb-3">
+            <label for="notes" class="form-label">NOTES</label>
+            <textarea id="notes" name="notes" class="form-control" rows="3">{{ report.notes }}</textarea>
+          </div>
+
+          <!-- Attachment Section -->
+          <div class="mb-3">
+            <label for="attachment" class="form-label">ATTACHMENT</label>
+            <input type="file" id="attachment" name="attachment" class="form-control">
+            {% if report.attachment %}
+            <p class="mt-2">Current: <a href="{{ report.attachment.url }}" target="_blank">View Attachment</a></p>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Submit and Reset Buttons -->
+        <div class="card-footer text-end">
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+          <a href="{% url 'generalreport' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

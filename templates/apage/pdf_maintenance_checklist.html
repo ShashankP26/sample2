@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maintenance Checklist</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Maintenance Checklist</h1>
+    <table>
+        <tr>
+            <th>Inspector</th>
+            <td>{{ checklist.inspector_name }}</td>
+        </tr>
+        <tr>
+            <th>Date</th>
+            <td>{{ checklist.date }}</td>
+        </tr>
+        <tr>
+            <th>Machine</th>
+            <td>{{ checklist.machine.name }}</td>
+        </tr>
+        <tr>
+            <th>Visit Date</th>
+            <td>{{ checklist.visit_date }}</td>
+        </tr>
+        <tr>
+            <th>Notes</th>
+            <td>{{ checklist.observations }}</td>
+        </tr>
+        <tr>
+            <th>Attachments</th>
+            <td>
+                {% if checklist.attachments.exists %}
+                    <ul>
+                        {% for attachment in checklist.attachments.all %}
+                        <li><a href="{{ attachment.file.url }}" target="_blank">{{ attachment.file.name }}</a></li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    No Attachments
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

@@ -1,5 +1,9 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+
+from website.fcm import send_push_fcm
+
+
 from .models import CashVoucher
 
 from django.db.models import F
@@ -38,3 +42,23 @@ def update_expense_on_approval(sender, instance, **kwargs):
 #             user=instance.created_by,
 #             message=f"Your cash voucher for {instance.item_name} has been approved and paid."
 #         )
+
+
+
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+from .models import Notification
+from .fcm import send_push_fcm
+
+
+@receiver(post_save, sender=Notification)
+def send_push_on_notification(sender, instance, created, **kwargs):
+    if created:
+        send_push_fcm(
+            instance.user,
+            instance.title,
+            instance.message
+        )
+

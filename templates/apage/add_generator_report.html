@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Add Generator Report</h3>
+                </div>
+                <div class="card-body">
+                    <form id="addGeneratorReportForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="date" class="form-label">Date:</label>
+                            <input type="date" id="date" name="date" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="start_time" class="form-label">Start Time:</label>
+                            <input type="time" id="start_time" name="start_time" class="form-control" required>
+                        </div>
+
+                        <div class="card-footer">
+                            <a href="{% url 'generator_report' %}" class="btn btn-success">Back</a>
+                            <button type="submit" class="btn btn-primary float-end">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $("#addGeneratorReportForm").submit(function (e) {
+        e.preventDefault();
+
+        let formData = {
+            date: $("#date").val(),
+            start_time: $("#start_time").val(),
+            csrfmiddlewaretoken: "{{ csrf_token }}"
+        };
+
+        $.ajax({
+            type: "POST",
+            url: "{% url 'add_generator_report' %}",
+            data: formData,
+            success: function (response) {
+                alert("✅ Timings Saved successfully!");
+                window.location.href = "{% url 'generator_report' %}";
+            },
+            error: function (xhr) {
+                alert("Error: " + xhr.responseText);
+            }
+        });
+    });
+</script>
+{% endblock %}

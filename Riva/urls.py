@@ -29,14 +29,18 @@ urlpatterns = [
     path('confirmedview/<int:enquiry_id>/<str:quotation_no>/details/', views.confirmed_view, name='confirmed_view'),
     path('confirmed/<int:enquiry_id>/<str:quotation_no>/', views.add_confirmed_order_followup, name='add_confirmed_order_followup'),
     path('', LoginView.as_view(template_name='app/login.html'), name='login'), 
-    path('login/', LoginView.as_view(template_name='app/login.html'), name='login'), 
+    path('login/',LoginView.as_view(
+    template_name='app/login.html',
+    redirect_authenticated_user=True,
+    extra_context={'debug': 'login-view-hit'}
+), name='login'),
     path('logout/', LogoutView.as_view(template_name='app/logout.html'), name='logout'),
 
     path('create-commercial-quote/<int:enquiry_id>/', views.create_commercial_quote, name='create_commercial_quote'),
     path('create-techno-commercial-quote/<int:enquiry_id>/', views.create_techno_commercial_quote, name='create_techno_commercial_quote'),
 
     path('quotation/preview/<str:quotation_no>/', views.preview_quotation, name='preview_quotation'),
-
+    path('quote/edit/<str:quotation_no>/', views.Edit_commercial_quote, name='Edit_commercial'),
     path('get_bank_details/<int:bank_id>/', views.get_bank_details, name='get_bank_details'),
     path('dashboard/', views.dashboard, name='crm_dashboard'),
     #  path('live_search/', views.live_search, name='live_search'),
@@ -54,6 +58,7 @@ urlpatterns = [
     path('product-list/<int:enquiry_id>/', views.product_list, name='product_list'),
 
     path("saved-quotations/", views.saved_quotations, name="saved_quotations"),
+    
     # path('saved-quotations/preview/<str:quotation_number>/', views.preview, name='preview'),
 #######################################################################################################################################
     path('proposal/<int:enquiry_id>/<str:product_id>/', views.proposal_details, name='proposal_details'),
@@ -110,6 +115,14 @@ urlpatterns = [
     path('create-hidrec-wash/<int:enquiry_id>/', views.hidrec_wash, name='Hidrec_wash'),
     path('hidrec-wash/preview/<str:quotation_no>/', views.hidrecwash_preview, name='wash_preview'),
     path('hid-wash/edit/<str:quotation_no>/<int:enquiry_id>', views.edit_hidrecwash, name='edit_wash'),
+
+
+
+
+
+
+
+
 
     
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-3 mt-3">
+    <h2 class="text-center"><i>Edit Direct Pay</i></h2>
+    <div class="row mt-1">
+        <div class="col text-end">
+            <strong>Date:</strong> {{ current_date }}
+        </div>
+    </div>
+</div>
+
+<form id="directPayForm" action="{% url 'directpay_form_edit' dp.id %}" method="post" enctype="multipart/form-data" style="margin: 10px; padding: 10px;">
+    {% csrf_token %}
+
+    <div class="row">
+        <div class="col-md-6">
+            <!-- Item Type -->
+            <div class="mb-3">
+                <div class="form-label">Select an item type<span class="required">*</span></div>
+                <select class="form-select" name="item_type" id="item_type">
+                    <option value="" disabled>Select Item Type</option>
+                    <option value="fright_transportation" {% if dp.item_type == 'fright_transportation' %}selected{% endif %}>Fright/Transportation</option>
+                    <option value="food_grocery" {% if dp.item_type == 'food_grocery' %}selected{% endif %}>Food/Grocery</option>
+                    <option value="fuel_oil" {% if dp.item_type == 'fuel_oil' %}selected{% endif %}>Fuel and Oil</option>
+                    <option value="others" {% if dp.item_type == 'others' %}selected{% endif %}>Others</option>
+                    <option value="vendor" {% if dp.item_type == 'vendor' %}selected{% endif %}>Vendor</option>
+                    <option value="reimbursement" {% if dp.item_type == 'reimbursement' %}selected{% endif %}>Reimbursement</option>
+                    <option value="site_services" {% if dp.item_type == 'site_services' %}selected{% endif %}>Site Services</option>
+                    <option value="advances" {% if dp.item_type == 'advances' %}selected{% endif %}>Advances</option>
+                    <option value="travelling" {% if dp.item_type == 'travelling' %}selected{% endif %}>Travelling</option>
+                    <option value="electricity_bill" {% if dp.item_type == 'electricity_bill' %}selected{% endif %}>Electricity Bill</option>
+                    <option value="internet_bill" {% if dp.item_type == 'internet_bill' %}selected{% endif %}>Internet Bill</option>
+                    <option value="postage_telegram" {% if dp.item_type == 'postage_telegram' %}selected{% endif %}>Postage and Telegram</option>
+                    <option value="machine_repair" {% if dp.item_type == 'machine_repair' %}selected{% endif %}>Machine Repair and Maintenance - Machinery</option>
+                    <option value="conveyance" {% if dp.item_type == 'conveyance' %}selected{% endif %}>Conveyance</option>
+                    <option value="stationary_printing" {% if dp.item_type == 'stationary_printing' %}selected{% endif %}>Stationary and Printing</option>
+                    <option value="hospitality" {% if dp.item_type == 'hospitality' %}selected{% endif %}>Hospitality</option>
+                    <option value="medicine" {% if dp.item_type == 'medicine' %}selected{% endif %}>Medicine</option>
+                </select>
+            </div>
+
+            <!-- Item Name -->
+            <div class="mb-3">
+                <label class="form-label">Item Name / Remarks<span class="required">*</span></label>
+                <input type="text" class="form-control" name="item_name" placeholder="Enter item name" value="{{ dp.item_name }}" required>
+            </div>
+
+            <!-- Payment Category -->
+            <div class="mb-3">
+                <label class="form-label" for="selectOption">Payment Category</label>
+                <select class="form-select" id="selectOption" name="transaction_option" onchange="updateFormFields()">
+                    <option value="" disabled>Select an option</option>
+                    <option value="bill" {% if dp.payment_category == 'bill' %}selected{% endif %}>Bill</option>
+                    <option value="voucher" {% if dp.payment_category == 'voucher' %}selected{% endif %}>Voucher</option>
+                    <option value="gst" {% if dp.payment_category == 'gst' %}selected{% endif %}>GST</option>
+                </select>
+            </div>
+
+            <!-- Bill Upload -->
+            <div class="mb-3" id="billUpload" style="display: {% if dp.payment_category == 'bill' %}block{% else %}none{% endif %};">
+                <label class="form-label">Upload Bill<span class="required">*</span></label>
+                {% if dp.bill_file %}
+                    <p>Current: <a href="{{ dp.bill_file.url }}" target="_blank">View</a></p>
+                {% endif %}
+                <input type="file" class="form-control" name="bill_photo">
+            </div>
+
+            <!-- GST Upload -->
+            <div class="mb-3" id="gstUpload" style="display: {% if dp.payment_category == 'gst' %}block{% else %}none{% endif %};">
+                <label class="form-label">Upload GST<span class="required">*</span></label>
+                {% if dp.gst_file %}
+                    <p>Current: <a href="{{ dp.gst_file.url }}" target="_blank">View</a></p>
+                {% endif %}
+                <input type="file" class="form-control" name="gst_photo">
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <!-- Transaction Category -->
+            <div class="mb-3">
+                <label class="form-label">Transaction Category<span class="required">*</span></label>
+                <select class="form-select" name="transaction_category" required>
+                    <option value="external" {% if dp.transaction_category == 'external' %}selected{% endif %}>External</option>
+                </select>
+            </div>
+
+            <!-- External Name -->
+            <div class="mb-3">
+                <label class="form-label">External Name<span class="required">*</span></label>
+                <input type="text" class="form-control" name="external_name" placeholder="Enter external name" value="{{ dp.external_name }}" required>
+            </div>
+
+            <!-- Total Amount -->
+            <div class="mb-3">
+                <label class="form-label">Total Amount<span class="required">*</span></label>
+                <input type="number" step="0.01" min="0" class="form-control" name="total_amount" placeholder="Enter Amount" value="{{ dp.total_amount }}" required>
+            </div>
+
+            <!-- Payment Mode -->
+            <div class="mb-3">
+                <label class="form-label" for="paymentMode">Payment Mode<span class="required">*</span></label>
+                <select class="form-select" id="paymentMode" name="payment_mode" >
+                    <option value="" disabled>Select Payment Mode</option>
+                    <option value="cash" {% if dp.payment_mode == 'cash' %}selected{% endif %}>Cash</option>
+                    <option value="upi" {% if dp.payment_mode == 'upi' %}selected{% endif %}>UPI</option>
+                    <option value="net_banking" {% if dp.payment_mode == 'net_banking' %}selected{% endif %}>Net Banking</option>
+                    <option value="credit" {% if dp.payment_mode == 'credit' %}selected{% endif %}>Credit</option>
+                    <option value="debit" {% if dp.payment_mode == 'debit' %}selected{% endif %}>Debit</option>
+                </select>
+            </div>
+
+            <!-- Proof Photo -->
+            <div class="mb-3">
+                <label class="form-label">
+                    Upload Proof Photo<span class="required">*</span>
+                </label>
+                {% if dp.proof_photo %}
+                    <p>Current: <a href="{{ dp.proof_photo.url }}" target="_blank">View</a></p>
+                {% endif %}
+                <input type="file" class="form-control" name="proof_photo">
+            </div>
+
+            <!-- Transaction Date -->
+            <div class="mb-3">
+                <label class="form-label">Transaction Date<span class="required">*</span></label>
+                <input type="date" class="form-control" name="transaction_date" value="{{ dp.transaction_date|date:'Y-m-d' }}" required>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="mb-3 text-center">
+        <button type="submit" class="btn btn-primary">Update</button>
+        <a href="{% url 'directpay_preview' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>
+
+<style>
+    .required {
+        color: red;
+        font-weight: bold;
+    }
+</style>
+
+<script>
+function updateFormFields() {
+    const selected = document.getElementById("selectOption").value;
+
+    document.getElementById("billUpload").style.display = "none";
+    document.getElementById("gstUpload").style.display = "none";
+
+    if (selected === "bill") {
+        document.getElementById("billUpload").style.display = "block";
+    } else if (selected === "gst") {
+        document.getElementById("gstUpload").style.display = "block";
+    }
+}
+</script>
+{% endblock content %}

@@ -8,10 +8,3 @@ class WebsiteConfig(AppConfig):
     def ready(self):
         import website.signals
 
-from django.apps import AppConfig
-
-class YourAppConfig(AppConfig):
-    name = 'website'
-
-    def ready(self):
-        import website.signals  # Make sure to import the signals module

@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+    <h2 class="mb-4">Generator Reports</h2>
+
+    <div class="mb-3">
+        <button id="addReportBtn" class="btn btn-primary">Add Report</button>
+    </div>
+
+
+    <div class="d-flex justify-content-between mb-3">
+        <input type="text" id="search" class="form-control w-25" placeholder="Search by Date">
+        <button id="exportCSV" class="btn btn-success">Export to CSV</button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Total Time</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="reportTable">
+                {% for report in reports %}
+                <tr>
+                    <td>{{ report.date }}</td>
+                    <td>{{ report.start_time }}</td>
+                    <td>{{ report.end_time|default:"--" }}</td>
+                    <td>{{ report.total_time|default:"--" }}</td>
+                    <td>
+                        {% if not report.end_time %}
+                        <a href="{% url 'edit_generator_report' report.id %}" class="btn btn-warning btn">Update Time</a>
+                        {% else %}
+                        <span class="text-success">Completed</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center">No reports found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    document.getElementById("search").addEventListener("input", function () {
+        let searchValue = this.value.toLowerCase();
+        let rows = document.querySelectorAll("#reportTable tr");
+
+        rows.forEach(row => {
+            let date = row.cells[0].textContent.toLowerCase();
+            row.style.display = date.includes(searchValue) ? "" : "none";
+        });
+    });
+
+    document.getElementById("exportCSV").addEventListener("click", function () {
+        let csvContent = "data:text/csv;charset=utf-8,Date,In Time,Out Time,Total Time\n";
+        document.querySelectorAll("#reportTable tr").forEach(row => {
+            let cols = row.querySelectorAll("td");
+            if (cols.length > 0) {
+                let data = [...cols].map(col => col.textContent.trim()).join(",");
+                csvContent += data + "\n";
+            }
+        });
+
+        let encodedUri = encodeURI(csvContent);
+        let link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "generator_reports.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+
+document.getElementById("addReportBtn").addEventListener("click", function () {
+    let reportTable = document.getElementById("reportTable");
+    let rows = reportTable.getElementsByTagName("tr");
+
+    // If there are no data rows (only header is present), allow adding a new report
+    if (rows.length === 0) {
+        window.location.href = "{% url 'add_generator_report' %}"; // Redirect to Add Report
+        return;
+    }
+
+    let lastRow = reportTable.querySelector("tr:last-child"); // Get the last row of the table
+
+    // Ensure the last row is valid and has at least 3 columns (avoid errors)
+    if (lastRow && lastRow.cells.length >= 3) {
+        let endTime = lastRow.cells[2].textContent.trim(); // Get the End Time column
+
+        if (!endTime || endTime === "--") {
+            alert("You must enter an End Time for the last report before adding a new one.");
+            return;
+        }
+    }
+
+    window.location.href = "{% url 'add_generator_report' %}"; // Redirect to Add Report
+});
+
+
+</script>
+
+
+{% endblock content %}

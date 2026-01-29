@@ -2,7 +2,8 @@ import json
 import shutil
 from django.shortcuts import render,redirect
 from django.http import JsonResponse,HttpResponse
-from .models import ConfirmedOrderFollowUp, Enquiry, Hidrec_wash,Products,Executive,FileUploadModel, quotation, ConfirmedOrder,FollowUp,companydetails
+from Riva.models import ConfirmedOrderFollowUp, FollowUp, Enquiry, ConfirmedHidrecWash
+from .models import  Enquiry, Hidrec_wash,Products,Executive,FileUploadModel, quotation, ConfirmedOrder,FollowUp,companydetails
 from .forms import ConfirmedOrderForm
 from django.utils.dateparse import parse_date
 from django.shortcuts import get_object_or_404
@@ -40,70 +41,109 @@ def Home(request):
     return render(request, 'base.html')
 
 
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.db.models import Q, ForeignKey, Count
+from django.contrib.auth.models import User
+from django.shortcuts import render
+from .models import Enquiry
+
+@login_required
 def enq_home(request):
     current_user = request.user
-    selected_user_id = request.GET.get('user')
-    selected_user = None
 
+    # ---------------------------
+    # GET PARAMS
+    # ---------------------------
+    selected_user_id = request.GET.get("user", "")
+    search_query = request.GET.get("search", "")
+    sort = request.GET.get("sort", "-id")
+
+    # ---------------------------
+    # BASE QUERY
+    # ---------------------------
+    base_filter = Q(is_confirmed=False, is_lost=False) | Q(is_reverted=True)
+
+    if current_user.is_staff or current_user.is_superuser:
+        enquiries = Enquiry.objects.filter(base_filter)
+    else:
+        enquiries = Enquiry.objects.filter(base_filter).filter(
+            Q(created_by=current_user) |
+            Q(executive__name=current_user.username)
+        )
+
+    # ---------------------------
+    # USER FILTER
+    # ---------------------------
     if selected_user_id:
-        selected_user = User.objects.filter(id=selected_user_id).first()
-        # Managers/superusers see all enquiries (non-confirmed, non-lost, or reverted)
-        enquiries = Enquiry.objects.filter(
-            Q(is_confirmed=False, is_lost=False) | Q(is_reverted=True)
-        )
-    else:
-        # Other users see their own created or assigned enquiries (non-confirmed, non-lost, or reverted)
-        enquiries = Enquiry.objects.filter(
-            Q(is_confirmed=False, is_lost=False) | Q(is_reverted=True)
-        ).filter(
-            Q(created_by=current_user) | Q(executive__name=current_user.username)
-        )
+        enquiries = enquiries.filter(created_by_id=selected_user_id)
 
-    # Global search functionality
-    search_query = request.GET.get('search', '')
-
+    # ---------------------------
+    # GLOBAL SEARCH
+    # ---------------------------
     if search_query:
-        global_filter = Q()
-
+        search_q = Q()
         for field in Enquiry._meta.fields:
-            field_name = field.name
-
             if isinstance(field, ForeignKey):
-                related_model = field.related_model
-                related_fields = [f.name for f in related_model._meta.fields if f.name != 'id']
-                for related_field in related_fields:
-                    global_filter |= Q(**{f"{field_name}__{related_field}__icontains": search_query})
-
-            elif field.choices:
-                for value, display in dict(field.choices).items():
-                    if search_query.lower() in display.lower():
-                        global_filter |= Q(**{f"{field_name}": value})
-
+                search_q |= Q(**{f"{field.name}__name__icontains": search_query})
             else:
-                global_filter |= Q(**{f"{field_name}__icontains": search_query})
+                search_q |= Q(**{f"{field.name}__icontains": search_query})
+        enquiries = enquiries.filter(search_q)
 
-        # Apply the global filter
-        enquiries = enquiries.filter(global_filter).order_by('-id')
-    else:
-        enquiries = enquiries.order_by('-id')
+    # ---------------------------
+    # SORTING (SAFE)
+    # ---------------------------
+    allowed_sorts = [
+        "status", "-status",
+        "created_at", "-created_at",
+        "companyname", "-companyname",
+        "id", "-id",
+    ]
+    if sort not in allowed_sorts:
+        sort = "-id"
 
-    # Pagination setup
-    paginator = Paginator(enquiries, 10)  # 10 items per page
-    page_number = request.GET.get('page')
+    enquiries = enquiries.order_by(sort)
+
+    # ---------------------------
+    # OPTIMIZATION
+    # ---------------------------
+    enquiries = enquiries.prefetch_related("files", "followups")
+
+    # ---------------------------
+    # PAGINATION
+    # ---------------------------
+    paginator = Paginator(enquiries, 10)
+    page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    # Add a sequence number for display in the template
-    start_sequence_number = (page_obj.number - 1) * paginator.per_page + 1
-    for index, enquiry in enumerate(page_obj, start=start_sequence_number):
-        enquiry.sequence_number = index
+    for enquiry in page_obj:
+        enquiry.followups_list = list(
+            enquiry.followups.order_by("-fodate", "-fotime")
+        )
 
-    # Render the response
-    return render(request, 'xp2/enqhome.html', {
-        'page_obj': page_obj,
-        'search_query': search_query
-    })
+    # ---------------------------
+    # USERS FOR DROPDOWN (FIXED)
+    # ---------------------------
+    users_list = (
+        User.objects
+        .filter(enquiry__isnull=False)
+        .annotate(enquiry_count=Count("enquiry"))
+        .distinct()
+        .order_by("first_name", "username")
+    )
 
+    # ---------------------------
+    # CONTEXT
+    # ---------------------------
+    context = {
+        "page_obj": page_obj,
+        "users_list": users_list,
+        "selected_user_id": int(selected_user_id) if selected_user_id else "",
+        "search_query": search_query,
+        "current_sort": sort,
+    }
 
+    return render(request, "xp2/enqhome.html", context)
 
    
 
@@ -143,19 +183,19 @@ def add_data(request):
 
         # Create and save the enquiry record
         enquiry = Enquiry.objects.create(
-            companyname=company_name,
-            customername=customer_name,
-            refrence=reference_name,
-            email=email,
-            contact=contact,
-            location=location,
-            status=status,
-            products=product,
-            subproduct=subproduct,
-            closuredate=closure_date,
-            executive=executive,
-            remarks=remarks,
-            created_by=request.user,  # Associate with the logged-in user
+            companyname=company_name or None,
+            customername=customer_name or None,
+            refrence=reference_name or None,
+            email=email or None,
+            contact=contact or None,
+            location=location or None,
+            status=status or None,
+            products=product if product_id else None,
+            subproduct=subproduct or None,
+            closuredate=closure_date or None,
+            executive=executive if executive_id else None,
+            remarks=remarks or None,
+            created_by=request.user,
         )
 
         for file in files:
@@ -234,44 +274,47 @@ def enquiry_details(request, id):
 
     
 
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .models import Enquiry, FileUploadModel
 from .forms import EnquiryForm
 
-def edit_enquiry(request, enquiry_id): 
+
+@login_required
+def edit_enquiry(request, enquiry_id):
     enquiry = get_object_or_404(Enquiry, id=enquiry_id)
-    
+
     if request.method == "POST":
-        form = EnquiryForm(request.POST, request.FILES, instance=enquiry)
+        form = EnquiryForm(request.POST, instance=enquiry)
 
         if form.is_valid():
-            # Access the 'products' field from form.cleaned_data after validation
-            products = form.cleaned_data.get('products')  
-            print(f"Products: {products}")
-
-            # Save the changes to the database
-            form.save()
-
-            # Handle file uploads (if any)
-            files = request.FILES.getlist("attachment[]")  # Get files from the request
-            for file in files:
-                # Create a FileUploadModel instance for each uploaded file
-                file_upload = FileUploadModel.objects.create(file=file, name=file.name)
-                enquiry.files.add(file_upload)  # Add the file to the Many-to-Many relationship
-
-            # Save the enquiry after adding the files
+            enquiry = form.save(commit=False)
             enquiry.save()
 
-            # Display a success message and redirect
-            messages.success(request, "Enquiry updated successfully!")
-            return redirect('enquries')  # Redirect to enquiry homepage
-        else:
-            # Display error message if form is invalid
-            messages.error(request, "There was an error updating the enquiry. Please fix the errors below.")
-            print(form.errors)  # Log the errors for debugging
+            # 🔴 REMOVE FILES (only checked ones)
+            remove_file_ids = request.POST.getlist("remove_files")
+            if remove_file_ids:
+                enquiry.files.remove(*remove_file_ids)
+
+            # 🟢 ADD NEW FILES (keep old ones)
+            for uploaded_file in request.FILES.getlist("attachment[]"):
+                file_obj = FileUploadModel.objects.create(
+                    file=uploaded_file,
+                    name=uploaded_file.name
+                )
+                enquiry.files.add(file_obj)
+
+            messages.success(request, "Enquiry updated successfully.")
+            return redirect("enquiry_details", id=enquiry.id)
+
     else:
-        # Display the form for GET request
         form = EnquiryForm(instance=enquiry)
 
-    return render(request, 'xp2/edit_enquiry.html', {'form': form, 'enquiry_id': enquiry_id})
+    return render(request, "xp2/edit_enquiry.html", {
+        "form": form,
+        "enquiry": enquiry
+    })
 
 
 
@@ -315,7 +358,7 @@ def lost_orders_view(request):
             global_filter |= Q(**{f"{field}__icontains": search_query})
 
     # Determine the queryset based on user type
-    if curent_user.is_staff or current_user.is_superuser:
+    if current_user.is_staff or current_user.is_superuser:
         # Superusers can view all lost enquiries and relegated confirmed_enquiry records
         lost_enquiries = Enquiry.objects.filter(is_lost=True).filter(global_filter)
         relegated_enquiries = Enquiry.objects.filter(is_relegated=True).filter(global_filter)
@@ -634,72 +677,68 @@ def quotation_details(request, quotation_id):
 
 
 
-from .models import confirmed_enquiry
+import os
+import json
+from collections import defaultdict
+from django.shortcuts import render, get_object_or_404, redirect
+from django.conf import settings
+from .models import (
+    Enquiry, CommercialQuote, confirmed_enquiry, ConfirmedHidrecWash
+)
 
 def confirm_order(request, enquiry_id):
     enquiry = get_object_or_404(Enquiry, id=enquiry_id)
+    
+    # Fetch commercial quotations for this enquiry
     quotations = CommercialQuote.objects.filter(enquiry_id=enquiry_id).order_by('-id')
-
-    # Get all confirmed quotations for this enquiry
-    confirmed_quotations = confirmed_enquiry.objects.filter(
-        enquiry=enquiry
-    ).values_list('quotation', flat=True)
-
-    # Initialize file paths for 'stored_data' and 'proposal'
+    
+    # Fetch confirmed quotations to disable already confirmed ones
+    confirmed_qs = confirmed_enquiry.objects.filter(enquiry=enquiry)
+    confirmed_quotations = set(confirmed_qs.values_list('quotation', flat=True))
+    
+    # Paths for stored data and proposals
     base_dir = settings.BASE_DIR
     stored_data_path = os.path.join(base_dir, 'stored_data')
     proposal_path = os.path.join(base_dir, 'proposal')
-
-    # Prepare data for stored_data and proposal
-    all_stored_files = []
-    all_proposal_files = []
+    
     stored_data = defaultdict(list)
     proposal_data = defaultdict(list)
-
-    # Load 'stored_data'
-    stored_data_directories = os.listdir(stored_data_path)
-    for directory in stored_data_directories:
-        dir_path = os.path.join(stored_data_path, directory)
-        if os.path.isdir(dir_path) and directory == str(enquiry_id):
-            json_files = os.listdir(dir_path)
-            for json_file in json_files:
-                file_path = os.path.join(dir_path, json_file)
-                all_stored_files.append(file_path)
-
-    # Load 'proposal'
-    proposal_directories = os.listdir(proposal_path)
-    for directory in proposal_directories:
-        dir_path = os.path.join(proposal_path, directory)
-        if os.path.isdir(dir_path) and directory == str(enquiry_id):
-            json_files = os.listdir(dir_path)
-            for json_file in json_files:
-                file_path = os.path.join(dir_path, json_file)
-                all_proposal_files.append(file_path)
-
-    # Load data for stored_data
-    for file_path in all_stored_files:
-        if os.path.exists(file_path):
-            with open(file_path, 'r') as file:
-                try:
-                    data = json.load(file)
-                    if isinstance(data, dict) and 'enquiry_id' in data:
-                        if str(data['enquiry_id']) == str(enquiry_id):
-                            stored_data[os.path.basename(file_path)].append(data)
-                except json.JSONDecodeError:
-                    stored_data[os.path.basename(file_path)].append({'error': 'Invalid JSON file'})
-
-    # Load data for proposal_data
-    for file_path in all_proposal_files:
-        if os.path.exists(file_path):
-            with open(file_path, 'r') as file:
-                try:
-                    data = json.load(file)
-                    if isinstance(data, dict) and 'enquiry_id' in data:
-                        if str(data['enquiry_id']) == str(enquiry_id):
-                            proposal_data[os.path.basename(file_path)].append(data)
-                except json.JSONDecodeError:
-                    proposal_data[os.path.basename(file_path)].append({'error': 'Invalid JSON file'})
-
+    
+    # Load JSON data from stored_data directory for this enquiry
+    if os.path.exists(stored_data_path):
+        for directory in os.listdir(stored_data_path):
+            dir_path = os.path.join(stored_data_path, directory)
+            if os.path.isdir(dir_path) and directory == str(enquiry_id):
+                for json_file in os.listdir(dir_path):
+                    file_path = os.path.join(dir_path, json_file)
+                    if os.path.exists(file_path):
+                        with open(file_path, 'r') as f:
+                            try:
+                                data = json.load(f)
+                                if isinstance(data, dict) and str(data.get('enquiry_id')) == str(enquiry_id):
+                                    stored_data[os.path.basename(file_path)].append(data)
+                            except json.JSONDecodeError:
+                                stored_data[os.path.basename(file_path)].append({'error': 'Invalid JSON file'})
+    
+    # Load JSON data from proposal directory for this enquiry
+    if os.path.exists(proposal_path):
+        for directory in os.listdir(proposal_path):
+            dir_path = os.path.join(proposal_path, directory)
+            if os.path.isdir(dir_path) and directory == str(enquiry_id):
+                for json_file in os.listdir(dir_path):
+                    file_path = os.path.join(dir_path, json_file)
+                    if os.path.exists(file_path):
+                        with open(file_path, 'r') as f:
+                            try:
+                                data = json.load(f)
+                                if isinstance(data, dict) and str(data.get('enquiry_id')) == str(enquiry_id):
+                                    proposal_data[os.path.basename(file_path)].append(data)
+                            except json.JSONDecodeError:
+                                proposal_data[os.path.basename(file_path)].append({'error': 'Invalid JSON file'})
+    
+    # Fetch Hydric Wash quotations for this enquiry 
+    hidrec_quotations = ConfirmedHidrecWash.objects.filter(enquiry_id=enquiry_id)
+    
     if request.method == 'POST':
         selected_quotation_no = request.POST.get('quotation_selection')
         if not selected_quotation_no:
@@ -709,32 +748,42 @@ def confirm_order(request, enquiry_id):
                 'stored_data': dict(stored_data),
                 'proposal_data': dict(proposal_data),
                 'confirmed_quotations': confirmed_quotations,
-                'error': 'Please select at least one quotation.'
+                'hidrec_quotations': hidrec_quotations,
+                'error': 'Please select at least one quotation.',
             })
 
-        # Create a new confirmed entry for the same enquiry with the selected quotation
+        # Save the confirmed quotation
         confirmed_entry = confirmed_enquiry.objects.create(
             created_by=request.user,
             enquiry=enquiry,
-            quotation=selected_quotation_no
+            quotation=selected_quotation_no,
         )
         confirmed_entry.save()
 
+        # Mark the enquiry as confirmed (reset reverted flag optionally)
         enquiry.is_confirmed = True
-        enquiry.is_reverted = False  # Optional: Ensure it’s not reverted
+        enquiry.is_reverted = False
         enquiry.save()
 
         return redirect('confirmed_orders')
 
-    return render(request, 'xp2/confirm_order.html', {
+    context = {
         'enquiry': enquiry,
         'quotations': quotations,
         'stored_data': dict(stored_data),
         'proposal_data': dict(proposal_data),
-        'confirmed_quotations': confirmed_quotations
-    })
+        'confirmed_quotations': confirmed_quotations,
+        'hidrec_quotations': hidrec_quotations,
+    }
+    return render(request, 'xp2/confirm_order.html', context)
 
 
+
+
+from django.contrib.auth.models import User
+from django.db.models import Q
+from django.shortcuts import render, redirect
+from .models import Enquiry
 
 def confirmed_orders(request):
     current_user = request.user
@@ -744,63 +793,62 @@ def confirmed_orders(request):
     if selected_user_id:
         selected_user = User.objects.filter(id=selected_user_id).first()
 
-    # Retrieve confirmed enquiries based on user type
-    if curent_user.is_staff or current_user.is_superuser:
-        confirmed_orders = Enquiry.objects.filter(is_confirmed=True).prefetch_related('confirmed_enquiry_set')
-    else:
-        confirmed_orders = Enquiry.objects.filter(is_confirmed=True, created_by=current_user).prefetch_related('confirmed_enquiry_set')
+    # Base queryset for confirmed enquiries
+    confirmed_filter = Q(is_confirmed=True)
 
-    # Handle search
+    if current_user.is_staff or current_user.is_superuser:
+        # Admin/staff can view all confirmed orders
+        confirmed_orders = Enquiry.objects.filter(confirmed_filter).prefetch_related('confirmed_enquiry_set')
+    else:
+        # Regular users can view only their own confirmed orders
+        confirmed_orders = Enquiry.objects.filter(
+            confirmed_filter,
+            Q(created_by=current_user) | Q(executive__name=current_user.username)  # if executive is ForeignKey
+            # Q(created_by=current_user) | Q(executive=current_user.username)  # if executive is CharField
+        ).prefetch_related('confirmed_enquiry_set')
+
+    # Global search
     search_query = request.GET.get('search', '')
     if search_query:
         global_filter = Q()
-
-        # Correct the searchable fields
         searchable_fields = [
             'companyname',
             'customername',
             'id',
             'contact',
-            'closuredate',  # Replace project_closing_date with closuredate
-            'executive__name',
+            'closuredate',
+            'executive__name',  # if ForeignKey
+            # 'executive',       # if CharField
         ]
-
         for field in searchable_fields:
             global_filter |= Q(**{f"{field}__icontains": search_query})
-
         confirmed_orders = confirmed_orders.filter(global_filter)
 
     confirmed_orders = confirmed_orders.distinct()
-    
 
-    # Handle toggling of `is_reverted` status when confirming or reverting an order
+    # Handle reverting confirmed status
     if 'revert' in request.GET:
         enquiry_id = request.GET.get('revert')
         enquiry = Enquiry.objects.filter(id=enquiry_id).first()
-        
         if enquiry:
             if enquiry.is_confirmed:
                 enquiry.is_reverted = False
             else:
                 enquiry.is_reverted = not enquiry.is_reverted
             enquiry.save()
+        return redirect('confirmed_orders')
 
-            return redirect('confirmed_orders')
-
-    # Handle pushing the same enquiry with a different quotation number
+    # Handle pushing new quotation number
     if 'push' in request.GET:
         enquiry_id = request.GET.get('push')
         new_quotation_number = request.GET.get('quotation_number')
-
         enquiry = Enquiry.objects.filter(id=enquiry_id).first()
-
         if enquiry:
             if enquiry.quotation != new_quotation_number:
                 enquiry.quotation = new_quotation_number
                 enquiry.is_reverted = False
                 enquiry.save()
-
-            return redirect('confirmed_orders')
+        return redirect('confirmed_orders')
 
     return render(request, 'xp2/confirmed_orders.html', {
         'confirmed_orders': confirmed_orders,
@@ -932,7 +980,7 @@ def confirmed_view(request, enquiry_id, quotation_no):
 
 
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import ConfirmedOrderFollowUp, confirmed_enquiry
+from Riva.models import ConfirmedOrderFollowUp, confirmed_enquiry
 
 def add_confirmed_order_followup(request, enquiry_id, quotation_no):
     # Fetch the confirmed order based on enquiry_id and quotation_no
@@ -1286,6 +1334,208 @@ def create_commercial_quote(request, enquiry_id):
     })
 
 
+from django.shortcuts import render, get_object_or_404, redirect
+from django.db.models import Max
+from django.db import transaction
+from .models import CommercialQuote, QuotationItem, Products, BankDetails, Xpredict
+
+def Edit_commercial_quote(request, quotation_no):
+    commercial_quote = get_object_or_404(CommercialQuote, quotation_no=quotation_no)
+    banks = BankDetails.objects.all()
+    xpredict_data = Xpredict.objects.all()
+    products = Products.objects.all()
+    quotation_items = QuotationItem.objects.filter(quotation_no=commercial_quote.quotation_no)
+    
+    # Extract base quotation number before any -R revision suffix
+    base_quotation_no = commercial_quote.quotation_no.split('-R')[0]
+    last_revision = CommercialQuote.objects.filter(quotation_no__startswith=base_quotation_no).aggregate(Max('quotation_no'))
+    last_quotation_no = last_revision['quotation_no__max']
+    
+    # Determine the next revision number
+    if last_quotation_no and '-R' in last_quotation_no:
+        next_revision = str(int(last_quotation_no.split('-R')[-1]) + 1)
+    else:
+        next_revision = "1"  # First revision
+    
+    new_quotation_no = f"{base_quotation_no}-R{next_revision}"
+    print(f"🔢 New Quotation Number: {new_quotation_no}")
+    
+    if request.method == 'POST':
+        print(request.POST.dict())  # Print POST data as a dictionary
+
+        try:
+            with transaction.atomic():
+                print("🚀 Creating New Quotation Record...")
+                bank_id = request.POST.get('bank_id')  
+                if bank_id:
+                    print("bank id ide ")
+                    bank = BankDetails.objects.get(id=bank_id)  # Ensure the bank exists
+                else:
+                    print("bank id illa")
+
+                # Create a new commercial quote record (instead of updating the existing one)
+                new_commercial_quote = CommercialQuote.objects.create(
+                    quotation_no=new_quotation_no,
+                    bill_to_company_name=request.POST.get('bill_to_company_name'),
+                    bill_to_customer_name=request.POST.get('bill_to_customer_name'),
+                    bill_to_gst_number=request.POST.get('bill_to_gst_number'),
+                    bill_to_address=request.POST.get('bill_to_address'),
+                    ship_to_company_name=request.POST.get('ship_to_company_name'),
+                    ship_to_customer_name=request.POST.get('ship_to_customer_name'),
+                    ship_to_gst_number=request.POST.get('ship_to_gst_number'),
+                    ship_to_address=request.POST.get('ship_to_address'),
+                    from_company_name=request.POST.get('from_company_name'),
+                    from_phone=request.POST.get('from_phone'),
+                    from_email=request.POST.get('from_email'),
+                    from_gst=request.POST.get('from_gst'),
+                    from_pan=request.POST.get('from_pan'),
+                    from_address=request.POST.get('from_address'),
+                    terms_and_conditions=request.POST.get('terms_and_conditions'),
+                    subtotal=request.POST.get('subtotal', 0),
+                    cgst_total=request.POST.get('cgst_total', 0),
+                    sgst_total=request.POST.get('sgst_total', 0),
+                    igst_total=request.POST.get('igst_total', 0),
+                    grand_total=request.POST.get('grand_total', 0),
+                    bank = bank,
+                    enquiry_id=commercial_quote.enquiry_id  # Retaining the same enquiry reference
+                )
+                print(f"✅ New Quotation Created: {new_commercial_quote.quotation_no}")
+                
+                # Fetch product data from form
+                products_selected = request.POST.getlist('products[]')
+                hsn_codes = request.POST.getlist('hsncode[]')
+                base_amounts = request.POST.getlist('base_amount[]')
+                quantities = request.POST.getlist('quantity[]')
+                margins = request.POST.getlist('margin[]')
+                rates = request.POST.getlist('rate[]')  # ✅ Include rate
+                cgsts = request.POST.getlist('cgst[]')
+                sgsts = request.POST.getlist('sgst[]')
+                igsts = request.POST.getlist('igst[]')
+                final_amounts = request.POST.getlist('final_amount[]')
+                print("prod :",products_selected)
+                print("hsn_codes :",hsn_codes)
+                print("🔹 Initial Product selected:", products_selected)
+                product_ids = []  # List to store product IDs instead of names
+
+                for i, product_name in enumerate(products_selected):
+                    product_name = product_name.strip()
+                    hsncode = hsn_codes[i].strip() if i < len(hsn_codes) else ""
+                    base_amount = base_amounts[i] if i < len(base_amounts) else 0
+                    gst = (
+                        float(cgsts[i]) + float(sgsts[i]) + float(igsts[i])
+                        if i < len(cgsts) and i < len(sgsts) and i < len(igsts)
+                        else 0
+                    )
+
+                    print("Processing:", product_name, "Type:", type(product_name))
+
+                    # If `product_name` is an ID (digits only), append and continue
+                    if product_name.isdigit():
+                        product_ids.append(product_name)
+                        print("appended:", product_name)
+                        print("✅ This is an ID, skipping creation. and appending to product ids")
+                        continue  
+
+                    print("🆕 Creating new product:", product_name)
+
+                    # Create or get the product
+                    product, created = Products.objects.get_or_create(
+                        name=product_name,
+                        defaults={
+                            "hsncode": hsncode,
+                            "base_amount": base_amount,
+                            "gst": gst,
+                        },
+                    )
+
+                    if created:
+                        print(f"✅ New product added: {product.name} with HSN: {hsncode}, Base Amount: {base_amount}, GST: {gst}")
+                    else:
+                        print(f"ℹ️ Existing product updated: {product.name}")
+                        product.hsncode = hsncode
+                        product.base_amount = base_amount
+                        product.gst = gst
+                        product.save()
+
+                    # ✅ Always use the actual product.id, not the manually typed string
+                    product_ids.append(str(product.id))
+
+                print("🔹 Updated Product ID List:", product_ids)
+
+
+
+
+                if product_ids:
+                    total_items = len(product_ids)
+                    print(f"🧾 Saving {total_items} Quotation Items...")
+
+                    for i in range(total_items):
+                        try:
+                            product_id = product_ids[i]
+                            print(f"🔍 Looking up Product ID: {product_id}")
+
+                            product = Products.objects.get(id=product_id)
+
+                            hsn = hsn_codes[i] if i < len(hsn_codes) else ''
+                            base_amt = float(base_amounts[i]) if i < len(base_amounts) and base_amounts[i] else 0
+                            qty = int(quantities[i]) if i < len(quantities) and quantities[i] else 0
+                            margin = float(margins[i]) if i < len(margins) and margins[i] else 0
+                            rate = float(rates[i]) if i < len(rates) and rates[i] else 0
+                            cgst = float(cgsts[i]) if i < len(cgsts) and cgsts[i] else 0
+                            sgst = float(sgsts[i]) if i < len(sgsts) and sgsts[i] else 0
+                            igst = float(igsts[i]) if i < len(igsts) and igsts[i] else 0
+                            final_amt = float(final_amounts[i]) if i < len(final_amounts) and final_amounts[i] else 0
+
+                            print(f"🧾 Creating QuotationItem for Product ID: {product_id} => {product.name}")
+                            print(f" - HSN: {hsn}, Qty: {qty}, Margin: {margin}, Rate: {rate}")
+                            print(f" - CGST: {cgst}, SGST: {sgst}, IGST: {igst}, Final: {final_amt}")
+
+                            QuotationItem.objects.create(
+                                quotation_no=new_commercial_quote.quotation_no,
+                                product=product,
+                                hsncode=hsn,
+                                base_amount=base_amt,
+                                quantity=qty,
+                                margin=margin,
+                                rate=rate,
+                                cgst=cgst,
+                                sgst=sgst,
+                                igst=igst,
+                                final_amount=final_amt,
+                            )
+
+                            print(f"✅ Quotation Item Saved: {product.name} (ID: {product_id})")
+
+                        except Exception as e:
+                            print(f"❌ Error saving product at index {i}: {e}")
+                return redirect('managequotationpage', enquiry_id=commercial_quote.enquiry_id)
+
+        except Exception as e:
+            print(f"❌ Error: {e}")
+            context = {
+                'commercial_quote': commercial_quote,
+                'quotation_items': quotation_items,
+                'products': products,
+                'xpredict': xpredict_data,
+                'banks': banks,
+                'new_quotation_no': new_quotation_no,
+                'error': str(e)
+            }
+            return render(request, 'xp2/edit_commercial.html', context)
+    
+    # GET request rendering
+    context = {
+        'commercial_quote': commercial_quote,
+        'quotation_items': quotation_items,
+        'products': products,
+        'xpredict': xpredict_data,
+        'banks': banks,
+        'new_quotation_no': new_quotation_no,
+    }
+    return render(request, 'xp2/edit_commercial.html', context)
+
+
+
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 
@@ -1359,16 +1609,44 @@ def create_techno_commercial_quote(request, enquiry_id):
 
 from django.http import Http404
 
+from django.http import Http404
+from num2words import num2words
+import os
+from datetime import datetime
+from django.conf import settings
+import json
+
+def any_checked(items):
+    """True if at least one dict in items has is_checked True."""
+    if not items:
+        return False
+    for item in items:
+        if item.get("is_checked", False):
+            return True
+    return False
+
+def split_bullets(section):
+    """
+    Given a list of dicts with 'value' keys, splits any 'value' string by the bullet '•'
+    and returns a list of points (strings), for checked items only.
+    """
+    result = []
+    if not section:
+        return result
+    for item in section:
+        if item.get("is_checked"):
+            # Split by bullet (•), remove empty/whitespace, support accidental \r
+            lines = [line.strip() for line in item.get("value", "").replace('\r','').split('•') if line.strip()]
+            result.extend(lines)
+    return result
+
 def amc_preview(request, quotation_no):
     company = companydetails.objects.all()
     current_date = datetime.now().strftime('%d %b, %Y')
 
-    # Path to the stored_data directory
     base_dir = settings.BASE_DIR
     stored_data_dir = os.path.join(base_dir, 'stored_data')
-    
-    # Path to the draft_data directory (similar to stored_data)
-    draft_data_dir = os.path.join(base_dir, 'AMC_draft')  # Assuming AMC_draft is the directory for draft data
+    draft_data_dir = os.path.join(base_dir, 'AMC_draft')
 
     found_data = None
     draft_data = None
@@ -1376,10 +1654,8 @@ def amc_preview(request, quotation_no):
     # Check stored_data first
     for directory in os.listdir(stored_data_dir):
         dir_path = os.path.join(stored_data_dir, directory)
-
         if os.path.isdir(dir_path):
             file_path = os.path.join(dir_path, f"{quotation_no}.json")
-            
             if os.path.exists(file_path):
                 with open(file_path, 'r') as file:
                     try:
@@ -1392,10 +1668,8 @@ def amc_preview(request, quotation_no):
     if not found_data:
         for directory in os.listdir(draft_data_dir):
             dir_path = os.path.join(draft_data_dir, directory)
-            
             if os.path.isdir(dir_path):
                 file_path = os.path.join(dir_path, f"{quotation_no}.json")
-                
                 if os.path.exists(file_path):
                     with open(file_path, 'r') as file:
                         try:
@@ -1404,11 +1678,9 @@ def amc_preview(request, quotation_no):
                             raise Http404(f"Invalid JSON file: {file_path}")
                     break
 
-    # If no matching file is found in both stored_data and draft_data, raise a 404
     if not found_data and not draft_data:
         raise Http404(f"Quotation with number {quotation_no} not found.")
 
-    # Merge data from stored and draft if both exist (optional, depending on business logic)
     combined_data = found_data if found_data else draft_data
 
     # Safely fetch the value of 'value' inside 'Grand_Total'
@@ -1417,22 +1689,36 @@ def amc_preview(request, quotation_no):
         gtotal_value = grand_total[0].get('value')
     else:
         gtotal_value = None
-    
+
     if gtotal_value is not None:
-        # Convert to float and convert to words
         g_total_in_words = num2words(float(gtotal_value), lang='en_IN').replace(" and", "").replace(",", "").upper() + " RUPEES ONLY"
     else:
         g_total_in_words = "NONE"
 
-    return render(request, 'xp2/amc_preview.html', {
+    # Section show/hide flags and ready-to-loop pointwise lists for each section
+    context = {
         'quotation_no': quotation_no,
         'data': combined_data,
         'current_date': current_date,
         'company': company,
         'g_total_in_words': g_total_in_words,
         "MEDIA_URL": settings.MEDIA_URL,
-    })
+        'show_contents': any_checked(combined_data.get("contents")),
+        'show_maintenance_support': any_checked(combined_data.get("maintenance_support")),
+        'show_yearly_maintenance': any_checked(combined_data.get("yearly_maintenance")),
+        'show_running_consumables': any_checked(combined_data.get("running_consumables")),
+        'show_exclusions': any_checked(combined_data.get("exclusions")),
+        'show_particulars': any_checked(combined_data.get("Particulars")),
+        'show_terms': any_checked(combined_data.get("terms")),
+        'maintenance_support_points': split_bullets(combined_data.get("maintenance_support")),
+        'yearly_maintenance_points': split_bullets(combined_data.get("yearly_maintenance")),
+        'running_consumables_points': split_bullets(combined_data.get("running_consumables")),
+        'exclusions_points': split_bullets(combined_data.get("exclusions")),
+        'terms_points': split_bullets(combined_data.get("terms")),
+        'contents_points': [item['value'] for item in combined_data.get("contents", []) if item.get("is_checked")],
+    }
 
+    return render(request, 'xp2/amc_preview.html', context)
 
     
 
@@ -1478,44 +1764,26 @@ import os
 import json
 
 def get_quotation_number():
-    # Define the file to store the last generated number
     storage_file = "quotation_number_store.json"
-
-    # Get the current year and month in YYMM format
     current_year_month = datetime.now().strftime('%y%m')
-
-    # Initialize the last recorded year and sequential number
     last_year_month = None
     last_sequential = 0
 
-    # Check if the storage file exists
     if os.path.exists(storage_file):
-        # Load the last record from the file
         with open(storage_file, "r") as file:
             data = json.load(file)
             last_year_month = data.get("last_year_month")
             last_sequential = data.get("last_sequential", 0)
-
-    # If the current year and month differ, reset the sequential number
     if last_year_month != current_year_month:
         last_sequential = 0
-
-    # Increment the sequential number for the current year and month
     next_sequential = last_sequential + 1
-
-    # Format the sequential number as a 3-digit string with leading zeros
     sequential_part = str(next_sequential).zfill(3)
-
-    # Generate the quotation number
     quotation_number = f"EL-HID-AMCPR-{current_year_month}{sequential_part}"
-
-    # Save the updated year-month and sequential number to the file
     with open(storage_file, "w") as file:
         json.dump({
             "last_year_month": current_year_month,
             "last_sequential": next_sequential
         }, file)
-
     return quotation_number
 
 def amc_quotation_details(request, enquiry_id, product_id):
@@ -1523,13 +1791,14 @@ def amc_quotation_details(request, enquiry_id, product_id):
         enquiry = Enquiry.objects.get(id=enquiry_id)
     except Enquiry.DoesNotExist:
         return render(request, 'xp2/error_page.html', {'error': 'Enquiry not found'})
-    # Filter QuotationProduct by enquiry
-    products = QuotationProduct.objects.get(id=product_id)
-    print(products)
-    # Generate a quotation number
-    quotation_number = get_quotation_number()
 
-    # Filter ParticularsTable by products
+    products = QuotationProduct.objects.get(id=product_id)
+
+    # --- Only generate quotation number once per session/draft ---
+    if 'pending_quotation_number' not in request.session:
+        request.session['pending_quotation_number'] = get_quotation_number()
+    quotation_number = request.session['pending_quotation_number']
+
     particulars = ParticularsTable.objects.filter(pd_name=products)
     all_headers_particulars = {
         field.name: field.verbose_name.title() for field in ParticularsTable._meta.fields
@@ -1540,21 +1809,12 @@ def amc_quotation_details(request, enquiry_id, product_id):
         if field not in excluded_fields_particulars
     ]
 
-    # Filter OutputTable by enquiry
     outputs = OutputTable.objects.filter(pd_name=products)
-
-    # Filter Contents by a specific product name (e.g., EC1000)
     contents = Contents.objects.filter(pd_name=products)
-
-    # Filter AMC_Pricing by the enquiry
     amc_pricings = AMC_Pricing.objects.filter(pd_name=products)
-
-    # Get the first AMC Pricing for terms
     amc = amc_pricings.first()
     terms = amc.terms_conditions if amc else ''
     terms_and_conds = terms.split(".")
-
-    # Filter InstallationTable by enquiry
     installations = InstallationTable.objects.filter(pd_name=products)
     installation_count = installations.count()
 
@@ -1571,10 +1831,7 @@ def amc_quotation_details(request, enquiry_id, product_id):
         if field not in excluded_fields_particulars
     ]
 
-    # Get the first inclusion record
     inclusion = Inclusions.objects.filter(pd_name=products).first()
-
-    # Retrieve and split maintenance fields
     maintenance_text = inclusion.maintenance if inclusion else ''
     maintenance_text_year = inclusion.yearly_maintenance if inclusion else ''
     maintenance_text_run = inclusion.running_consumables if inclusion else ''
@@ -1603,8 +1860,27 @@ def amc_quotation_details(request, enquiry_id, product_id):
         'terms_and_conds': terms_and_conds,
         'quotation_number': quotation_number,
     }
-
     return render(request, 'xp2/amc_quotation_details.html', context)
+
+
+def save_amc_quotation(request, enquiry_id, product_id):
+    if request.method == "POST":
+        # ... parse form data, validation, object creation etc. ...
+
+        quotation_number = request.session.get('pending_quotation_number')
+        # Save the new Quotation object, e.g.
+        # Quotation.objects.create(number=quotation_number, ...)
+
+        # After save, remove the reserved number to avoid reuse
+        if 'pending_quotation_number' in request.session:
+            del request.session['pending_quotation_number']
+
+        # Redirect as appropriate
+        return redirect("success_url_or_detail", enquiry_id=enquiry_id, product_id=product_id)
+
+    # Optionally, render an error or redirect if GET
+    return redirect("amc_quotation_details", enquiry_id=enquiry_id, product_id=product_id)
+
 
 
 
@@ -1847,32 +2123,81 @@ def saved_quotations(request):
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
+
+
+
 # -------------------------------------------edit quotation -----------------------
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
 import os
 import json
+import re
 
+def slugify(txt):
+    return re.sub(r'(^-|-$)', '', re.sub(r'[^a-z0-9]+', '-', txt.lower()))
 
 @csrf_exempt
 def edit_quotation(request, enquiry_id, quotation_number):
+    import logging
+    logger = logging.getLogger('django')  # If you want logging to work!
     logger.info("Editing Quotation: %s, %s", enquiry_id, quotation_number)
 
     # Define the file path for the existing quotation data (JSON file)
     file_path = os.path.join(settings.BASE_DIR, "stored_data", str(enquiry_id), f"{quotation_number}.json")
     print(f"path:",file_path)
-    # Check if the file exists
     if not os.path.exists(file_path):
         return JsonResponse({"status": "error", "message": "Quotation not found"}, status=404)
 
-    # Load the existing quotation data from the file
+    # Load existing data for GET and template prefill
     with open(file_path, "r") as json_file:
         quotation_data = json.load(json_file)
+
+    # ----- AUTO-PREFILL PATCH START -----
+    def ensure_section_row_if_checked(section_slug, data_key, row_template):
+        checked = False
+        for c in quotation_data.get('contents', []):
+            value = c.get('value', '') if isinstance(c, dict) else ''
+            slug = slugify(value.split('-------------------')[0]) if value else ''
+            if slug == section_slug and (c.get('is_checked') if isinstance(c, dict) else False):
+                checked = True
+                break
+        if checked and not quotation_data.get(data_key):
+            quotation_data[data_key] = [row_template.copy()]
+
+    ensure_section_row_if_checked(
+        'amc-proposal', 'Amc_Proposal',
+        {'pd_name': '', 'capacity': '', 'total_needed_capacity': '',
+         'waste_water_type': '', 'total_no_machines': '', 'is_checked': False}
+    )
+    ensure_section_row_if_checked(
+        'pricing-amc-for-one-year', 'amc_pricing',
+        {'pd_name': '', 'capacity': '', 'total_needed_capacity': '',
+         'waste_water_type': '', 'total_no_machines': '', 'is_checked': False}
+    )
+    ensure_section_row_if_checked(
+        'inclusions-comprehensive-amc', 'maintenance_support',
+        {'value': '', 'is_checked': False}
+    )
+    ensure_section_row_if_checked(
+        'yearly-maintenance-and-upkeep', 'yearly_maintenance',
+        {'value': '', 'is_checked': False}
+    )
+    ensure_section_row_if_checked(
+        'running-consumables-and-chemicals-as-required', 'running_consumables',
+        {'value': '', 'is_checked': False}
+    )
+    ensure_section_row_if_checked(
+        'exclusions-comprehensive-amc', 'exclusions',
+        {'value': '', 'is_checked': False}
+    )
+    # Add similar lines for any extra sections you have
+    # ----- AUTO-PREFILL PATCH END -----
+
     if request.method == "POST":
-        # Initialize lists to hold form data
         data = request.POST
-        print(f"sent from template",data)
+        print(f"sent from template", data)
         contents = []
         maintenance_support = []
         yearly_maintenance = []
@@ -1886,20 +2211,16 @@ def edit_quotation(request, enquiry_id, quotation_number):
         Grand_Total = []
         terms = []
         try:
-            # Process each section of the form that has a checkbox
-            # Contents Section
             for key in data.keys():
                 if key.startswith("content_select_"):
                     index = key.split("_")[-1]
                     content_select_value = data.get(f"content_select_{index}")
-                    is_checked = content_select_value in ["1", "on", "true"]  # Adjust this comparison based on the actual values received
+                    is_checked = content_select_value in ["1", "on", "true"]
                     content_value = data.get(f"content_{index}")
                     if content_value:
                         contents.append({"value": content_value, "is_checked": is_checked})
-            # Amc_Proposal (Installations) Section
             for key in data.keys():
                 if key.startswith('select_amc_check_'):
-
                     index = key.split('_')[-1]
                     is_checked = data.get(f'select_amc_check_{index}') == "1"
                     installation_data = {
@@ -1911,7 +2232,7 @@ def edit_quotation(request, enquiry_id, quotation_number):
                         'is_checked': is_checked
                     }
                     Amc_Proposal.append(installation_data)
-            # Inclusions Section
+
             for key in data.keys():
                 if key.startswith("maintenance_support_check_"):
                     index = key.split("_")[-1]
@@ -1920,7 +2241,6 @@ def edit_quotation(request, enquiry_id, quotation_number):
                     if maintenance_support_value:
                         maintenance_support.append({"value": maintenance_support_value, "is_checked": is_checked})
 
-            # Yearly Maintenance Section
             for key in data.keys():
                 if key.startswith("yearly_maintenance_check_"):
                     index = key.split("_")[-1]
@@ -1929,7 +2249,6 @@ def edit_quotation(request, enquiry_id, quotation_number):
                     if yearly_maintenance_value:
                         yearly_maintenance.append({"value": yearly_maintenance_value, "is_checked": is_checked})
 
-            # Running Consumables Section
             for key in data.keys():
                 if key.startswith("running_consumables_check_"):
                     index = key.split("_")[-1]
@@ -1938,7 +2257,6 @@ def edit_quotation(request, enquiry_id, quotation_number):
                     if running_consumables_value:
                         running_consumables.append({"value": running_consumables_value, "is_checked": is_checked})
 
-            # Exclusions Section
             for key in data.keys():
                 if key.startswith("exclusions_check_"):
                     index = key.split("_")[-1]
@@ -1946,7 +2264,7 @@ def edit_quotation(request, enquiry_id, quotation_number):
                     exclusions_value = data.get(f"exclusions_{index}")
                     if exclusions_value:
                         exclusions.append({"value": exclusions_value, "is_checked": is_checked})
-            # AMC Pricing Section
+
             for key in data.keys():
                 if key.startswith('select_amcp_check_'):
                     index = key.split('_')[-1]
@@ -1960,6 +2278,7 @@ def edit_quotation(request, enquiry_id, quotation_number):
                         'is_checked': is_checked
                     }
                     amc_pricing.append(installation_data)
+
             for key in data.keys():
                 if key.startswith('select_per_check_'):
                     index = key.split('_')[-1]
@@ -1970,8 +2289,6 @@ def edit_quotation(request, enquiry_id, quotation_number):
                         'is_checked': is_checked
                     }
                     Particulars.append(installation_data)
-
-            # Terms Section
             for key in data.keys():
                 if key.startswith("terms_check_"):
                     index = key.split("_")[-1]
@@ -1980,83 +2297,68 @@ def edit_quotation(request, enquiry_id, quotation_number):
                     if terms_value:
                         terms.append({"value": terms_value, "is_checked": is_checked})
 
-            # Extract Subtotal
             if "content_select_sub" in data:
-                is_checked = data.get("content_select_sub") == "on"  # Match "on" for checkbox behavior
+                is_checked = data.get("content_select_sub") == "on"
                 Subtotal_value = data.get("Subtotal1")
                 if Subtotal_value:
                     Subtotal_list.append({"value": Subtotal_value, "is_checked": is_checked})
 
-            # Extract GST
             if "content_select_gst" in data:
                 is_checked = data.get("content_select_gst") == "on"
                 gst_value = data.get("gst1")
                 if gst_value:
                     GST.append({"value": gst_value, "is_checked": is_checked})
 
-            # Extract Grand Total
             if "content_select_gtotal" in data:
                 is_checked = data.get("content_select_gtotal") == "on"
                 gtotal_value = data.get("grand")
                 if gtotal_value:
                     Grand_Total.append({"value": gtotal_value, "is_checked": is_checked})
-                
+
             base_dir = os.path.join(settings.BASE_DIR, "stored_data", str(enquiry_id))
             os.makedirs(base_dir, exist_ok=True)
             existing_files = os.listdir(base_dir)
+            # Robust versioning logic
             if "R" in quotation_number.split(".")[0][-3:]:
                 # Split at the last occurrence of "R" and take the part before it
                 base_name = quotation_number[:quotation_number.rfind("R")]
             else:
                 base_name = quotation_number
-
-            # Extract version numbers for files matching the base name
             version_numbers = [
-                int(f.split("R")[-1].split(".")[0])  # Extract the version number
+                int(f.split("R")[-1].split(".")[0])
                 for f in existing_files
                 if f.startswith(base_name) and f.endswith(".json") and "R" in f.split(".")[0][-3:]
             ]
-
-            # Calculate the next version
             latest_version = max(version_numbers, default=0)
             new_version = latest_version + 1
             quotation = f"{base_name}R{new_version}"
-            # Construct the new file name
             new_file_name = f"{quotation}.json"
             new_file_path = os.path.join(base_dir, new_file_name)
-            print(f"Base name: {base_name}")
-            print(f"Existing versions: {version_numbers}")
-            print(f"New file name: {new_file_name}")
-            print(f"New file path: {new_file_path}")
-            
+
             final_data = {
-                    'contents': contents,
-                    'terms': terms,
-                    'Amc_Proposal': Amc_Proposal,
-                    'maintenance_support': maintenance_support,
-                    'yearly_maintenance': yearly_maintenance,
-                    'running_consumables': running_consumables,
-                    'exclusions': exclusions,
-                    'amc_pricing': amc_pricing,
-                    'Particulars': Particulars,
-                    'Subtotal_list': Subtotal_list,
-                    'GST': GST,
-                    'Grand_Total': Grand_Total,
-                    'enquiry_id': enquiry_id,
-                    'quotation_number':quotation,
-                }
-            edited_data = final_data
+                'contents': contents,
+                'terms': terms,
+                'Amc_Proposal': Amc_Proposal,
+                'maintenance_support': maintenance_support,
+                'yearly_maintenance': yearly_maintenance,
+                'running_consumables': running_consumables,
+                'exclusions': exclusions,
+                'amc_pricing': amc_pricing,
+                'Particulars': Particulars,
+                'Subtotal_list': Subtotal_list,
+                'GST': GST,
+                'Grand_Total': Grand_Total,
+                'enquiry_id': enquiry_id,
+                'quotation_number': quotation,
+            }
             with open(new_file_path, "w") as json_file:
-                json.dump(edited_data, json_file, indent=4)
-            return JsonResponse({"message": "Quotation updated successfully", "file": new_file_name})    
+                json.dump(final_data, json_file, indent=4)
+            return JsonResponse({"message": "Quotation updated successfully", "file": new_file_name})
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
-    # Return the template with the existing data for editing
     data_json = json.dumps(quotation_data)
     return render(request, 'xp2/edit_quotation.html', {'quotation_data': quotation_data, 'data': data_json})
-
-
 
 
 # def amc_edit(request,quotation_no):
@@ -2250,6 +2552,12 @@ def product_list(request, enquiry_id):
 
 
 from django.core.files.storage import default_storage
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import os, json, logging
+from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 @csrf_exempt
 def proposal_store_data(request, enquiry_id, quotation_number):
@@ -2276,45 +2584,32 @@ def proposal_store_data(request, enquiry_id, quotation_number):
                 status=400,
             )
 
-        # Define base directory for the enquiry_id
         base_dir = os.path.join(settings.BASE_DIR, "proposal", str(enquiry_id))
         os.makedirs(base_dir, exist_ok=True)
         file_path = os.path.join(base_dir, f"{quotation_number}.json")
 
         base_dir1 = os.path.join(settings.BASE_DIR, "static", "process_diagrams", str(enquiry_id))
         os.makedirs(base_dir1, exist_ok=True)
-        # Check if file already exists
         if os.path.exists(file_path):
             return JsonResponse(
                 {"status": "error", "message": f"Quotation number {quotation_number} already exists for this enquiry"},
                 status=400,
             )
 
-        # Initialize lists to hold form data
-        contents = []
-        site_info=[]
-        table_data = []
-        treatment_processes = []
-        observations_and_suggestions = []
-        requirements_and_specifications = []
-        specifications = []
-        process_diagram = []
-        process_description = []
-        output_table = []
-        pricing = []
-        terms = []
-        installation = []
-        specification = []
-        hardware = []
-        general_terms_conditions = []
-        appendix = []
-        processed_indices = set()
-        terms_indices=set()
-        general_indices=set()
-        processed_indices_supply_eq = set()  
-        processed_indices_dristi = set() 
-        
+        # Helper: only append if at least one key is non-empty and non-false
+        def is_nonempty_row(d):
+            return any((v if isinstance(v, bool) else (v and str(v).strip())) for v in d.values())
 
+        # -- All Dynamic Lists initialized as before --
+        contents, site_info, table_data, treatment_processes = [], [], [], []
+        observations_and_suggestions, requirements_and_specifications = [], []
+        specifications, process_diagram, process_description = [], [], []
+        output_table, pricing, terms, installation = [], [], [], []
+        specification, hardware, general_terms_conditions, appendix = [], [], [], []
+        processed_indices, terms_indices, general_indices = set(), set(), set()
+        processed_indices_supply_eq, processed_indices_dristi = set(), set()
+
+        # ---- Preserve your logic, add is_nonempty_row filter to each list ----
 
         for key in data.keys():
             if key.startswith("content_select_"):
@@ -2322,9 +2617,10 @@ def proposal_store_data(request, enquiry_id, quotation_number):
                 content_select_value = data.get(f"content_select_{index}")
                 is_checked = content_select_value in ["1", "on", "true"]  
                 content_value = data.get(f"content_{index}")
-                print(f"content",content_value)
-                if content_value:
-                    contents.append({"value": content_value, "is_checked": is_checked})
+                print(f"content", content_value)
+                d = {"value": content_value, "is_checked": is_checked}
+                if is_nonempty_row(d):
+                    contents.append(d)
 
         for key in data.keys():
             if key.startswith('site_select_info_'):
@@ -2335,37 +2631,33 @@ def proposal_store_data(request, enquiry_id, quotation_number):
                     'is_standard_checked': data.get(f'site_select_standard_{index}') == "1",
                     'standard_text': data.get(f'site_standard_{index}')
                 }
-                site_info.append(site_data)
+                if is_nonempty_row(site_data):
+                    site_info.append(site_data)
+
         for key in data.keys():
             if key.startswith('sl_no_value_t1_'):
-                # Extract the index of the current row from the key
                 index = key.split('_')[-1]
-                
-                # Construct the row dictionary
                 table_row = {
                     'sl_no': data.get(f'sl_no_value_t1_{index}'),
                     'raw_sewage_characteristics': data.get(f'raw_sewage_characteristics_value_t1_{index}'),
                     'unit': data.get(f'unit_value_t1_{index}'),
                     'value': data.get(f'value_value_t1_{index}'),
-                    # Checkbox state: True if checked, False otherwise
-                    'is_checked': data.get(f'select_row_t1_{index}') == "1"  # Check if the checkbox was checked
+                    'is_checked': data.get(f'select_row_t1_{index}') == "1"
                 }
-                # Append the row to the table data list
-                table_data.append(table_row)
+                if is_nonempty_row(table_row):
+                    table_data.append(table_row)
+        
         for key in data.keys():
             if key.startswith('standard_select_'):
-                # Extract the index of the current row from the key
                 index = key.split('_')[-1]
-                
-                # Construct the treatment process dictionary
                 treatment_data = {
-                    'is_checked': data.get(f'standard_select_{index}') == "1",  # Checkbox checked state
-                    'principal_purpose_unit_process': data.get(f'principal_purpose_{index}'),  # Principal purpose
-                    'unit_processes': data.get(f'unit_processes_{index}')  # Unit processes
+                    'is_checked': data.get(f'standard_select_{index}') == "1",
+                    'principal_purpose_unit_process': data.get(f'principal_purpose_{index}'),
+                    'unit_processes': data.get(f'unit_processes_{index}')
                 }
-                
-                # Append the treatment process data to the list
-                treatment_processes.append(treatment_data)
+                if is_nonempty_row(treatment_data):
+                    treatment_processes.append(treatment_data)
+        
         for key in data.keys():
             if key.startswith('observation_select_'):
                 index = key.split('_')[-1]
@@ -2379,135 +2671,118 @@ def proposal_store_data(request, enquiry_id, quotation_number):
                     'salient_checked': data.get(f'salient_select_{index}') == "1",
                     'salient': data.get(f'salient_{index}')
                 }
-                observations_and_suggestions.append(observation_data)
-        # site_info.append({'observations_and_suggestions': observations_and_suggestions})
+                if is_nonempty_row(observation_data):
+                    observations_and_suggestions.append(observation_data)
+        
         for key in data.keys():
             if key.startswith('requirement_select_'):
-                index = key.split('_')[-1]    
+                index = key.split('_')[-1]
                 requirement_data = {
                     'requirement_checked': data.get(f'requirement_select_{index}') == "1",
                     'requirement_text': data.get(f'requirement_{index}', '')
                 }
-                requirements_and_specifications.append(requirement_data)
+                if is_nonempty_row(requirement_data):
+                    requirements_and_specifications.append(requirement_data)
 
-        # requirements_and_specifications.append({'requirements_and_specifications': requirements_and_specifications})
         for key in data.keys():
             if key.startswith('spec_select_'):
-                # Extract the index from the key
                 index = key.split('_')[-1]
-                
-                # Construct the spec data dictionary
                 spec_data = {
-                    'spec_checked': data.get(f'spec_select_{index}') == "1",  # Checkbox checked state
-                    'specs_for_25kld': data.get(f'specs_for_25kld_{index}', ''),  # Specs for 25 KLD
-                    'hidrec': data.get(f'hidrec_{index}', '')  # HIDREC value
+                    'spec_checked': data.get(f'spec_select_{index}') == "1",
+                    'specs_for_25kld': data.get(f'specs_for_25kld_{index}', ''),
+                    'hidrec': data.get(f'hidrec_{index}', '')
                 }
-                
-                # Append the spec data to the specifications list
-                specifications.append(spec_data)
-        for key in data.keys():
-            if key.startswith('process_diagram_'):
-                # Extract the index from the key name
-                index = key.split('_')[-1]
+                if is_nonempty_row(spec_data):
+                    specifications.append(spec_data)
 
-                process_diagram_checked = data.get(f'process_diagram_{index}') == "1"
-                req_text = data.get(f'req_text_{index}', '')
+        # Process diagrams – scan for diagram1_checked and diagram2_checked
+                        # SAVE PROCESS DIAGRAMS INSIDE MEDIA FOLDER (CORRECT)
+                media_process_dir = os.path.join(settings.MEDIA_ROOT, "process_diagrams", str(enquiry_id))
+                os.makedirs(media_process_dir, exist_ok=True)
 
-                # Retrieve checkbox values to check if the images are selected
-                process_diagram1_checked = data.get(f'process_diagram1_checked_{index}') == "1"
-                process_diagram2_checked = data.get(f'process_diagram2_checked_{index}') == "1"
+                for key in data.keys():
+                    if key.startswith("process_diagram1_checked_") or key.startswith("process_diagram2_checked_"):
+                        index = key.split("_")[-1]
 
-                # Retrieve uploaded files
-                process_diagram1_file = request.FILES.get(f'process_diagram1_url_{index}', None)
-                process_diagram2_file = request.FILES.get(f'process_diagram2_url_{index}', None)
+                        process_diagram1_checked = data.get(f'process_diagram1_checked_{index}') == "1"
+                        process_diagram2_checked = data.get(f'process_diagram2_checked_{index}') == "1"
 
-                # Initialize variables for file paths
-                process_diagram1_path = ''
-                process_diagram2_path = ''
+                        process_diagram1_file = request.FILES.get(f'process_diagram1_url_{index}')
+                        process_diagram2_file = request.FILES.get(f'process_diagram2_url_{index}')
 
-                # Save the file paths if checked
-                if process_diagram1_checked and process_diagram1_file:
-                    # Define the relative path for the process diagram 1 file
-                    process_diagram1_path = os.path.join("static", "process_diagrams", str(enquiry_id), f"process_diagram1_{index}_{process_diagram1_file.name}")
-                    process_diagram1_path = process_diagram1_path.replace("\\", "/")  # Normalize to forward slashes
+                        process_diagram1_path = ""
+                        process_diagram2_path = ""
 
-                    # Save the file to the specified path inside static
-                    with open(os.path.join(settings.BASE_DIR, process_diagram1_path), 'wb') as f:
-                        for chunk in process_diagram1_file.chunks():
-                            f.write(chunk)
+                        if process_diagram1_checked and process_diagram1_file:
+                            process_diagram1_path = os.path.join(
+                                "process_diagrams",
+                                str(enquiry_id),
+                                f"process_diagram1_{index}_{process_diagram1_file.name}"
+                            )
+                            full_path = os.path.join(settings.MEDIA_ROOT, process_diagram1_path)
+                            with open(full_path, "wb") as f:
+                                for chunk in process_diagram1_file.chunks():
+                                    f.write(chunk)
 
-                if process_diagram2_checked and process_diagram2_file:
-                    # Define the relative path for the process diagram 2 file
-                    process_diagram2_path = os.path.join("static", "process_diagrams", str(enquiry_id), f"process_diagram2_{index}_{process_diagram2_file.name}")
-                    process_diagram2_path = process_diagram2_path.replace("\\", "/")  # Normalize to forward slashes
+                        if process_diagram2_checked and process_diagram2_file:
+                            process_diagram2_path = os.path.join(
+                                "process_diagrams",
+                                str(enquiry_id),
+                                f"process_diagram2_{index}_{process_diagram2_file.name}"
+                            )
+                            full_path = os.path.join(settings.MEDIA_ROOT, process_diagram2_path)
+                            with open(full_path, "wb") as f:
+                                for chunk in process_diagram2_file.chunks():
+                                    f.write(chunk)
 
-                    # Save the file to the specified path inside static
-                    with open(os.path.join(settings.BASE_DIR, process_diagram2_path), 'wb') as f:
-                        for chunk in process_diagram2_file.chunks():
-                            f.write(chunk)
+                        diagram_data = {
+                            'process_diagram1_checked': process_diagram1_checked,
+                            'process_diagram1_path': process_diagram1_path,
+                            'process_diagram2_checked': process_diagram2_checked,
+                            'process_diagram2_path': process_diagram2_path,
+                        }
+                        process_diagram.append(diagram_data)
 
-                # Gather the diagram data, including the file paths and checkbox statuses
-                diagram_data = {
-                    'process_diagram1_checked': process_diagram1_checked,
-                    'process_diagram1_path': process_diagram1_path.replace("static/", ""),  # Remove 'static/' for cleaner paths
-                    'process_diagram2_checked': process_diagram2_checked,
-                    'process_diagram2_path': process_diagram2_path.replace("static/", ""),  # Remove 'static/' for cleaner paths
-                    'process_diagram_checked': process_diagram_checked,
-                    'req_text': req_text,
-                }
-
-                # Append the diagram data to the list
-                process_diagram.append(diagram_data)
         for key in data.keys():
             if key.startswith("sl_no_value_op_"):
                 index = key.split("_")[-1]
-                
-                # Check if the row is selected
                 is_selected = data.get(f"select_row_op_{index}") == "1"
-                
-                # Retrieve other values
                 sl_no = data.get(f"sl_no_value_op_{index}", "").strip()
                 treated_water_characteristics = data.get(f"treated_water_characteristics_value_op_{index}", "").strip()
                 unit = data.get(f"unit_value_op_{index}", "").strip()
                 standard_value = data.get(f"standard_value_op_{index}", "").strip()
-                
-                # Only add rows with valid data or if explicitly selected
-                if sl_no or treated_water_characteristics or unit or standard_value or is_selected:
-                    output_row = {
-                        'sl_no': sl_no,
-                        'treated_water_characteristics': treated_water_characteristics,
-                        'unit': unit,
-                        'standard_value': standard_value,
-                        'is_checked': is_selected
-                    }
+                output_row = {
+                    'sl_no': sl_no,
+                    'treated_water_characteristics': treated_water_characteristics,
+                    'unit': unit,
+                    'standard_value': standard_value,
+                    'is_checked': is_selected
+                }
+                if is_nonempty_row(output_row):
                     output_table.append({'output_data': output_row})
+
         for key in data.keys():
             if key.startswith("process_description_text_"):
                 index = key.split("_")[-1]
                 process_row = {
-
                     'process_description_checked': data.get(f"process_description_text_{index}") == "1",
                     'process_description': data.get(f"process_description_{index}"),
-
                     'is_checked': data.get(f'etp_text_{index}') == "1",
                     'etp_text': data.get(f'etp_text_value_{index}'),
-
                     'is_standard_checked': data.get(f'stp_text_{index}') == "1",
                     'stp_text': data.get(f'stp_text_value_{index}'),
-
                     'is_shs_checked': data.get(f'shs_text_{index}') == "1",
                     'shs_text': data.get(f'shs_text_value_{index}'),
-
                     'is_atm_checked': data.get(f'automation_text_{index}') == "1",
                     'automation_text': data.get(f'automation_text_value_{index}'),
-
                     'is_foot_checked': data.get(f'footprint_area_{index}') == "1",
                     'footprint_area': data.get(f'footprint_area_value_{index}'),
-
                     'is_tentative_checked': data.get(f'tentative_{index}') == "1",
                     'tentative_BOM': data.get(f'tentative__value_{index}'),
                 }
-                process_description.append({'process_data': process_row})
+                if is_nonempty_row(process_row):
+                    process_description.append({'process_data': process_row})
+
         for key in data.keys():
             if key.startswith("machine_cost_text_"):
                 index = key.split("_")[-1]
@@ -2515,7 +2790,8 @@ def proposal_store_data(request, enquiry_id, quotation_number):
                     'machine_cost_text': data.get(f"machine_cost_value_{index}"),
                     'is_machine_checked': data.get(f"machine_cost_text_{index}") == "1"
                 }
-                pricing.append(pricing_row)
+                if is_nonempty_row(pricing_row):
+                    pricing.append(pricing_row)
 
         for key in data.keys():
             if key.startswith("product_name_spe_"):
@@ -2526,9 +2802,10 @@ def proposal_store_data(request, enquiry_id, quotation_number):
                     'total_needed_capacity': data.get(f"total_needed_capacity_value_spe_{index}", ""),
                     'waste_water_type': data.get(f"waste_water_type_value_spe_{index}", ""),
                     'total_no_machines': data.get(f"total_no_machines_value_spe_{index}", ""),
-                    'is_checked': data.get(f"select_row_spe_{index}", "0") == "1"  # Checks if the checkbox is selected
+                    'is_checked': data.get(f"select_row_spe_{index}", "0") == "1"
                 }
-                installation.append(installation_row)
+                if is_nonempty_row(installation_row):
+                    installation.append(installation_row)
 
         for key in data.keys():
             if key.startswith("sl_no_value_det_"):
@@ -2541,9 +2818,10 @@ def proposal_store_data(request, enquiry_id, quotation_number):
                     'unit_rate': data.get(f"unit_rate_value_det_{index}", ""),
                     'price_exgst': data.get(f"price_exgst_value_det_{index}", ""),
                     'total': data.get(f"total_value_det_{index}", ""),
-                    'is_checked': data.get(f"select_row_det_{index}", "0") == "1"  # Checkbox value handling
+                    'is_checked': data.get(f"select_row_det_{index}", "0") == "1"
                 }
-                specification.append(specification_row)
+                if is_nonempty_row(specification_row):
+                    specification.append(specification_row)
 
         for key in data.keys():
             if key.startswith("sl_no_value_opt_"):
@@ -2556,110 +2834,80 @@ def proposal_store_data(request, enquiry_id, quotation_number):
                     'unit_rate': data.get(f"unit_rate_value_opt_{index}", ""),
                     'price_exgst': data.get(f"price_exgst_value_opt_{index}", ""),
                     'total': data.get(f"total_value_opt_{index}", ""),
-                    'is_checked': data.get(f"select_row_opt_{index}", "0") == "1"  # Handle checkbox state
+                    'is_checked': data.get(f"select_row_opt_{index}", "0") == "1"
                 }
-                hardware.append(hardware_row)
+                if is_nonempty_row(hardware_row):
+                    hardware.append(hardware_row)
 
         for key in request.POST.keys():
             if key.startswith("terms_") and not key.startswith("terms_check_"):
-                # Get the index from the key (e.g., "terms_1" -> "1")
                 index = key.split("_")[1]
-
-                # Retrieve the term text and checkbox status
                 term_text = request.POST.get(f"terms_{index}")
                 is_checked = request.POST.get(f"terms_check_{index}") == "1"
-
-                # Append the term as a dictionary
-                terms.append({
-                    "text": term_text,
-                    "is_checked": is_checked
-                })
+                term_row = {"text": term_text, "is_checked": is_checked}
+                if is_nonempty_row(term_row):
+                    terms.append(term_row)
 
         for key in data.keys():
             if key.startswith('performance_'):
                 index = key.split('_')[-1]
-
-                # Skip if this index has already been processed
                 if index in general_indices:
                     continue
-
                 term_data = {
                     'performance_checked': data.get(f'performance_{index}') == "1",
                     'performance_text': data.get(f'performance_text_{index}'),
-
                     'flow_characteristics_checked': data.get(f'flow_characteristics_{index}') == "1",
                     'flow_characteristics_text': data.get(f'flow_characteristics_text_{index}'),
-
                     'trial_quality_check_checked': data.get(f'trial_quality_check_{index}') == "1",
                     'trial_quality_check_text': data.get(f'trial_quality_check_text_{index}'),
-
                     'virtual_completion_checked': data.get(f'virtual_completion_{index}') == "1",
                     'virtual_completion_text': data.get(f'virtual_completion_text_{index}'),
-
                     'limitation_liability_checked': data.get(f'limitation_liability_{index}') == "1",
                     'limitation_liability_text': data.get(f'limitation_liability_text_{index}'),
-
                     'force_clause_checked': data.get(f'force_clause_{index}') == "1",
                     'force_clause_text': data.get(f'force_clause_text_{index}'),
-
                     'additional_works_checked': data.get(f'additional_works_{index}') == "1",
                     'additional_works_text': data.get(f'additional_works_text_{index}'),
-
                     'warranty_guaranty_checked': data.get(f'warranty_guaranty_{index}') == "1",
                     'warranty_guaranty_text': data.get(f'warranty_guaranty_text_{index}'),
-
                     'arbitration_checked': data.get(f'arbitration_{index}') == "1",
                     'arbitration_text': data.get(f'arbitration_text_{index}'),
-
                     'validity_checked': data.get(f'validity_{index}') == "1",
                     'validity_text': data.get(f'validity_text_{index}')
                 }
-
-                # Add to the list only if it's not already present
-                if term_data not in general_terms_conditions:
-                    general_terms_conditions.append(term_data)
-
-                # Mark this index as processed
+                if is_nonempty_row(term_data):
+                    if term_data not in general_terms_conditions:
+                        general_terms_conditions.append(term_data)
                 general_indices.add(index)
 
-        
             for key in data.keys():
                 if key.startswith('supply_eq_'):
                     index = key.split('_')[-1]
-                    
                     if index in processed_indices_supply_eq:
                         continue
-
                     appendix_data = {
                         'supply_eq_checked': data.get(f'supply_eq_{index}') == "1",
                         'supply_eq_text': data.get(f'supply_eq_text_{index}'),
-                        
                         'instal_commissioning_checked': data.get(f'instal_commissioning_{index}') == "1",
                         'instal_commissioning_text': data.get(f'instal_commissioning_text_{index}'),
-                        
                         'clients_scope_checked': data.get(f'clients_scope_{index}') == "1",
                         'clients_scope_text': data.get(f'clients_scope_text_{index}'),
-                        
                         'note_checked': data.get(f'note_{index}') == "1",
                         'note_text': data.get(f'note_text_{index}'),
-
                         'dristi_checked': data.get(f'dristi_{index}') == "1",
                         'dristi_subscription_text': data.get(f'dristi_subscription_{index}'),
-                        
                         'iot_checked': data.get(f'iot_{index}') == "1",
                         'iot_hardware_text': data.get(f'iot_hardware_{index}'),
-
                         'dristi_checked': data.get(f'dristi_{index}') == "1",
                         'dristi_subscription_text': data.get(f'dristi_subscription_{index}'),
-                        
                         'iot_checked': data.get(f'iot_{index}') == "1",
                         'iot_hardware_text': data.get(f'iot_hardware_{index}'),
                     }
-
-                    if appendix_data not in appendix:
-                        appendix.append(appendix_data)
-
+                    if is_nonempty_row(appendix_data):
+                        if appendix_data not in appendix:
+                            appendix.append(appendix_data)
                     processed_indices_supply_eq.add(index)
+
         final_data = {
             'quotation_number': quotation_number,
             'contents': contents,
@@ -2674,15 +2922,14 @@ def proposal_store_data(request, enquiry_id, quotation_number):
             'output_table': output_table,
             'pricing': pricing,
             'installation': installation,
-            'specification':specification,
-            'hardware':hardware,
-            'general_terms_conditions':general_terms_conditions,
-            'appendix':appendix,
+            'specification': specification,
+            'hardware': hardware,
+            'general_terms_conditions': general_terms_conditions,
+            'appendix': appendix,
             'enquiry_id': enquiry_id,
-            'terms':terms,
+            'terms': terms,
         }
 
-        # Store the final data in the file as JSON
         with open(file_path, "w") as json_file:
             json.dump(final_data, json_file, indent=4)
         logger.info("Data stored successfully at: %s", file_path)
@@ -2698,65 +2945,143 @@ def proposal_store_data(request, enquiry_id, quotation_number):
 
 
 
+
+import os
+import json
+from datetime import datetime
+from django.conf import settings
+from django.http import Http404
+from django.shortcuts import render
+from .models import companydetails  # Adjust as needed
+
 def proposal_preview(request, quotation_no):
-    # Fetch company details
     company = companydetails.objects.all()
-    
-    # Get the current date
     current_date = datetime.now().strftime('%d %b, %Y')
 
-    # Correct the path to the directory where JSON files are stored
-    stored_data_dir = os.path.join(settings.BASE_DIR, 'proposal')
-    proposal_stored_data_dir = os.path.join(settings.BASE_DIR, 'proposal_draft')
-
+    # Directories to check
+    data_dirs = [
+        os.path.join(settings.BASE_DIR, 'proposal'),
+        os.path.join(settings.BASE_DIR, 'proposal_draft'),
+    ]
     found_data = None
 
-    # Traverse all directories in 'proposal' directory
-    for directory in os.listdir(stored_data_dir):
-        dir_path = os.path.join(stored_data_dir, directory)
-
-        if os.path.isdir(dir_path):  # Ensure it's a directory
-            # Look for a file matching the quotation_no
+    for base_dir in data_dirs:
+        if not os.path.exists(base_dir):
+            continue
+        for directory in os.listdir(base_dir):
+            dir_path = os.path.join(base_dir, directory)
+            if not os.path.isdir(dir_path):
+                continue
             file_path = os.path.join(dir_path, f"{quotation_no}.json")
-
-            if os.path.exists(file_path):  # Check if the file exists
-                # Load the JSON data
+            if os.path.exists(file_path):
                 try:
-                    with open(file_path, 'r') as file:
+                    with open(file_path, 'r', encoding='utf-8') as file:
                         found_data = json.load(file)
+                    break
                 except json.JSONDecodeError:
                     raise Http404(f"Invalid JSON file: {file_path}")
-                break  # Stop searching once file is found
+        if found_data:
+            break
 
-    # Traverse all directories in 'proposal' directory
-    for directory in os.listdir(proposal_stored_data_dir):
-        dir_path = os.path.join(proposal_stored_data_dir, directory)
-
-        if os.path.isdir(dir_path):  # Ensure it's a directory
-            # Look for a file matching the quotation_no
-            file_path = os.path.join(dir_path, f"{quotation_no}.json")
-
-            if os.path.exists(file_path):  # Check if the file exists
-                # Load the JSON data
-                try:
-                    with open(file_path, 'r') as file:
-                        found_data = json.load(file)
-                except json.JSONDecodeError:
-                    raise Http404(f"Invalid JSON file: {file_path}")
-                break  # Stop searching once file is found
-
-    # If no matching file is found, raise a 404 error
     if not found_data:
         raise Http404(f"Quotation with number {quotation_no} not found.")
-    for key, value in found_data.items():
-        print(f" {key}: {value}")    # Pass the data to the template
+
+    data = found_data
+
+    # Helper for appendix subsections
+    def appendix_has(section_key):
+        return any(a.get(section_key) for a in data.get('appendix', []))
+
+    # Section flags
+    has_contents = bool(data.get('contents'))
+    has_site_info = any(i.get('is_checked') or i.get('is_standard_checked') for i in data.get('site_info', []))
+    has_raw_sewage = any(t.get('is_checked') for t in data.get('table_data', []))
+    has_treatment = any(t.get('is_checked') for t in data.get('treatment_processes', []))
+    has_obs_sugg = any(
+        o.get('observation_checked') or o.get('suggestion_checked') or o.get('features') or o.get('salient')
+        for o in data.get('observations_and_suggestions', [])
+    )
+    has_requirements = any(r.get('requirement_checked') for r in data.get('requirements_and_specifications', []))
+    has_specs = any(s.get('spec_checked') for s in data.get('specifications', []))
+    has_process_diagram = any(d.get('process_diagram_checked') for d in data.get('process_diagram', []))
+
+    has_process_desc = any(
+        d.get('process_data', {}).get('process_description_checked')
+        for d in data.get('process_description', [])
+    )
+    has_output = any(
+        o.get('output_data', {}).get('is_checked')
+        for o in data.get('output_table', [])
+    )
+    has_pricing = any(p.get('is_checked') for p in data.get('pricing', []))
+    has_installation = any(i.get('is_checked') for i in data.get('installation', []))
+    has_specification = any(s.get('is_checked') for s in data.get('specification', []))
+    has_terms = any(t.get('is_checked') for t in data.get('terms', []))
+    # General terms: only show if there's any checked field
+    has_general_terms = any(
+        g and any(
+            g.get(f"{field}_checked")
+            for field in [
+                "performance", "flow_characteristics", "trial_quality_check", "virtual_completion",
+                "limitation_liability", "force_clause", "additional_works", "warranty_guaranty", "arbitration", "validity"
+            ]
+        )
+        for g in data.get("general_terms_conditions", [])
+    )
+    # Appendix: show only if any content
+    has_appendix = any(
+        a and any(
+            a.get(k)
+            for k in [
+                "supply_eq_checked", "instal_commissioning_checked", "clients_scope_checked",
+                "note_checked", "dristi_checked", "iot_checked"
+            ]
+        )
+        for a in data.get('appendix', [])
+    )
+    # Appendix table (installation)
+    has_appendix_table = any(i.get("is_checked") for i in data.get('installation', []))
+    # Individual inclusions
+    has_supply_eq = appendix_has('supply_eq_checked')
+    has_instal_commissioning = appendix_has('instal_commissioning_checked')
+    has_clients_scope = appendix_has('clients_scope_checked')
+    has_note = appendix_has('note_checked')
+    has_dristi = appendix_has('dristi_checked')
+    has_iot = appendix_has('iot_checked')
+
+    # Pass all flags to the template
     return render(request, 'xp2/proposal_preview.html', {
         'quotation_no': quotation_no,
         'data': found_data,
         'current_date': current_date,
         'company': company,
-    })
 
+        # Section flags for headers
+        'has_contents': has_contents,
+        'has_site_info': has_site_info,
+        'has_raw_sewage': has_raw_sewage,
+        'has_treatment': has_treatment,
+        'has_obs_sugg': has_obs_sugg,
+        'has_requirements': has_requirements,
+        'has_specs': has_specs,
+        'has_process_diagram': has_process_diagram,
+        'has_process_desc': has_process_desc,
+        'has_output': has_output,
+        'has_pricing': has_pricing,
+        'has_installation': has_installation,
+        'has_specification': has_specification,
+        'has_terms': has_terms,
+        'has_general_terms': has_general_terms,
+        'has_appendix': has_appendix,
+        'has_appendix_table': has_appendix_table,
+        # Appendix inclusion flags
+        'has_supply_eq': has_supply_eq,
+        'has_instal_commissioning': has_instal_commissioning,
+        'has_clients_scope': has_clients_scope,
+        'has_note': has_note,
+        'has_dristi': has_dristi,
+        'has_iot': has_iot,
+    })
 
 
 def product_pr(request, enquiry_id):
@@ -3876,7 +4201,7 @@ def proposal_draft_store_data(request, enquiry_id, quotation_number):
                 # Save the file paths if checked
                 if process_diagram1_checked and process_diagram1_file:
                     # Define the relative path for the process diagram 1 file
-                    process_diagram1_path = os.path.join("static", "process_diagrams", str(enquiry_id), f"process_diagram1_{index}_{process_diagram1_file.name}")
+                    process_diagram1_path = os.path.join( "process_diagrams", str(enquiry_id), f"process_diagram1_{index}_{process_diagram1_file.name}")
                     process_diagram1_path = process_diagram1_path.replace("\\", "/")  # Normalize to forward slashes
 
                     # Save the file to the specified path inside static
@@ -4853,3 +5178,7 @@ def edit_hidrecwash(request, quotation_no, enquiry_id):
         'enquiry_id': enquiry_id,
         'hidrec': hidrec
     })
+
+
+
+

@@ -1,0 +1,706 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Edit Commercial Quote - {{ commercial_quote.quotation_no }}</h2>
+    <form method="POST" >
+        {% csrf_token %}
+    
+        <!-- Billing Details -->
+        <div class="row">
+            <div class="col-md-6">
+                <h4>Billing Details</h4>
+                <table class="table table-bordered">
+                    <tbody>
+                        <tr>
+                            <th>Company Name</th>
+                            <td><input type="text" class="form-control" name="bill_to_company_name" value="{{ commercial_quote.bill_to_company_name }}" readonly></td>
+                        </tr>
+                        <tr>
+                            <th>Customer Name</th>
+                            <td><input type="text" class="form-control" name="bill_to_customer_name" value="{{ commercial_quote.bill_to_customer_name }}"readonly></td>
+                        </tr>
+                        <tr>
+                            <th>GST Number</th>
+                            <td><input type="text" class="form-control"  id ="bill_to_gst_number" name="bill_to_gst_number" value="{{ commercial_quote.bill_to_gst_number }}"></td>
+                        </tr>
+                        <tr>
+                            <th>Address</th>
+                            <td><textarea class="form-control" name="bill_to_address">{{ commercial_quote.bill_to_address }}</textarea></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+    
+            <!-- Shipping Details -->
+            <div class="col-md-6">
+                <h4>Shipping Details</h4>
+                <table class="table table-bordered">
+                    <tbody>
+                        <tr>
+                            <th>Company Name</th>
+                            <td><input type="text" class="form-control" name="ship_to_company_name" value="{{ commercial_quote.ship_to_company_name }}"readonly></td>
+                        </tr>
+                        <tr>
+                            <th>Customer Name</th>
+                            <td><input type="text" class="form-control" name="ship_to_customer_name" value="{{ commercial_quote.ship_to_customer_name }}"readonly></td>
+                        </tr>
+                        <tr>
+                            <th>GST Number</th>
+                            <td><input type="text" class="form-control" name="ship_to_gst_number" value="{{ commercial_quote.ship_to_gst_number }}"></td>
+                        </tr>
+                        <tr>
+                            <th>Address</th>
+                            <td><textarea class="form-control" name="ship_to_address">{{ commercial_quote.ship_to_address }}</textarea></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    
+        <!-- From Details (Pre-Fetched) -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h4>From</h4>
+                <table class="table table-bordered">
+                    <tbody>
+                        <tr>
+                            <th>Company Name</th>
+                            <td><input type="text" class="form-control" name="from_company_name" value="{{ commercial_quote.from_company_name }}" readonly></td>
+                        </tr>
+                        <tr>
+                            <th>Phone Number</th>
+                            <td><input type="text" class="form-control" name="from_phone" value="{{ commercial_quote.from_phone }}" readonly></td>
+                        </tr>
+                        <tr>
+                            <th>Email</th>
+                            <td><input type="text" class="form-control" name="from_email" value="{{ commercial_quote.from_email }}" readonly></td>
+                        </tr>
+                        <tr>
+                            <th>GST Number</th>
+                            <td><input type="text" class="form-control" name="from_gst" value="{{ commercial_quote.from_gst }}" readonly></td>
+                        </tr>
+                        <tr>
+                            <th>PAN Number</th>
+                            <td><input type="text" class="form-control" name="from_pan" value="{{ commercial_quote.from_pan }}" ></td>
+                        </tr>
+                        <tr>
+                            <th>Address</th>
+                            <td><textarea class="form-control" name="from_address" rows="3" readonly>{{ commercial_quote.from_address }}</textarea></td>
+                        </tr>
+                        <tr>
+                            <th>Bank Details</th>
+                            <td>
+                                <select name="bank_id" id="bank_id" class="form-select">
+                                    <option value="" disabled>Select Bank</option>
+                                    {% for bank in banks %}
+                                        <option value="{{ bank.id }}" {% if commercial_quote.bank.id == bank.id %}selected{% endif %}>
+                                            {{ bank.bank_name }} - {{ bank.account_number }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    
+        <!-- Quotation Items Table -->
+        <div class="row mt-4">
+            <h4>Quotation Items</h4>
+            <table class="table table-bordered" id="quotationTable">
+                <thead>
+                    <tr>
+                        <th>Sl</th>
+                        <th>Description</th>
+                        <th>HSN Code</th>
+                        <th>Base Amount</th>
+                        <th>Quantity</th>
+                        <th>Margin</th>
+                        <th>Rate</th>
+                        <th>CGST</th>
+                        <th>SGST</th>
+                        <th>IGST</th>
+                        <th>Final Amount</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in quotation_items %}
+                    <tr>
+                        <td class="row-index">{{ forloop.counter }}</td>
+                        <td>
+                            <select name="products[]" class="form-control product-select" onchange="updateProductDetails(this)">
+                                <option value="">Select Product</option>
+                                {% for product in products %}
+                                    <option value="{{ product.id }}"  data-hsncode="{{ product.hsncode }}" 
+                                            data-base_amount="{{ product.base_amount }}" data-margin="{{ product.margin }}"
+                                            data-gst="{{ product.gst }}" data-cgst="{{ product.cgst }}" data-sgst="{{ product.sgst }}"
+                                            data-igst="{{ product.igst }}" {% if product.id == item.product.id %}selected{% endif %}>
+                                        {{ product.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><input type="text" class="form-control hsncode" name="hsncode[]" value="{{ item.hsncode }}"></td>
+                        <td><input type="text" class="form-control base-amount" name="base_amount[]" value="{{ item.base_amount }}"></td>
+                        <td><input type="number" class="form-control quantity" name="quantity[]" value="{{ item.quantity }}" onchange="updateRateAndFinalAmount(this)"></td>
+                        <td><input type="text" class="form-control margin" name="margin[]" value="{{ item.margin }}" onchange="updateRateAndFinalAmount(this)"></td>
+
+                        <td><input type="text" class="form-control Rate" name="rate[]" value="{{ item.rate }}" style="width: 120px;"></td>
+
+                        <td><input type="text" class="form-control cgst" name="cgst[]" value="{{ item.cgst }}" onchange="updateFinalAmount(this)"></td>
+                        <td><input type="text" class="form-control sgst" name="sgst[]" value="{{ item.sgst }}" onchange="updateFinalAmount(this)"></td>
+                        <td><input type="text" class="form-control igst" name="igst[]" value="{{ item.igst }}" onchange="updateFinalAmount(this)"></td>
+                        <td><input type="text" class="form-control final-amount" name="final_amount[]" value="{{ item.final_amount }}"></td>
+                        <td>
+                            <button type="button" class="btn btn-danger btn-sm remove-row">Delete</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div>
+            <button type="button" class="btn btn-success mt-2" id="addRow">Add Row</button>
+            </div>
+        </div>
+    
+        <!-- Terms and Conditions -->
+        <div class="row mt-4">
+            <h4>Terms & Conditions</h4>
+            <textarea class="form-control" name="terms_and_conditions" rows="7">{{ commercial_quote.terms_and_conditions }}</textarea>
+        </div>
+    
+        <!-- Quotation Summary -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h4>Summary</h4>
+                <table class="table table-bordered">
+                    <tbody>
+                        <tr>
+                            <th>Subtotal</th>
+                            <td><input type="text" class="form-control" id="subtotal" name="subtotal" value="{{ commercial_quote.subtotal }}" readonly></td>
+                        </tr>
+                        <tr>
+                            <th>CGST Total</th>
+                            <td><input type="text" class="form-control" id="cgst_total" name="cgst_total" value="{{ commercial_quote.cgst_total }}" readonly></td>
+                        </tr>
+                        <tr>
+                            <th>SGST Total</th>
+                            <td><input type="text" class="form-control" id="sgst_total" name="sgst_total" value="{{ commercial_quote.sgst_total }}" readonly></td>
+                        </tr>
+                        <tr>
+                            <th>IGST Total</th>
+                            <td><input type="text" class="form-control" id="igst_total" name="igst_total" value="{{ commercial_quote.igst_total }}" readonly></td>
+                        </tr>
+                        <tr>
+                            <th>Grand Total</th>
+                            <td><input type="text" class="form-control" id="grand_total" name="grand_total" value="{{ commercial_quote.grand_total }}" readonly></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    
+        <!-- Save & Cancel Buttons -->
+        <div class="row mt-4">
+            <div class="col-md-12 text-center">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                {% comment %} <a href="{% url 'managequotationpage' %}" class="btn btn-secondary">Cancel</a> {% endcomment %}
+            </div>
+        </div>
+    </form>
+    
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        function syncAddProductButton(row) {
+            // Finds the relevant select and button in the provided row
+            var select = $(row).find('.product-select')[0];
+            var btn = $(row).find('.add-product')[0];
+            if (select && btn) {
+                btn.disabled = !!select.value;
+            }
+        }
+    
+        // On page load, sync all rows
+        $("#quotationTable tbody tr").each(function(){ syncAddProductButton(this); });
+    
+        // Whenever the product select changes, enable/disable Add Product button
+        $(document).on('change', '.product-select', function() {
+            syncAddProductButton($(this).closest('tr'));
+        });
+    
+        // When a new row is added, set up the select2 and do the sync
+        $(document).on('click', '#addRow', function () {
+            setTimeout(function(){
+                var lastRow = $("#quotationTable tbody tr:last-child");
+                // If Select2 is not already initialized on this select
+                var newSelect = lastRow.find('.product-select');
+                if (newSelect.length && !newSelect.data('select2')) {
+                    newSelect.select2({
+                        tags: true,
+                        placeholder: "Search or type a product",
+                        allowClear: true,
+                        width: '250px'
+                    });
+                }
+                syncAddProductButton(lastRow);
+            }, 10);
+        });
+    
+        // If dynamic clearing of the select happens (e.g., via allowClear), keep things in sync as well
+        $(document).on('select2:clear', '.product-select', function() {
+            syncAddProductButton($(this).closest('tr'));
+        });
+    });
+    </script>
+    
+
+<script>
+
+    
+    // Wait for DOM to load
+    document.addEventListener("DOMContentLoaded", function () {
+        let table = document.querySelector("#quotationTable");  // Ensure table exists before adding event listener
+        if (table) {
+            table.addEventListener("click", enableManualProductEntry);
+        }
+    });
+
+
+    
+// Function to get GST state code from billing details
+function getGSTStateCode() {
+    let gstNumber = $("input[name='bill_to_gst_number']").val().trim();
+    return gstNumber ? gstNumber.substring(0, 2) : "";  // Get first two digits
+}
+
+
+// Function to update CGST, SGST, and IGST based on GST number
+function updateTaxFields(row) {
+    let gstStateCode = getGSTStateCode();
+
+    if (gstStateCode === "29") {  // Karnataka (State Code: 29)
+        row.find(".cgst").val(9);
+        row.find(".sgst").val(9);
+        row.find(".igst").val(0);
+    } else {
+        row.find(".cgst").val(0);
+        row.find(".sgst").val(0);
+        row.find(".igst").val(18);
+    }
+
+    updateFinalAmount(row);
+}
+
+$(document).ready(function () {
+    // Bind input and change events to all relevant fields
+    $(document).on("input change", "[name='base_amount[]'], [name='quantity[]'], [name='margin[]']", function () {
+        updateRateAndFinalAmount(this);
+    });
+
+    $(document).on("input change", "[name='cgst[]'], [name='sgst[]'], [name='igst[]']", function () {
+        updateFinalAmount(this);
+    });
+
+    // Trigger calculation once on page load (optional)
+    $("#quotationTable tbody tr").each(function () {
+        updateRateAndFinalAmount($(this).find("[name='quantity[]']"));
+    });
+});
+
+// Function to update rate and final amount based on quantity and margin
+function updateRateAndFinalAmount(input) {
+    let row = $(input).closest("tr");
+    let baseAmount = parseFloat(row.find("[name='base_amount[]']").val()) || 0;
+    let quantity = parseFloat(row.find("[name='quantity[]']").val()) || 1;
+    let margin = parseFloat(row.find("[name='margin[]']").val()) || 0;
+
+    // Calculate the rate based on quantity and margin
+    let rate = (baseAmount * quantity) * (1 + margin / 100);
+    row.find("[name='rate[]']").val(rate.toFixed(2));
+
+    // Recalculate the final amount including GST
+    updateFinalAmount(row);
+}
+
+// Function to update final amount based on CGST, SGST, and IGST
+function updateFinalAmount(input) {
+    let row = $(input).closest("tr");
+    let rate = parseFloat(row.find("[name='rate[]']").val()) || 0;
+    let cgstPercent = parseFloat(row.find("[name='cgst[]']").val()) || 0;
+    let sgstPercent = parseFloat(row.find("[name='sgst[]']").val()) || 0;
+    let igstPercent = parseFloat(row.find("[name='igst[]']").val()) || 0;
+
+    // Calculate CGST, SGST, IGST amounts
+    let cgstAmount = (rate * cgstPercent) / 100;
+    let sgstAmount = (rate * sgstPercent) / 100;
+    let igstAmount = (rate * igstPercent) / 100;
+
+    // Calculate Final Amount
+    let finalAmount = rate + cgstAmount + sgstAmount + igstAmount;
+    row.find("[name='final_amount[]']").val(finalAmount.toFixed(2));
+
+    updateTotalFinalAmount(); // Update grand total
+}
+
+// Function to update total final amount (Grand Total)
+function updateTotalFinalAmount() {
+    console.log("Triggered subtotal changing js ")
+    let subtotal = 0;
+    let cgst_total = 0;
+    let sgst_total = 0;
+    let igst_total = 0;
+    let grand_total = 0;
+
+    $("#quotationTable tbody tr").each(function () {
+        let row = $(this);
+        let rate = parseFloat(row.find("[name='rate[]']").val()) || 0;
+        let cgst = parseFloat(row.find("[name='cgst[]']").val()) || 0;
+        let sgst = parseFloat(row.find("[name='sgst[]']").val()) || 0;
+        let igst = parseFloat(row.find("[name='igst[]']").val()) || 0;
+
+        let cgstAmount = (rate * cgst) / 100;
+        let sgstAmount = (rate * sgst) / 100;
+        let igstAmount = (rate * igst) / 100;
+
+        let finalAmount = rate + cgstAmount + sgstAmount + igstAmount;
+
+        // Update running totals
+        subtotal += rate;
+        cgst_total += cgstAmount;
+        sgst_total += sgstAmount;
+        igst_total += igstAmount;
+        grand_total += finalAmount;
+    });
+    console.log("subtotal",subtotal)
+    // Update the summary fields in the summary table
+    $("#subtotal").val(subtotal.toFixed(2));
+    $("#cgst_total").val(cgst_total.toFixed(2));
+    $("#sgst_total").val(sgst_total.toFixed(2));
+    $("#igst_total").val(igst_total.toFixed(2));
+    $("#grand_total").val(grand_total.toFixed(2));
+    
+}
+
+function bindProductChange(row) {
+    row.find(".form-select").on("change", function () {
+        let selectedProduct = $(this).find(":selected");
+
+        // Update all the fields based on selected product
+        row.find(".hsncode").val(selectedProduct.data("hsn"));
+        row.find(".base-amount").val(selectedProduct.data("base"));
+        row.find(".margin").val(selectedProduct.data("margin"));
+        row.find(".cgst").val(selectedProduct.data("cgst"));
+        row.find(".sgst").val(selectedProduct.data("sgst"));
+        row.find(".igst").val(selectedProduct.data("igst"));
+
+        // Recalculate tax fields and final amount
+        updateTaxFields(row);
+        updateRateAndFinalAmount(row);
+    });
+
+    // Remove row event
+    {% comment %} row.find(".remove-row").on("click", function () {
+        row.remove();
+        updateRowNumbers();
+        updateTotalFinalAmount();
+    }); {% endcomment %}
+}
+
+// Remove row functionality
+document.addEventListener("click", function(event) {
+    if (event.target && event.target.classList.contains("remove-row")) {
+        const row = event.target.closest("tr");
+        row.remove();
+        updateTotalFinalAmount(); // Recalculate total final amount
+    }
+});
+// Function to handle updates based on changes in product selection or GST number
+function updateProductDetails(element) {
+    console.log("Triggered by:", element.name);
+
+    // Check if the event came from the product dropdown or GST input field
+    if (element.name === "products[]") {
+        // Handle product selection logic
+        var selectedOption = element.options[element.selectedIndex];
+        var hsnCode = selectedOption.getAttribute('data-hsncode');
+        var baseAmount = selectedOption.getAttribute('data-base_amount');
+        var gst = parseFloat(selectedOption.getAttribute('data-gst')) || 0; // Get GST from product
+        var row = element.closest('tr');
+        console.log("GST from product:", gst);
+
+        // Update the corresponding HSN code and base amount input fields
+        var hsnCodeInput = row.querySelector('[name="hsncode[]"]');
+        var baseAmountInput = row.querySelector('[name="base_amount[]"]');
+        if (hsnCodeInput) hsnCodeInput.value = hsnCode;
+        if (baseAmountInput) baseAmountInput.value = baseAmount;
+
+        // Distribute GST between CGST/SGST or IGST
+        distributeGST(row, gst);
+
+        // Recalculate the rate and final amount after updating the base amount
+        updateRateAndFinalAmount(row.querySelector('[name="quantity[]"]'));
+
+    } else if (element.name === "bill_to_gst_number") {
+        // Handle changes in the GST number
+        console.log("GST Number changed:", element.value);
+
+        // Trigger GST-related column updates for all rows
+        document.querySelectorAll('select[name="products[]"]').forEach(function(productSelect) {
+            var row = productSelect.closest('tr');
+            var gst = parseFloat(productSelect.options[productSelect.selectedIndex].getAttribute('data-gst')) || 0;
+            console.log("Re-distributing GST for row:", row);
+
+            // Redistribute GST based on new GST number logic
+            distributeGST(row, gst);
+        });
+    }
+}
+
+    // Function to distribute GST between CGST/SGST or IGST
+    function distributeGST(row, gst) {
+        console.log("triggered gst thing")
+        var billToGST = document.getElementById('bill_to_gst_number').value;
+        var fromGST = document.querySelector('input[name="from_gst"]').value;
+
+        // Ensure both GST numbers are available
+        if (billToGST && fromGST) {
+            var billToPrefix = billToGST.substring(0, 2);
+            var fromPrefix = fromGST.substring(0, 2);
+            console.log("a : ", billToPrefix ,"b :",fromPrefix);
+
+            var cgstInput = row.querySelector('[name="cgst[]"]');
+            var sgstInput = row.querySelector('[name="sgst[]"]');
+            var igstInput = row.querySelector('[name="igst[]"]');
+
+            if (billToPrefix === fromPrefix) {
+                // Enable CGST/SGST, disable IGST
+                if (cgstInput) {
+                    cgstInput.disabled = false;
+                    cgstInput.value = (gst / 2).toFixed(2); // Divide GST into two halves
+                }
+                if (sgstInput) {
+                    sgstInput.disabled = false;
+                    sgstInput.value = (gst / 2).toFixed(2);
+                }
+                if (igstInput) {
+                    igstInput.disabled = true;
+                    igstInput.value = ''; // Clear IGST
+                }
+            } else {
+                // Enable IGST, disable CGST/SGST
+                if (cgstInput) {
+                    cgstInput.value = '0.00'; // Clear CGST
+                }
+                if (sgstInput) {
+                    sgstInput.value = '0.00'; // Clear SGST
+                }
+                if (igstInput) {
+                    igstInput.disabled = false;
+                    igstInput.value = gst.toFixed(2); // Fill full GST in IGST
+                }
+            }
+            console.log("calling other function");
+            
+            updateFinalAmount(cgstInput || igstInput);
+
+        }
+    }
+
+    // Function to enable manual product entry
+    function enableManualProductEntry(event) {
+        if (event.target.classList.contains("add-product")) {
+            let row = event.target.closest("tr");
+            let selectBox = row.querySelector(".product-select");
+    
+            if (selectBox) {
+                // Capture the selected value before destroying Select2
+                let selectedValue = selectBox.value;
+    
+                // Destroy Select2 only for this row
+                if ($(selectBox).data("select2")) {
+                    $(selectBox).select2("destroy");
+                }
+    
+                // Ensure Select2 elements are removed only in this row
+                setTimeout(() => {
+                    let select2Container = row.querySelector(".select2-container");
+                    if (select2Container) {
+                        select2Container.remove();
+                    }
+    
+                    // Replace the select box with a text input
+                    let newInput = document.createElement("input");
+                    newInput.type = "text";
+                    newInput.className = "form-control";
+                    newInput.name = "products[]";
+                    newInput.placeholder = "Enter Product Name";
+                    newInput.required = true;
+    
+                    // Retain the selected value
+                    newInput.value = selectedValue;
+    
+                    // Replace the select box with input
+                    selectBox.replaceWith(newInput);
+                }, 50); // Small delay ensures Select2 finishes cleanup properly
+            }
+    
+            // Enable read-only fields for this row only
+            row.querySelectorAll("input[name='hsncode[]'], input[name='base_amount[]'], input[name='cgst[]'], input[name='sgst[]'], input[name='igst[]']")
+                .forEach(input => input.removeAttribute("readonly"));
+    
+            // Remove "Add Product" button only in this row
+            event.target.remove();
+    
+            // Call function to update tax fields based on GST number
+            updateTaxFields($(row));
+        }
+    }
+    
+    // Function to get GST state code from billing details
+    function getGSTStateCode() {
+        let gstNumber = $("input[name='bill_to_gst_number']").val().trim();
+        return gstNumber ? gstNumber.substring(0, 2) : ""; // Get first two digits
+    }
+    
+    // Function to update CGST, SGST, and IGST based on GST number
+    function updateTaxFields(row) {
+        let gstStateCode = getGSTStateCode();
+    
+        if (gstStateCode === "29") {  // Karnataka (State Code: 29)
+            row.find(".cgst").val(9);
+            row.find(".sgst").val(9);
+            row.find(".igst").val(0);
+        } else {
+            row.find(".cgst").val(0);
+            row.find(".sgst").val(0);
+            row.find(".igst").val(18);
+        }
+    
+        updateFinalAmount(row);
+    }
+    
+
+    // Event delegation for existing and dynamically added rows
+    let table = document.querySelector("#quotationTable");
+    table.addEventListener("click", enableManualProductEntry);
+    
+// Add new row event listener inside $(document).ready()
+$(document).ready(function () {
+    // Add new row
+    $(document).on("click", "#addRow", function () {
+        let newRow = $(`
+            <tr>
+                <td class="row-index"></td>
+                <td>
+                    <select class="form-select product-select" name="products[]" required onchange="updateProductDetails(this)">
+                        <option value="" disabled selected>Select a product</option>
+                        {% for product in products %}
+                            <option value="{{ product.id }}" 
+                                    data-hsncode="{{ product.hsncode }}" 
+                                    data-base_amount="{{ product.base_amount }}"
+                                    data-gst="{{ product.gst }}" 
+                                    data-cgst="{{ product.cgst }}" 
+                                    data-sgst="{{ product.sgst }}"
+                                    data-igst="{{ product.igst }}">
+                                {{ product.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td><input type="text" class="form-control hsncode" name="hsncode[]" value=""></td>
+                <td><input type="text" class="form-control base-amount" name="base_amount[]" value=""></td>
+                <td><input type="number" class="form-control quantity" name="quantity[]" value="1" onchange="updateRateAndFinalAmount(this)"></td>
+                <td><input type="text" class="form-control margin" name="margin[]" value="" onchange="updateRateAndFinalAmount(this)"></td>
+                <td><input type="text" class="form-control rate" name="rate[]" value="" readonly></td>
+                <td><input type="text" class="form-control cgst" name="cgst[]" value="" oninput="updateFinalAmount(this)"></td>
+                <td><input type="text" class="form-control sgst" name="sgst[]" value="" oninput="updateFinalAmount(this)"></td>
+                <td><input type="text" class="form-control igst" name="igst[]" value="" oninput="updateFinalAmount(this)"></td>
+                <td><input type="text" class="form-control final-amount" name="final_amount[]" value="" readonly></td>
+                <td>
+                    <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-success btn-sm add-product">Add Product</button>
+                    <button type="button" class="btn btn-danger btn-sm remove-row">Delete</button></td>
+                    </div>
+            </tr>
+        `);
+
+        let tableBody = $("#quotationTable tbody");
+        if (tableBody.length === 0) {
+            console.error("Table body not found!");
+            return;
+        }
+
+        // Append row & update numbers
+        tableBody.append(newRow);
+        updateRowNumbers();
+        // Apply Select2 to the newly added dropdown
+        tableBody.find(".product-select").last().select2({
+            tags: true,
+            placeholder: "Search or type a product",
+            allowClear: true,
+            width: '250px'
+        });
+    
+        $("#quotationTable tbody").append(newRow);
+        updateRowNumbers();
+    });
+
+    // Remove row
+    $(document).on("click", ".remove-row", function () {
+        $(this).closest("tr").remove();
+        updateRowNumbers();
+    });
+
+   // Convert dropdown to input field when clicking "Add Product"
+   $(document).on("click", ".add-product", function () {
+        let row = $(this).closest("tr");
+        let selectBox = row.find(".product-select"); // Target select box
+
+        if (selectBox.length > 0) {
+            // Remove Select2 first (if applied)
+            selectBox.select2("destroy");
+
+            // Create new input field
+            let newInput = $("<input>", {
+                type: "text",
+                class: "form-control product-input",
+                name: "products[]",
+                placeholder: "Enter Product Name",
+                required: true
+            });
+
+            // Replace select dropdown with input field
+            selectBox.replaceWith(newInput);
+        }
+
+        // Make other fields editable
+        row.find("input[name='hsncode[]'], input[name='base_amount[]'], input[name='cgst[]'], input[name='sgst[]'], input[name='igst[]']").prop("readonly", false);
+
+        // Remove the "Add Product" button
+        $(this).remove();
+    });
+    
+
+
+    
+    // Update row numbering
+    function updateRowNumbers() {
+        $("#quotationTable tbody tr").each(function (index) {
+            $(this).find(".row-index").text(index + 1);
+        });
+    }
+});
+
+
+
+
+</script>
+
+{% endblock %}

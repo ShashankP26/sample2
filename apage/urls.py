@@ -20,7 +20,17 @@ urlpatterns = [
     path('service-report/<int:pk>/pdf/', views.service_report_pdf, name='service_report_pdf'),
     path('service-report/<int:report_id>/update-notes/', views.servireport_edithistory, name='servireport_edithistory'),
     path('service-report/update-status/<int:pk>/<str:action>/', views.update_service_report_status, name='update_service_report_status'),
-    path('service-report/update-status/<int:pk>/<str:action>/', views.update_service_report_status, name='update_service_report_status'),
+
+    path('service-report/<int:pk>/reject/', views.reject_service_report, name='reject_service_report'),
+    path('client-sign/form/<int:pk>/', views.client_sign_report, name='client_sign_form'),
+    path("client-sign/<int:pk>/", views.client_sign_view, name="client_sign"),
+    path('service-report/draft/', views.autosave_service_report, name='service_report_draft'),
+    path('service-report/draft/<int:pk>/', views.get_report_draft, name='get_report_draft'),
+
+
+
+
+    path('get-sites/', views.get_sites, name='get_sites'),
 
     # general report 
     path('generalreport/', views.generalreport, name='generalreport'),  # Match to this URL
@@ -43,6 +53,14 @@ urlpatterns = [
     path('maintenance-checklist/detail/<int:checklist_id>/', views.maintenance_checklist_detail, name='maintenance_checklist_detail'),
     path('checklist/<int:pk>/<str:action>/', views.update_status, name='update_status'),
 
+    # Generator Report
+    path('generatorreport-viewing/', views.generator_report, name='generator_report'),
+    path('generatorreport/add/', views.add_generator_report, name='add_generator_report'),
+    path('generatorreport/edit/<int:report_id>/', views.edit_generator_report, name='edit_generator_report'),
+    # path('demo/', views.demo, name='demo'),
+
+
+
     # export
     path('export/data/', exportviews.export_data, name='export_data'),  # General Report Export
     path('export/mom/', exportviews.export_mom, name='export_mom'),     # MOM Export
@@ -52,12 +70,17 @@ urlpatterns = [
     path('service-reports/export/pdf/', exportviews.export_service_reports_pdf, name='export_service_reports_pdf'),
     path('service-reports/export/csv/', exportviews.export_service_reports_csv, name='export_service_reports_csv'),
     path('service-reports/export/xlsx/', exportviews.export_service_reports_xlsx, name='export_service_reports_xlsx'),
+    path('service-report/draft/', views.autosave_service_report, name='service_report_draft'),
+    path('service-report/draft/<int:pk>/', views.get_report_draft, name='get_report_draft'),
+
 
 
     path('password_reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
     path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
     path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
+
+
 ]
 
 

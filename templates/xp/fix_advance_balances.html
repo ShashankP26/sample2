@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <h2 class="mb-4">Fix Advance Group Balances — Preview</h2>
+
+    <div class="alert alert-warning">
+        <strong>Note:</strong> This page will <u>NOT</u> update anything until you click 
+        <strong>"Confirm Fix"</strong>.
+    </div>
+
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Group Name</th>
+                <th>OLD Used</th>
+                <th>OLD Remaining</th>
+                <th>NEW Used (Correct)</th>
+                <th>NEW Remaining (Correct)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in preview_data %}
+            <tr>
+                <td>{{ row.group.name }}</td>
+                <td>₹{{ row.old_used }}</td>
+                <td>₹{{ row.old_remaining }}</td>
+                <td class="text-success fw-bold">₹{{ row.new_used }}</td>
+                <td class="text-success fw-bold">₹{{ row.new_remaining }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <form action="{% url 'confirm_fix_advance_balances' %}" method="POST">
+        {% csrf_token %}
+        <button class="btn btn-danger btn-lg mt-3"
+                onclick="return confirm('Are you sure? This will update ALL group balances.')">
+            CONFIRM FIX
+        </button>
+    </form>
+
+</div>
+{% endblock %}

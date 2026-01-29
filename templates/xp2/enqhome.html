@@ -1,51 +1,126 @@
 {% extends "base.html" %}
 
-    
+
 {% load static %}
 
 {% block content %}
 
 <div class="page-wrapper d-flex flex-column justify-content-start">
     <!-- Page header -->
-    <div class="page-body">
-        <div class="container-fluid">
-            <div class="row g-2 align-items-center">
-                <div class="col d-flex align-items-center justify-content-between">
-                    <h1 class="page-title">Enquiries</h1>
-                 
-                    <div class="input-icon d-flex">
-                        <form method="GET" action="" class="d-flex">
-                            <!-- Search Input -->
-                            <input type="text" name="search" value="{{ search_query }}" class="form-control me-2" placeholder="Search…" aria-label="Search in website">
-                            
-                            <!-- Search Button -->
-                            <button type="submit" class="btn btn-primary me-2">Search</button>
-                    
-                            <!-- Clear Button -->
-                            <button type="button" class="btn btn-secondary" onclick="clearSearch()">Clear</button>
-                        </form>
-                    </div>
-                </div>
-            </div><br>
-            <div class="btn-group">
-                <button class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                    Export
-                </button>
-                <div class="dropdown-menu">
-                    <a class="dropdown-item" href="{% url 'export_enquiries_pdf' %}">Export  as PDF</a>
-                    <a class="dropdown-item" href="{% url 'export_enquiries_csv' %}">Export  as CSV</a>
-                    <a class="dropdown-item" href="{% url 'export_enquiries_xlsx' %}">Export  as XLSX</a>
-                    <a class="dropdown-item" href="#" onclick="printPage()">Print</a>
-                </div>
-            </div>
-            <a href="{% url 'newenquirypage' %}" class="btn btn-primary" role="button">New Enquiry</a>
+   <!-- PAGE HEADER -->
+<div class="page-body">
+    <div class="container-fluid">
+  
+      <!-- ================= LINE 1 ================= -->
+      <div class="row align-items-center mb-2">
+  
+        <!-- LEFT : H1 -->
+        <div class="col-md-6">
+          <h1 class="page-title mb-0">Enquiries</h1>
         </div>
+  
+        <!-- RIGHT : SEARCH -->
+        <div class="col-md-6 d-flex justify-content-end align-items-center gap-2">
+  
+          <form method="GET" class="d-flex align-items-center gap-2 mb-0">
+  
+            <input type="text"
+                   name="search"
+                   value="{{ search_query }}"
+                   class="form-control"
+                   placeholder="Search…"
+                   style="width:220px">
+  
+            <button type="submit" class="btn btn-primary">
+              Search
+            </button>
+  
+            <button type="button"
+                    class="btn btn-secondary"
+                    onclick="clearAllFilters()">
+              Clear
+            </button>
+  
+          </form>
+  
+        </div>
+      </div>
+  
+      <!-- ================= LINE 2 ================= -->
+      <div class="row align-items-center">
+  
+        <!-- LEFT CONTROLS -->
+        <div class="col-md-6 d-flex align-items-center gap-2 flex-wrap">
+  
+          <!-- NEW ENQUIRY -->
+          <a href="{% url 'newenquirypage' %}" class="btn btn-primary">
+            + New Enquiry
+          </a>
+  
+          <!-- EXPORT -->
+          <div class="btn-group">
+            <button class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+              Export
+            </button>
+            <div class="dropdown-menu">
+              <a class="dropdown-item" href="{% url 'export_enquiries_pdf' %}">PDF</a>
+              <a class="dropdown-item" href="{% url 'export_enquiries_csv' %}">CSV</a>
+              <a class="dropdown-item" href="{% url 'export_enquiries_xlsx' %}">XLSX</a>
+              <a class="dropdown-item" href="#" onclick="printPage()">Print</a>
+            </div>
+          </div>
+  
+          <!-- FILTER BY USER (AUTO SUBMIT) -->
+          <div class="btn-group">
+
+            <button type="button"
+                    class="btn btn-primary dropdown-toggle"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false">
+              {% if selected_user %}
+                {{ selected_user.first_name }}
+              {% else %}
+                Filter by User
+              {% endif %}
+            </button>
+          
+            <ul class="dropdown-menu">
+          
+              <!-- Clear user filter -->
+              <li>
+                <a class="dropdown-item"
+                   href="?{% if search_query %}search={{ search_query }}&{% endif %}
+                          {% if current_sort %}sort={{ current_sort }}{% endif %}">
+                  All Users
+                </a>
+              </li>
+          
+              <li><hr class="dropdown-divider"></li>
+          
+              {% for user in users_list %}
+                <li>
+                  <a class="dropdown-item"
+                     href="?user={{ user.id }}
+                          {% if search_query %}&search={{ search_query }}{% endif %}
+                          {% if current_sort %}&sort={{ current_sort }}{% endif %}">
+                    {{ user.first_name }}
+                  </a>
+                </li>
+              {% endfor %}
+          
+            </ul>
+          
+          </div>
+  
+        </div>
+  
+        <!-- RIGHT EMPTY (INTENTIONAL) -->
+        <div class="col-md-6"></div>
+  
+      </div>
+  
     </div>
-    {% comment %} <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta14/dist/css/tabler.min.css" rel="stylesheet"> {% endcomment %}
-    {% comment %} <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta14/dist/js/tabler.min.js"></script> {% endcomment %}
-   
-    
-    
+  </div>
 
     <div class="container-fluid">
         <div class="card">
@@ -55,17 +130,39 @@
                         <thead>
                             <tr>
                                 <th><label>ID</label></th>
+                                <th><label>User</label></th>
                                 <th><label>Company Name</label></th>
                                 <th><label>Cust Name</label></th>
-                                {% comment %} <th><label>Email</label></th> {% endcomment %}
+                                <th><label>Email</label></th>
                                 <th><label>Contact</label></th>
-                                {% comment %} <th><label>Location</label></th> {% endcomment %}
-                                <th><label>Status</label></th>
+                                <th><label>Files</label></th>
+                                <th>
+                                    {% with next_sort="status" %}
+                                      {% if current_sort == "status" %}
+                                        {% with next_sort="-status" %}
+                                        <a href="?sort={{ next_sort }}&user={{ selected_user_id|default:'' }}&search={{ search_query }}"
+                                           class="text-decoration-none text-dark">
+                                          Status ▲
+                                        </a>
+                                        {% endwith %}
+                                      {% elif current_sort == "-status" %}
+                                        <a href="?sort=status&user={{ selected_user_id|default:'' }}&search={{ search_query }}"
+                                           class="text-decoration-none text-dark">
+                                          Status ▼
+                                        </a>
+                                      {% else %}
+                                        <a href="?sort=status&user={{ selected_user_id|default:'' }}&search={{ search_query }}"
+                                           class="text-decoration-none text-dark">
+                                          Status
+                                        </a>
+                                      {% endif %}
+                                    {% endwith %}
+                                  </th>
                                 <th><label>Product</label></th>
                                 <th><label>Enquiry Date</label></th>
-                                {% comment %} <th><label>Executive</label></th> {% endcomment %}
+                                <th><label>Executive</label></th>
                                 <th><label>Remarks</label></th>
-                                {% comment %} <th><label>Order Status</th> {% endcomment %}
+                                <th><label>Recent Followup</label></th>
                                 <th><label>Action</label></th>
                             </tr>
                         </thead>
@@ -73,18 +170,95 @@
                             {% for data in page_obj %}
                             <tr id="profile-{{ data.id }}" class="selectable-row" data-id="{{ data.id }}">
                                 <td>{{ data.id }}</td>
+                                <td>{{ data.created_by }}</td>
                                 <td>{{ data.companyname }}</td>
                                 <td>{{ data.customername }}</td>
-                                {% comment %} <td>{{ data.email }}</td> {% endcomment %}
+                                <td>{{ data.email }}</td>
                                 <td>{{ data.contact }}</td>
-                                {% comment %} <td>{{ data.location }}</td> {% endcomment %}
-                                <td>{{ data.get_status_display }}</td>
-                                <td>{{ data.products.name }}</td> 
-                                <td>{{ data.closuredate }}</td>
+                                <td style="white-space: nowrap;">
+                                    {% for file in data.files.all %}
+                                        {% with file_name=file.file.name|lower %}
+                                            <a href="{{ file.file.url }}"
+                                               target="_blank"
+                                               title="{{ file.name }}"
+                                               style="display:inline-flex;
+                                                      align-items:center;
+                                                      gap:4px;
+                                                      max-width:180px;
+                                                      white-space:nowrap;
+                                                      overflow:hidden;
+                                                      text-overflow:ellipsis;
+                                                      vertical-align:middle;
+                                                      text-decoration:none;">
                                 
-                                {% comment %} <td>{{ data.get_executive_display }}</td> {% endcomment %}
+                                                {% if ".jpg" in file_name or ".jpeg" in file_name or ".png" in file_name or ".gif" in file_name %}
+                                                    <img src="{{ file.file.url }}"
+                                                         style="height:35px;
+                                                                width:35px;
+                                                                object-fit:cover;
+                                                                border-radius:4px;
+                                                                border:1px solid #ddd;"
+                                                         alt="img">
+                                                {% else %}
+                                                    <span style="display:inline-block;
+                                                                 max-width:130px;
+                                                                 overflow:hidden;
+                                                                 text-overflow:ellipsis;
+                                                                 white-space:nowrap;">
+                                                        📎 {{ file.name }}
+                                                    </span>
+                                                {% endif %}
+                                
+                                            </a>
+                                        {% endwith %}
+                                    {% empty %}
+                                        <span class="text-muted">-</span>
+                                    {% endfor %}
+                                </td>
+                                <td>{{ data.get_status_display }}</td>
+                                <td>{{ data.products.name }}</td>
+                                <td>{{ data.closuredate }}</td>
+
+                                <td>{{ data.executive }}</td>
                                 <td>{{ data.remarks }}</td>
-                                {% comment %} <td>{{ data.is_lost}}</td> {% endcomment %}
+
+                                <td style="min-width:300px;">
+                                    {% if data.followups_list %}
+                                      <div class="followup-wrapper" data-enquiry="{{ data.id }}">
+                                  
+                                        {% for f in data.followups_list %}
+                                          <div class="followup-slide slide-{{ data.id }}"
+                                               style="{% if forloop.first %}display:block{% else %}display:none{% endif %}">
+                                            
+                                            <div style="font-weight:500;">{{ f.foname }}</div>
+                                            <div style="font-size:13px;color:#555;">
+                                              {{ f.fodate|date:"M d, Y" }} | {{ f.fotime|time:"H:i" }}
+                                            </div>
+                                  
+                                          </div>
+                                        {% endfor %}
+                                  
+                                        {% if data.followups_list|length > 1 %}
+                                          <div class="text-center mt-1">
+                                            <button type="button"
+                                                    class="btn btn-sm btn-link text-decoration-none"
+                                                    onclick="slideFollowup({{ data.id }}, -1)">
+                                              ⬅️
+                                            </button>
+                                  
+                                            <button type="button"
+                                                    class="btn btn-sm btn-link text-decoration-none"
+                                                    onclick="slideFollowup({{ data.id }}, 1)">
+                                              ➡️
+                                            </button>
+                                          </div>
+                                        {% endif %}
+                                  
+                                      </div>
+                                    {% else %}
+                                      <span class="text-muted">No follow-up yet</span>
+                                    {% endif %}
+                                  </td>
                                 <td>
                                     <a class="btn btn-info" href="{% url 'enquiry_details' data.id %}">
                                         View Details
@@ -97,188 +271,143 @@
                 </div>
             </div>
         </div>
-  
-    <div class="d-flex justify-content-end mt-4">
-        <nav aria-label="Pagination" class="pagination">
-            <ul class="pagination">
-                {% if page_obj.has_previous %}
+
+        <div class="d-flex justify-content-end mt-4">
+            <nav aria-label="Pagination" class="pagination">
+                <ul class="pagination">
+                    {% if page_obj.has_previous %}
                     <li class="page-item">
-                        <a class="page-link" href="?page=1" aria-label="First">
+                        <a class="page-link"
+                            href="?page=1&user={{ selected_user_id|default:'' }}&search={{ search_query }}&sort={{ current_sort }}"
+                            aria-label="First">
                             <span aria-hidden="true">&laquo;&laquo;</span>
                         </a>
                     </li>
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                        <a class="page-link"
+                            href="?page={{ page_obj.previous_page_number }}&user={{ selected_user_id|default:'' }}&search={{ search_query }}&sort={{ current_sort }}"
+                            aria-label="Previous">
                             <span aria-hidden="true">&laquo;</span>
                         </a>
                     </li>
-                {% endif %}
-    
-                <li class="page-item disabled">
-                    <span class="page-link fw-bold text-dark"> <!-- Added classes -->
-                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-                    </span>
-                </li>
-    
-                {% if page_obj.has_next %}
+                    {% endif %}
+
+                    <li class="page-item disabled">
+                        <span class="page-link fw-bold text-dark">
+                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if page_obj.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                        <a class="page-link"
+                            href="?page={{ page_obj.next_page_number }}&user={{ selected_user_id|default:'' }}&search={{ search_query }}&sort={{ current_sort }}"
+                            aria-label="Next">
                             <span aria-hidden="true">&raquo;</span>
                         </a>
                     </li>
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                        <a class="page-link"
+                            href="?page={{ page_obj.paginator.num_pages }}&user={{ selected_user_id|default:'' }}&search={{ search_query }}&sort={{ current_sort }}"
+                            aria-label="Last">
                             <span aria-hidden="true">&raquo;&raquo;</span>
                         </a>
                     </li>
-                {% endif %}
-            </ul>
-        </nav>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
     </div>
 </div>
-    {% comment %} <!-- Section to display enquiry details -->
-    <div id="enquiryDetails" style="display:none; margin-top:20px;">
-        <h4>Enquiry Details</h4>
-        <p><strong>Company Name:</strong> <span id="companyName"></span></p>
-        <p><strong>Customer Name:</strong> <span id="customerName"></span></p>
-        <p><strong>Email:</strong> <span id="email"></span></p>
-        <p><strong>Contact:</strong> <span id="contact"></span></p>
-        <p><strong>Location:</strong> <span id="location"></span></p>
-        <p><strong>Status:</strong> <span id="status"></span></p>
-        <p><strong>Products:</strong> <span id="products"></span></p>
-        <p><strong>Closure Date:</strong> <span id="closureDate"></span></p>
-        <p><strong>Executive:</strong> <span id="executive"></span></p>
-        <p><strong>Remarks:</strong> <span id="remarks"></span></p>
-        <p><strong>File:</strong> <span id="file"></span></p>
-    </div>
-</div> {% endcomment %}
-
-
 
 <script>
+    const followupIndices = {};
+
+    function navigateFollowups(id, direction) {
+        const slides = document.querySelectorAll(`.fup-${id}`);
+        if (!slides.length) return;
+
+        if (!(id in followupIndices)) {
+            followupIndices[id] = 0;
+        }
+
+        // Hide current
+        slides[followupIndices[id]].style.display = "none";
+
+        // Update index
+        followupIndices[id] = (followupIndices[id] + direction + slides.length) % slides.length;
+
+        // Show next
+        slides[followupIndices[id]].style.display = "block";
+    }
+
     // Hover selection functionality
     const rows = document.querySelectorAll('.selectable-row');
     rows.forEach(row => {
         row.addEventListener('mouseover', () => {
-            row.style.backgroundColor = '#f0f0f0';  // Change background on hover
+            row.style.backgroundColor = '#f0f0f0';
         });
         row.addEventListener('mouseout', () => {
-            row.style.backgroundColor = '';  // Reset background on mouseout
+            row.style.backgroundColor = '';
         });
     });
 
-    // Function to display enquiry details in the page
-    function viewDetails(id) {
-        const enquiryDetails = document.getElementById('enquiryDetails');
-        const companyName = document.getElementById('companyName');
-        const customerName = document.getElementById('customerName');
-        const email = document.getElementById('email');
-        const contact = document.getElementById('contact');
-        const location = document.getElementById('location');
-        const status = document.getElementById('status');
-        const products = document.getElementById('products');
-        const closureDate = document.getElementById('closureDate');
-        const executive = document.getElementById('executive');
-        const remarks = document.getElementById('remarks');
-        const file = document.getElementById('file');
-
-        fetch(`/enquiry/${id}/details/`)  // Fetch the details based on ID
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("Failed to fetch enquiry details");
-                }
-                return response.json();
-            })
-            .then(data => {
-                companyName.textContent = data.companyname;
-                customerName.textContent = data.customername;
-                email.textContent = data.email;
-                contact.textContent = data.contact;
-                location.textContent = data.location;
-                status.textContent = data.status;
-                products.textContent = data.products;
-                closureDate.textContent = data.closuredate;
-                executive.textContent = data.executive;
-                remarks.textContent = data.remarks;
-                file.innerHTML = data.file_url ? `<a href="${data.file_url}" download>Download</a>` : 'No file uploaded';
-
-                // Show the enquiry details section
-                enquiryDetails.style.display = 'block';
-            })
-            .catch(error => {
-                alert("An error occurred while fetching the enquiry details.");
-            });
+    // JavaScript function to clear the search field
+    function clearSearch() {
+        var searchInput = document.querySelector('input[name="search"]');
+        if (searchInput) {
+            searchInput.value = '';
+            searchInput.form.submit();
+        }
     }
-</script>
-<script>
-    document.querySelectorAll('.dropdown-item').forEach(item => {
-        item.addEventListener('click', function(e) {
-            e.preventDefault();
-            const url = this.getAttribute('href');
-            window.location.href = url; // Redirect to download file
-        });
-    });
-</script>
-<script>
+
+    function clearAllFilters() {
+          window.location.href = window.location.pathname;
+        }
+
+
     function printPage() {
-        // Hide non-printable elements like the export dropdown, search bar, etc., if needed
         const elementsToHide = document.querySelectorAll('.dropdown, .pagination, .page-header, .input-icon');
         elementsToHide.forEach(element => element.style.display = 'none');
-
-        // Trigger the browser's print functionality
         window.print();
-
-        // Restore hidden elements after printing
         setTimeout(() => {
             elementsToHide.forEach(element => element.style.display = '');
         }, 0);
     }
 </script>
+
 <style>
     @media print {
-        /* Hide unnecessary UI elements */
-        .btn-group, 
-        .page-header, 
-        .pagination, 
-        .navbar, 
+
+        .btn-group,
+        .page-header,
+        .pagination,
+        .navbar,
         .footer {
             display: none !important;
         }
-        
-        /* Adjust table layout for better printing */
+
         table {
             width: 100%;
             border-collapse: collapse;
         }
 
-        th, td {
+        th,
+        td {
             border: 1px solid #000;
             padding: 8px;
             text-align: left;
         }
 
-        /* Ensure the content takes up the full width of the print page */
         body {
             margin: 0;
             padding: 0;
             width: 100%;
         }
 
-        /* Hide other unnecessary elements */
         .dropdown-menu {
             display: none !important;
         }
     }
 </style>
-<script>
-    // JavaScript function to clear the search field
-    function clearSearch() {
-        // Get the search input field
-        var searchInput = document.querySelector('input[name="search"]');
-        // Clear the value of the search input field
-        searchInput.value = '';
-        // Optionally, submit the form to reset the search query on the page
-        searchInput.form.submit();
-    }
-</script>
 {% endblock content %}

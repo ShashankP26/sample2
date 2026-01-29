@@ -1,84 +1,311 @@
 {% extends 'base.html' %}
 
 {% block content %}
+
 <style>
-    .bodycss {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 50vh;
-        width: 50vw;
-        flex-direction: column;
-        text-align: center;
-        margin-top: 10vh;
+    .notifications-wrapper {
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 20px;
     }
 
-    .btn-custom {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        width: 100%;
-        padding: 15px;
-        border: 2px solid #1976d2;
-        background: transparent;
-        color: #1976d2;
-        transition: 0.3s;
-        font-size: 18px;
+    .notification-carousel {
+        position: relative;
+        overflow: hidden;
+        height: 180px;
+        border-radius: 8px;
+        border-left: 5px solid #1976d2;
+
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 20px;
     }
-    .btn-custom:hover {
+
+    .notification-slide {
+        display: none;
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
+    .notification-slide.active {
+        display: block;
+    }
+
+    .notification-title {
+        font-weight: bold;
+        color: #1976d2;
+        font-size: 18px;
+        margin-bottom: 5px;
+    }
+
+    .notification-message {
+        font-size: 15px;
+        margin-bottom: 10px;
+    }
+
+    .notification-timestamp {
+        font-size: 12px;
+        color: #777;
+        text-align: right;
+    }
+
+    .nav-buttons {
+        text-align: center;
+        margin-top: 10px;
+    }
+
+    .nav-buttons button {
         background: #1976d2;
         color: #fff;
+        border: none;
+        padding: 6px 14px;
+        margin: 0 5px;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
     }
-    .btn-container {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
+
+    .nav-buttons button:hover {
+        background: #145a9e;
+    }
+
+    @keyframes fadeIn {
+        from {opacity: 0;}
+        to {opacity: 1;}
+    }
+
+    .empty-message {
+        text-align: center;
+        color: #999;
+        padding: 30px;
+    }
+
+    .site-visits-wrapper {
+        max-width: 1000px;
+        margin: 50px auto;
+        padding: 20px;
+    }
+
+    .site-visits-wrapper table {
+        width: 100%;
+        border-collapse: collapse;
         margin-top: 20px;
     }
-    .svg-icon {
-        width: 24px;
-        height: 24px;
+
+    .site-visits-wrapper th, .site-visits-wrapper td {
+        padding: 10px;
+        border: 1px solid #ddd;
+    }
+
+    .site-visits-wrapper th {
+        background-color: #f1f1f1;
+        font-weight: bold;
+    }
+
+    .pending-cell {
+        color: #b30000;
+        font-weight: bold;
     }
 </style>
+{% if todays_birthdays %}
+<div class="alert alert-primary text-center mb-4 shadow-lg birthday-banner"
+     style="font-size: 20px; font-weight: bold; animation: popIn 0.6s;">
 
-<div class="cards">
-    <div class="container-fluid bodycss card">
-        <h1 class="mb-4">🚧 Dashboard Under Construction 🚧</h1>
-        <p class="text-muted">We are working hard to bring you an amazing experience. Please check back soon!</p>
-        <div class="btn-container">
-            <a href="/riva/dashboard/" class="btn btn-custom">
-                <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"> 
-                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/> 
-                    <path d="M3 21v-13l9 -4l9 4v13" /> 
-                    <path d="M13 13h4v8h-10v-6h6v-2" />
-                </svg>
-                CRM Dashboard
-            </a>
-            <a href="/dashboard/" class="btn btn-custom">
-                <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"> 
-                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/> 
-                    <path d="M5 3m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z" /> 
-                    <path d="M9 8l1 0" /> 
-                    <path d="M9 12l1 0" /> 
-                    <path d="M9 16l1 0" /> 
-                    <path d="M12 8l4 0" /> 
-                    <path d="M12 12l4 0" /> 
-                    <path d="M12 16l4 0" />
-                </svg>
-                Reports Dashboard
-            </a>
-            <a href="/website/dashboard/" class="btn btn-custom">
-                <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"> 
-                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/> 
-                    <path d="M5 5h14v14h-14z" /> 
-                    <path d="M9 9l6 6m0 -6l-6 6" />
-                </svg>
-                Vouchers Dashboard
-            </a>
+    {% if self_birthday %}
+        <!-- 🎉 If the logged-in user's own birthday -->
+        🎉 <strong>Happy Birthday {{ request.user.first_name }}!</strong> 🎂
+        <div style="font-size: 15px; margin-top: 5px;">
+            Wishing you joy, success, and a wonderful year ahead!
         </div>
+
+    {% else %}
+        <!-- 🎂 If someone ELSE has birthday today -->
+         <strong>
+            It’s 
+            {% for u in todays_birthdays %}
+                {{ u.first_name }}{% if not forloop.last %} & {% endif %}
+            {% endfor %}
+            {% if todays_birthdays|length > 1 %}’s{% else %}’s{% endif %}
+            Birthday Today!
+        </strong> 🎉
+
+        <div style="font-size: 15px; margin-top: 5px;">
+            Don’t forget to wish {% for u in todays_birthdays %}
+                {{ u.first_name }}{% if not forloop.last %} and {% endif %}
+            {% endfor %}!
+        </div>
+
+    {% endif %}
+</div>
+
+<style>
+@keyframes popIn {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+</style>
+{% endif %}
+
+<div class="notifications-wrapper">
+    <h3 class="text-center mb-4"> This Week's Notifications</h3>
+
+    {% if notifications %}
+        <div class="notification-carousel" id="notification-carousel">
+            {% for notification in notifications %}
+            <div class="notification-slide{% if forloop.first %} active{% endif %}">
+                <div class="notification-title">
+                    {% if request.user.is_superuser or request.user.is_staff %}
+                        {{ notification.user.username }} —
+                    {% endif %}
+                    {{ notification.title }}
+                </div>
+                <div class="notification-message">{{ notification.message }}</div>
+                <div class="notification-timestamp">{{ notification.created_at|date:"d M Y, h:i A" }}</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="nav-buttons">
+            <button onclick="prevSlide()">◀ Prev</button>
+            <button onclick="nextSlide()">Next ▶</button>
+        </div>
+    {% else %}
+        <p class="empty-message"> No notifications this week.</p>
+    {% endif %}
+</div>
+
+<!-- 📊 Site Visit Tracker -->
+<div class="site-visits-wrapper container mt-4">
+    <h3 class="text-center mb-4">📋 Site Visit Summary</h3>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-primary">
+                <tr>
+                    <th>Site</th>
+                    <th>Last Visit</th>
+                    <th>Next Visit Due</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in visit_data %}
+                <tr>
+                    <td>{{ row.site.name }}</td>
+                    <td>{{ row.last_visit|date:"d M Y" }}</td>
+                    <td>{{ row.next_visit|date:"d M Y" }}</td>
+                    <td>
+                        {% if row.is_due %}
+                            <span class="badge bg-danger text-white">Pending</span>
+                        {% else %}
+                            <span class="badge bg-success">Up-to-date</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted">No site visit data found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    let slides = document.querySelectorAll('.notification-slide');
+    let currentIndex = 0;
 
+    function showSlide(index) {
+        slides.forEach(slide => slide.classList.remove('active'));
+        slides[index].classList.add('active');
+    }
+
+    window.nextSlide = function () {
+        currentIndex = (currentIndex + 1) % slides.length;
+        showSlide(currentIndex);
+    }
+
+    window.prevSlide = function () {
+        currentIndex = (currentIndex - 1 + slides.length) % slides.length;
+        showSlide(currentIndex);
+    }
+
+    // Optional: auto-scroll every 7 seconds
+    setInterval(() => {
+        nextSlide();
+    }, 7000);
+});
+</script>
+{% if show_birthday_popup %}
+<!-- Confetti Script -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // 🎉 Confetti blast
+    for (let i = 0; i < 3; i++) {
+        setTimeout(() => {
+            confetti({
+                particleCount: 200,
+                spread: 120,
+                origin: { y: 0.6 }
+            });
+        }, i * 500);
+    }
+
+    // 🎂 Popup for self Birthday
+    {% if self_birthday %}
+    Swal.fire({
+        title: "🎉 Happy Birthday {{ request.user.first_name }}! 🎂",
+        html: `
+            <p style="font-size:16px;">
+                Wishing you a year filled with joy, growth, and success!
+            </p>
+        `,
+        icon: "success",
+        confirmButtonText: "Thank you! ❤️",
+    });
+    {% endif %}
+
+    // 🎈 Popup for others Birthday
+    {% if others_birthdays %}
+    Swal.fire({
+        title: "🎂 Team Birthday Today!",
+        html: `
+            <p><strong>{% for u in others_birthdays %}{{ u.first_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</strong> celebrates their birthday today! 🎉</p>
+            <p style="font-size:15px;">Don't forget to wish them!</p>
+        `,
+        icon: "info",
+        confirmButtonText: "Got it 🎈",
+    });
+    {% endif %}
+
+});
+</script>
+<script>
+    fetch("api/mobile-session/", { credentials: "include" })
+      .then(r => r.json())
+      .then(d => {
+        if (window.AndroidToken) {
+          window.AndroidToken.postMessage(d.token);
+        }
+      });
+    </script>
+
+
+{% endif %}
+
+<script>
+    fetch("/website/api/mobile-session/", { credentials: "include" })
+      .then(r => r.json())
+      .then(d => {
+        console.log("MOBILE TOKEN =", d.token);
+        if (window.Mobile) {
+          window.Mobile.postMessage(d.token);
+        }
+      });
+    </script>
+    
+    
 {% endblock %}

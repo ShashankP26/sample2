@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+  .modal-backdrop {
+    position: fixed;
+    top: 0; left: 0;
+    right: 0; bottom: 0;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.6);
+    z-index: 1050;
+  }
+  
+  .modal-dialog-box {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 400px;
+    z-index: 1100;
+  }
+  </style>
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+    <h3 class="mb-2"><i class="bi bi-chat-dots-fill me-2"></i>All Raised Tickets / Requests</h3>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <!-- Make table scrollable on small devices -->
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>User</th>
+              <th>Message</th>
+              <th>Submitted At</th>
+              <th>Status</th>
+              <th style="min-width: 120px;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for req in requests %}
+            <tr>
+              <td>
+                <i class="bi bi-person-circle me-1"></i>
+                {{ req.user.username }}
+              </td>
+              <td class="" style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                {% with req.messages.first as msg %}
+                  {% if msg %}
+                    {{ msg.message|truncatechars:50 }}
+                  {% else %}
+                    <em>No message</em>
+                  {% endif %}
+                {% endwith %}
+              </td>
+              <td>{{ req.created_at|date:"d M Y, h:i A" }}</td>
+              <td>
+                {% if req.is_resolved %}
+                  <span><i class="bi bi-check-circle-fill me-1 text-success"></i><span class="text-success">Resolved</span></span>
+                {% else %}
+                  <span><i class="bi bi-x-circle-fill me-1 text-danger"></i><span class="text-danger">Pending</span></span>
+                {% endif %}
+              </td>
+              <td>
+                <a href="{% url 'chat_request' req.id %}" class="btn btn-sm btn-primary">
+                  <i class="bi bi-chat-right-text"></i> Chat
+                </a>
+              
+                {% if request.user.is_superuser or request.user.is_staff %}
+                  <button class="btn btn-sm btn-danger" onclick="confirmDelete({{ req.id }})">
+                    <i class="bi bi-trash"></i> Delete
+                  </button>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted py-4">
+                <i class="bi bi-inbox fs-4"></i><br>No requests found.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Delete Confirmation Modal -->
+<!-- Delete Modal -->
+<div id="deleteModal" class="modal-backdrop" style="display: none;">
+  <div class="modal-dialog-box">
+    <form method="POST" action="{% url 'delete_request' %}">
+      {% csrf_token %}
+      <input type="hidden" name="request_id" id="delete-request-id">
+      <h5>Enter Admin Password to Delete</h5>
+      <div class="mb-3">
+        <input type="password" name="admin_password" class="form-control" required placeholder="Admin password">
+      </div>
+      <div class="d-flex justify-content-end">
+        <button type="button" class="btn btn-secondary btn-sm me-2" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-danger btn-sm">Confirm Delete</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+  function confirmDelete(requestId) {
+    document.getElementById('delete-request-id').value = requestId;
+    document.getElementById('deleteModal').style.display = 'flex';
+    setTimeout(() => {
+      document.querySelector('#deleteModal input[name="admin_password"]').focus();
+    }, 100);
+  }
+  
+  function closeModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+  }
+  </script>
+{% endblock %}

@@ -2,8 +2,12 @@
 
 // Function to add new AMC row in AMC table
 function addAMCRow() {
-    const tableBody = document.getElementById("amcTable").getElementsByTagName("tbody")[0];
-    const newRowIndex = tableBody.rows.length + 1; // Determine the new row index
+    const table = document.getElementById("amcTable");
+    if (!table) return; // Table not present, do nothing
+    const tableBody = table.getElementsByTagName("tbody")[0];
+    if (!tableBody) return; // tbody not present, do nothing
+
+    const newRowIndex = tableBody.rows.length + 1;
 
     const newRow = document.createElement("tr");
     newRow.setAttribute("id", "amc_row_" + newRowIndex);
@@ -239,8 +243,12 @@ function removeExclusionsField(index) {
 // ------------------------------- AMC Pricing Table Functions ------------------------------
 // Function to add new AMC row in AMC Pricing table
 function addAMCPricingRow() {
-    const tableBody = document.getElementById("amcpTable").getElementsByTagName("tbody")[0];
-    const newRowIndex = tableBody.rows.length + 1; // Determine the new row index
+    const table = document.getElementById("amcpTable");
+    if (!table) return;
+    const tableBody = table.getElementsByTagName("tbody")[0];
+    if (!tableBody) return;
+
+    const newRowIndex = tableBody.rows.length + 1;
 
     const newRow = document.createElement("tr");
     newRow.setAttribute("id", "amcp_row_" + newRowIndex);
@@ -268,43 +276,46 @@ function addAMCPricingRow() {
     `;
 
     tableBody.appendChild(newRow);
-    toggleAMCPricingRemoveButton(); // Enable/Disable Remove button for AMC Pricing Table
+    toggleAMCPricingRemoveButton();
 }
+
 
 // Function to remove AMC row from AMC Pricing table
 function removeAMCPricingRow() {
-    const tableBody = document.getElementById("amcpTable").getElementsByTagName("tbody")[0];
-    // Ensure we do not remove the default row
+    const table = document.getElementById("amcpTable");
+    if (!table) return;
+    const tableBody = table.getElementsByTagName("tbody")[0];
+    if (!tableBody) return;
     if (tableBody.rows.length > 1) {
         tableBody.deleteRow(tableBody.rows.length - 1);
     }
-    toggleAMCPricingRemoveButton(); // Enable/Disable Remove button for AMC Pricing Table
+    toggleAMCPricingRemoveButton();
 }
 
-// Toggle remove button for AMC Pricing Table based on row count
 function toggleAMCPricingRemoveButton() {
     const removeButton = document.getElementById("removeAMCPricingButton");
-    const tableBody = document.getElementById("amcpTable").getElementsByTagName("tbody")[0];
-
-    if (tableBody.rows.length > 1) {
-        removeButton.disabled = false;
-        console.log("enabled");
-    } else {
+    const table = document.getElementById("amcpTable");
+    if (!removeButton || !table) return;
+    const tableBody = table.getElementsByTagName("tbody")[0];
+    if (!tableBody || tableBody.rows.length <= 1) {
         removeButton.disabled = true;
-        console.log("disbaled");
+    } else {
+        removeButton.disabled = false;
     }
 }
+
 
 
 // Function to add new AMC Particular row in AMC Particulars Table
 function addAMCParticularRow() {
-    console.log('Adding new AMC Particular row');
-    const tableBody = document.getElementById("amcParticularsTable").getElementsByTagName("tbody")[0];
-    const newRowIndex = tableBody.rows.length + 1; // Determine the new row index
+    const table = document.getElementById("amcParticularsTable");
+    if (!table) return;
+    const tableBody = table.getElementsByTagName("tbody")[0];
+    if (!tableBody) return;
+    const newRowIndex = tableBody.rows.length + 1;
 
     const newRow = document.createElement("tr");
     newRow.setAttribute("id", "particular_row_" + newRowIndex);
-
     newRow.innerHTML = `
         <td>
             <input type="hidden" name="select_per_${newRowIndex}" value="0">
@@ -314,13 +325,24 @@ function addAMCParticularRow() {
             <input type="text" name="particulars_${newRowIndex}" class="form-control" placeholder="Enter particulars">
         </td>
         <td>
-            <input type="text" name="first_year_exgst_${newRowIndex}" class="form-control" placeholder="Enter 1st year cost (Excluding GST)" oninput="calculateTotals()">
+            <input type="text" name="first_year_exgst_${newRowIndex}" class="form-control first-year-exgst" placeholder="Enter 1st year cost (Excluding GST)">
         </td>
     `;
-
     tableBody.appendChild(newRow);
-    toggleAMCParticularRemoveButton(); // Enable/Disable Remove button for AMC Particulars Table
+
+    // Attach listeners to recalculate totals
+    const newCheckbox = newRow.querySelector('.form-check-input');
+    if (newCheckbox) {
+        newCheckbox.addEventListener('change', calculateTotals);
+    }
+    const newInput = newRow.querySelector('.first-year-exgst');
+    if (newInput) {
+        newInput.addEventListener('input', calculateTotals);
+    }
+
+    toggleAMCParticularRemoveButton();
 }
+
 
 // Function to remove AMC Particular row from AMC Particulars Table
 function removeAMCParticularRow() {

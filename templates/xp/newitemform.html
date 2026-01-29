@@ -33,7 +33,7 @@
             <!-- Item Type -->
             <div class="mb-3">
                 <div class="form-label">Select an item type<span class="required">*</span></div>
-                <select class="form-select" name="item_type">
+                <select class="form-select" name="item_type" id="item_type">
                     <option value="" {% if not submitted_data %}selected{% endif %} disabled>Select Item Type</option>
                     <option value="fright_transportation" {% if submitted_data and submitted_data.item_type == 'fright_transportation' %}selected{% endif %}>Fright/Transportation</option>
                     <option value="food_grocery" {% if submitted_data and submitted_data.item_type == 'food_grocery' %}selected{% endif %}>Food/Grocery</option>
@@ -51,8 +51,28 @@
                     <option value="conveyance" {% if submitted_data and submitted_data.item_type == 'conveyance' %}selected{% endif %}>Conveyance</option>
                     <option value="stationary_printing" {% if submitted_data and submitted_data.item_type == 'stationary_printing' %}selected{% endif %}>Stationary and Printing</option>
                     <option value="hospitality" {% if submitted_data and submitted_data.item_type == 'hospitality' %}selected{% endif %}>Hospitality</option>
+                    <option value="Medicine" {% if submitted_data and submitted_data.item_type == 'medicine' %}selected{% endif %}>Medicine</option>
                 </select>
             </div>
+            <!-- Advance Group Dropdown (Hidden by Default) -->
+            <div class="mb-3" id="advance-group-section" style="display: none;">
+                <label for="selected_group_id">Select Advance Group:</label>
+                <select name="selected_group_id" id="selected_group_id" 
+                        class="form-control" onchange="updateAdvanceBalance()">
+                    <option value="">-- Select Group --</option>
+                    {% for assignment in user_groups %}
+                        <option value="{{ assignment.group.id }}">
+                            {{ assignment.group.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Remaining Advance Balance Display (Hidden by Default) -->
+            <div id="advance-balance-box" style="display: none; margin-bottom: 15px;">
+                <strong  class="text-success" >Remaining Group Advance:
+                ₹<span id="advance-balance-value" class="text-success">0.00</span></strong>
+              </div>
 
             <!-- Item Name -->
             <div class="mb-3">
@@ -62,7 +82,7 @@
 
             <!-- Payment Category -->
             <div class="mb-3">
-                <label class="form-label" for="selectOption">Payment Category<span class="required">*</span></label>
+                <label class="form-label" for="selectOption">Payment Category</label>
                 <select class="form-select" id="selectOption" name="transaction_option" onchange="updateFormFields()">
                     <option value="" {% if not submitted_data %}disabled{% endif %} selected>Select an option</option>
             
@@ -91,8 +111,8 @@
             <!-- Upload Bill Photo Field (Hidden initially) -->
             <div class="mb-3" id="billPhotoContainer" style="display: none;">
                 <label for="billPhoto" class="form-label">Upload Bill Photo<span class="required">*</span></label>
-                <input type="file" class="form-control" name="bill_photo" id="billPhoto" onchange="handleFileUpload(event)">
-                <p id="extractedAmount" style="color: green; font-weight: bold; margin-top: 10px;"></p>
+                <input type="file" class="form-control" name="bill_photo" id="billPhoto"  >
+                {% comment %} <p id="extractedAmount" style="color: green; font-weight: bold; margin-top: 10px;"></p> {% endcomment %}
                 <!-- Hidden field to store the temporary file URL -->
                 <input type="hidden" name="bill_photo_temp" id="billPhotoTemp">
             </div>
@@ -100,26 +120,37 @@
             <!-- Upload GST Photo Field (Hidden initially) -->
             <div class="mb-3" id="gstPhotoContainer" style="display: none;">
                 <label for="gstPhoto" class="form-label">Upload GST Photo<span class="required">*</span></label>
-                <input type="file" class="form-control" name="gst_photo" id="gstPhoto" onchange="handleFileUpload(event)">
+                <input type="file" class="form-control" name="gst_photo" id="gstPhoto"  >
                 <!-- Hidden field to store the temporary file URL -->
                 <input type="hidden" name="gst_photo_temp" id="gstPhotoTemp">
             </div>
             
 
             <!-- Voucher Number Field -->
-            <div class="mb-3" id="voucherInput" >
+            <!-- Voucher Number Field -->
+            {% comment %} <div class="mb-3" id="voucherInput" style="display: none;">
                 <label for="voucher_number" class="form-label">Voucher Number<span class="required">*</span></label>
                 <select class="form-control" name="voucher_number" id="voucher_number" onchange="updateAmount()">
                     <option value="" disabled selected>Select Voucher Number</option>
                     {% for voucher in approved_vouchers %}
                         {% if voucher.expense is None %}
-                            <option value="{{ voucher.voucher_number }}" data-amount="{{ voucher.amount }}">
-                                {{ voucher.voucher_number }}
-                            </option>
+                        <option value="{{ voucher.voucher_number }}"
+                            data-amount="{{ voucher.amount }}"
+                            data-item="{{ voucher.item_name }}"
+                            data-date="{{ voucher.transaction_date|date:'Y-m-d' }}"
+                            data-paidto="{{ voucher.paid_to }}"
+                            {% if voucher.proof_photo %}
+                                data-file="{{ voucher.proof_photo.url }}"
+                            {% endif %}>
+                            {{ voucher.voucher_number }} ({{ voucher.item_name }})
+                        </option>
                         {% endif %}
                     {% endfor %}
                 </select>
-            </div>
+
+                <!-- 🔥 Add this here -->
+                <div id="voucherFilePreview" style="margin-top: 10px;"></div>
+            </div> {% endcomment %}
 
             <!-- Proof Photo Upload Field (Hidden initially) -->
             <div class="mb-3" id="proofPhotoContainer" style="display: none;">
@@ -134,7 +165,7 @@
                 <div class="form-label">Transaction Category<span class="required">*</span></div>
                 <select class="form-select" id="transactionCategory" name="transaction_category" onchange="toggleTransactionField()" >
                     <option value="" {% if not submitted_data %}disabled{% endif %} selected>Select Transaction Category</option>
-                    <option value="internal" {% if submitted_data and submitted_data.transaction_category == 'internal' %}selected{% endif %}>Internal</option>
+                    <option value="internal" disabled {% if submitted_data and submitted_data.transaction_category == 'internal' %}selected{% endif %}>Internal</option>
                     <option value="external" {% if submitted_data and submitted_data.transaction_category == 'external' %}selected{% endif %}>External</option>
                 </select>
             </div>
@@ -171,7 +202,7 @@
             
         <div id="borrowed-amounts-container" style="display: none;">
     <!-- The entry to be cloned for each new borrowed amount -->
-    <div class="borrowed-entry">
+    <div class="borrowed-entry" id="borrowed-section">
         <div class="form-group">
             <label for="borrowed_amount">Borrowed Amount</label>
             <input type="number" step="0.01" name="borrowed_amounts[]" class="form-control" placeholder="Enter borrowed amount">
@@ -180,9 +211,11 @@
         <div class="form-group">
             <label for="borrowed_from">Borrowed From</label>
             <select name="borrowed_froms[]" class="form-control">
-                <option value="">Select User</option>
+                <option value="">-- Select Borrowed User --</option>
                 {% for user in users %}
-                    <option value="{{ user.id }}">{{ user.username }}</option>
+                    {% if user.id != request.user.id %}
+                        <option value="{{ user.id }}">{{ user.username }}</option>
+                    {% endif %}
                 {% endfor %}
             </select>
         </div>
@@ -207,13 +240,13 @@
                 </select>
             </div>
             <!-- Proof Photo Upload Field (Visible by default) -->
-            <div class="mb-3" id="proofPhotoContainer">
+             <div class="mb-3" id="proofPhotoContainer">
                 <label class="form-label">
                     Upload Proof Photo <span class="required">*</span> 
-                    <small class="text-muted">(Proof is Mandatory for payment)</small>
+                    <small class="text-muted">(Proof is Mandatory for payment except Cash Voucher And Conveyance)</small>
                 </label>
                 <div id="proofUploads">
-                    <input type="file" name="proof_photos" class="form-control mb-2" multiple>
+                    <input type="file" name="proof_photos" class="form-control mb-2">
                 </div>
                 <button type="button" class="btn btn-sm btn-secondary" onclick="addProofPhoto()">Add More</button>
             </div>
@@ -245,7 +278,9 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="cashVoucherModalLabel">Cash Voucher</h5>
+                    <h5 class="modal-title" id="cashVoucherModalLabel">TIPS
+                        
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -282,6 +317,10 @@
                             <input type="date" id="cvtransaction_date" name=
                             "transaction_date" class="form-control">
                         </div>
+                        <div class="mb-3">
+                            <label for="proof_photo" class="form-label">Upload Proof (Optional)</label>
+                            <input type="file" id="proof_photo" name="proof_photo" class="form-control">
+                        </div>
                         {% comment %} <input type="hidden" name="created_by" value="{{ request.user.id }}"> {% endcomment %}
                         
                         <!-- Submit Button -->
@@ -298,12 +337,113 @@
         font-weight: bold;
     }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% if messages %}
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      {% for message in messages %}
+        Swal.fire({
+          icon: "{{ message.tags }}",
+          title: "{{ message|escapejs }}",
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000
+        });
+      {% endfor %}
+    });
+  </script>
+{% endif %}
+{% comment %} <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const form = document.querySelector("form");
+      const itemTypeField = document.querySelector('[name="item_type"]');
+      const amountField = document.querySelector('[name="amount"]');
+      const groupSelect = document.querySelector('[name="selected_group_id"]');
+    
+      if (form && itemTypeField && amountField && groupSelect) {
+        form.addEventListener("submit", function (e) {
+          const itemType = itemTypeField.value;
+          const selectedGroupId = groupSelect.value;
+          const enteredAmount = parseFloat(amountField.value || 0);
+          const remaining = parseFloat(document.getElementById("advance-balance-value").textContent || 0);
+    
+          if (itemType === "advances" && selectedGroupId && enteredAmount > remaining) {
+            e.preventDefault();
+    
+            Swal.fire({
+              icon: 'warning',
+              title: 'Insufficient Advance Balance',
+              text: `You only have ₹${remaining.toFixed(2)} left in this group.`,
+              confirmButtonText: 'OK',
+            });
+          }
+        });
+      }
+    });
+    </script> {% endcomment %}
+<script>
+    // Show/Hide advance group section based on item_type
+    function toggleAdvanceGroup() {
+      const itemType = document.getElementById("item_type");
+      const advanceSection = document.getElementById("advance-group-section");
+      const balanceBox = document.getElementById("advance-balance-box");
+  
+      if (itemType && itemType.value === "advances") {
+        advanceSection.style.display = "block";
+      } else {
+        advanceSection.style.display = "none";
+        balanceBox.style.display = "none";  // Hide balance if not in advances mode
+      }
+    }
+  
+    // Update remaining balance when group is selected
+    function updateAdvanceBalance() {
+        const select = document.getElementById("selected_group_id");
+        const groupId = select.value;
+        const balanceBox = document.getElementById("advance-balance-box");
+        const balanceValue = document.getElementById("advance-balance-value");
+      
+        if (groupId) {
+            fetch(`/website/advance-group/${groupId}/balance/`)
+            .then(response => response.json())
+            .then(data => {
+              balanceBox.style.display = "block";
+              balanceValue.textContent = parseFloat(data.remaining_balance).toFixed(2);
+            })
+            .catch(err => {
+              console.error("Error fetching balance:", err);
+              balanceBox.style.display = "none";
+            });
+        } else {
+          balanceBox.style.display = "none";
+        }
+      }
+  
+    // Initialize on page load
+    document.addEventListener("DOMContentLoaded", function () {
+      const itemType = document.getElementById("item_type");
+      if (itemType) {
+        toggleAdvanceGroup();
+        itemType.addEventListener("change", toggleAdvanceGroup);
+      }
+    });
+  </script>
 
 <script>
     
-    
+  function addProofPhoto() {
+        const container = document.getElementById("proofUploads");
+        const input = document.createElement("input");
+        input.type = "file";
+        input.name = "proof_photos";
+        input.className = "form-control mb-2";
+        container.appendChild(input);
+    }
+
  document.addEventListener("DOMContentLoaded", function () {
-        const paymentCategory = document.getElementById("transaction_option");
+        const paymentCategory = document.getElementById("selectOption");
         const kilometersField = document.getElementById("kilometers-field");
         const kilometersInput = document.getElementById("kilometers");
         const totalAmountField = document.getElementById("totalAmount");
@@ -320,7 +460,6 @@
                 console.log("Kilometers field is hidden");
             }
         });
-    
     
         // Listen for changes to the kilometers input field
         kilometersInput.addEventListener("input", function () {
@@ -368,59 +507,9 @@
             }
         });
     }); 
-    function addProofPhoto() {
-        const container = document.getElementById("proofUploads");
-        const input = document.createElement("input");
-        input.type = "file";
-        input.name = "proof_photos";
-        input.className = "form-control mb-2";
-        container.appendChild(input);
-    }
+
    
-    function handleFileUpload(event) {
-        const file = event.target.files[0]; // Get the selected file
-        console.log("entered")
-        const extractedAmountField = document.getElementById('extractedAmount');
-        const totalAmountField = document.getElementById('totalAmount');
     
-        if (file) {
-            console.log("triggered")
-            const formData = new FormData();
-            formData.append('file', file); // Ensure this key matches the backend's key
-            console.log(formData)
-            // Display a "please wait" message while extracting the amount
-            extractedAmountField.textContent = 'We are Extracting your amount... Please wait.';
-    
-            // Send the file to the server via AJAX
-            fetch('/website/process-photo/', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken'), // Include CSRF token
-                },
-            })
-                .then((response) => response.json())
-                .then((data) => {
-                    if (data.success) {
-                        // Remove commas from the extracted amount
-                        const extractedAmount = data.amount.replace(/,/g, '');
-    
-                        // Display the extracted amount
-                        extractedAmountField.textContent = `Extracted Amount: ₹${extractedAmount}`;
-    
-                        // Ensure the extracted amount is numeric and set it in the total amount field
-                        totalAmountField.value = parseFloat(extractedAmount).toFixed(2);
-                    } else {
-                        // Display error message if extraction fails
-                        extractedAmountField.textContent = data.error || 'Sorry we couldnt extract your amount. Please Enter amount manually or try again.';
-                    }
-                })
-                .catch((error) => {
-                    console.error('Error:', error);
-                    extractedAmountField.textContent = 'Error processing the file. Please try again later.';
-                });
-        }
-    }
     
     // Utility to get CSRF token
     function getCookie(name) {
@@ -470,15 +559,14 @@
             const fieldsToValidate = [
                 { selector: "select[name='item_type']", message: "Please select an item type." },
                 { selector: "input[name='item_name']", message: "Item name is required." },
-                { selector: "select[name='transaction_option']", message: "Please select a payment category." },
+
                 { selector: "input[name='bill_photo']", condition: () => document.getElementById("billPhotoContainer").style.display !== "none", message: "Please upload a bill photo." },
                 { selector: "input[name='gst_photo']", condition: () => document.getElementById("gstPhotoContainer").style.display !== "none", message: "Please upload a GST photo." },
-                { selector: "input[name='voucher_number']", condition: () => document.getElementById("voucherInput").style.display !== "none", message: "Voucher number is required." },
+
                 { selector: "select[name='transaction_category']", message: "Please select a transaction category." },
                 { selector: "input[name='amount']", message: "Amount is required." },
                 { selector: "select[name='payment_mode']", message: "Please select a payment mode." },
                 { selector: "input[name='transaction_date']", message: "Transaction date is required." },
-
             ];
     
             // Perform validation
@@ -505,24 +593,13 @@
     
         // Update visibility logic for conditional fields
         
-function toggleTransactionField() {
-    const transactionCategory = document.querySelector("select[name='transaction_category']").value;
 
-    // Show/hide fields based on transaction category
-    document.getElementById("internalDropdown").style.display = transactionCategory === "internal" ? "block" : "none";
-    document.getElementById("externalInput").style.display = transactionCategory === "external" ? "block" : "none";
-}
 
 // Attach event listeners
 document.querySelector("select[name='transaction_option']").addEventListener("change", updateFormFields);
 document.querySelector("select[name='transaction_category']").addEventListener("change", toggleTransactionField);
     
-        function toggleTransactionField() {
-            const transactionCategory = document.querySelector("select[name='transaction_category']").value;
-            document.getElementById("internalDropdown").style.display = transactionCategory === "internal" ? "block" : "none";
-            document.getElementById("externalInput").style.display = transactionCategory === "external" ? "block" : "none";
-        }
-    
+        
         document.querySelector("select[name='transaction_option']").addEventListener("change", updateFormFields);
         document.querySelector("select[name='transaction_category']").addEventListener("change", toggleTransactionField);
     });
@@ -564,34 +641,38 @@ document.querySelector("select[name='transaction_category']").addEventListener("
 // Function to toggle internal/external fields based on the transaction category
 // Function to toggle internal/external fields based on the transaction category
 function toggleTransactionField() {
-    var transactionCategory = document.getElementById('transactionCategory').value;
-    var internalDropdown = document.getElementById('internalDropdown');
-    var externalInput = document.getElementById('externalInput');
-    var borrowedAmountsContainer = document.getElementById('borrowed-amounts-container');
-    var addBorrowButton = document.getElementById('add-borrowed-entry');
-    {% comment %} var tipscheckbox = document.getElementById('tips'); {% endcomment %}
-    
-    // Show/hide internal options and external input fields
-    if (transactionCategory === 'internal') {
-        internalDropdown.style.display = 'block';
-        externalInput.style.display = 'none';
-        borrowedAmountsContainer.style.display = 'none';  // Hide borrowed fields for internal
-        addBorrowButton.style.display = 'none';  // Hide the 'Add Borrow' button for internal
-        {% comment %} tipscheckbox.style.display = 'none';  // Hide the 'Add Borrow' button for internal {% endcomment %}
-    } else if (transactionCategory === 'external') {
-        internalDropdown.style.display = 'none';
-        externalInput.style.display = 'block';
-        borrowedAmountsContainer.style.display = 'block';  // Show borrowed fields for external
-        addBorrowButton.style.display = 'block';  // Show the 'Add Borrow' button for external
-        {% comment %} tipscheckbox.style.display = 'block';  // Show the 'Add Borrow' button for external {% endcomment %}
-    } else {
-        internalDropdown.style.display = 'none';
-        externalInput.style.display = 'none';
-        borrowedAmountsContainer.style.display = 'none';  // Hide both if no category selected
-        addBorrowButton.style.display = 'none';  // Hide the 'Add Borrow' button if no category selected
-        {% comment %} tipscheckbox.style.display = 'none';  // Hide the 'Add Borrow' button if no category selected {% endcomment %}
-    }
+    const transactionCategory = document.getElementById('transactionCategory').value;
+    const itemType = document.getElementById('item_type').value;
+
+    const internalDropdown = document.getElementById('internalDropdown');
+    const externalInput = document.getElementById('externalInput');
+    const borrowedContainer = document.getElementById('borrowed-amounts-container');
+    const addBorrowButton = document.getElementById('add-borrowed-entry');
+
+    // Internal/External show logic
+    internalDropdown.style.display = transactionCategory === 'internal' ? 'block' : 'none';
+    externalInput.style.display = transactionCategory === 'external' ? 'block' : 'none';
+
+    // Borrowed field visibility logic
+    const showBorrow = itemType !== 'advances' && transactionCategory === 'external';
+    borrowedContainer.style.display = showBorrow ? 'block' : 'none';
+    addBorrowButton.style.display = showBorrow ? 'block' : 'none';
 }
+
+// Ensure both dropdowns trigger visibility updates
+document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("item_type").addEventListener("change", toggleTransactionField);
+    document.getElementById("transactionCategory").addEventListener("change", toggleTransactionField);
+    toggleTransactionField(); // Run on load
+});
+
+
+// Run on DOM load and bind events
+document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("itemType").addEventListener("change", toggleTransactionField);
+    document.getElementById("transactionCategory").addEventListener("change", toggleTransactionField);
+    toggleTransactionField();  // initial call
+});
 
 
    
@@ -631,23 +712,64 @@ function toggleTransactionField() {
     }
 
 
-    document.addEventListener('DOMContentLoaded', function () {
-        const voucherSelect = document.getElementById('voucher_number');
-        const amountField = document.querySelector('input[name="amount"]');
-    
-        voucherSelect.addEventListener('change', function () {
-            const selectedVoucher = Array.from(voucherSelect.options).find(
-                option => option.value === voucherSelect.value
-            );
-    
-            if (selectedVoucher) {
-                const amount = selectedVoucher.getAttribute('data-amount');
-                amountField.value = amount || ''; // Populate amount or leave empty if no data
-            } else {
-                amountField.value = ''; // Clear the field if no match
-            }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const voucherSelect = document.getElementById('voucher_number');
+            const amountField = document.querySelector('input[name="amount"]');
+            const itemNameField = document.querySelector('input[name="item_name"]');
+            const transactionDateField = document.querySelector('input[name="transaction_date"]');
+            const paidToField = document.getElementById('paid_to');
+            const externalType = document.getElementById('externalType');
+            const transactionCategory = document.getElementById('transactionCategory');
+            const proofUploads = document.getElementById('proofUploads');
+        
+            voucherSelect?.addEventListener('change', function () {
+                const selectedOption = voucherSelect.selectedOptions[0];
+                if (!selectedOption) return;
+        
+                // Auto-fill fields
+                amountField.value = selectedOption.dataset.amount || '';
+                itemNameField.value = selectedOption.dataset.item || '';
+                transactionDateField.value = selectedOption.dataset.date || '';
+                paidToField.value = selectedOption.dataset.paidto || '';
+        
+                // Set Transaction Category to "external"
+                transactionCategory.value = "external";
+                transactionCategory.dispatchEvent(new Event('change'));
+        
+                // Set External Type (input or select)
+                if (externalType.tagName === "SELECT") {
+                    Array.from(externalType.options).forEach(option => {
+                        if (option.value === "TPA" || option.text === "TPA") {
+                            externalType.value = option.value;
+                        }
+                    });
+                } else {
+                    externalType.value = "TPA";
+                }
+        
+                // Show proof photo + upload input
+                const fileUrl = selectedOption.dataset.file;
+                if (proofUploads) {
+                    proofUploads.innerHTML = '';  // Clear existing content
+        
+                    if (fileUrl) {
+                        proofUploads.innerHTML += `
+                            <label class="form-label"><b>Existing Proof Photo:</b></label><br>
+                            <a href="${fileUrl}" target="_blank" class="text-primary">View Uploaded File</a><br><br>
+                        `;
+                    }
+        
+                    // Always show input to allow replacement
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.name = 'proof_photos';
+                    input.className = 'form-control mb-2';
+                    proofUploads.appendChild(input);
+                }
+            });
         });
-    });
+
 
     // Initialize form fields visibility based on item_type and transaction_option
 // Initialize form fields based on default selections
@@ -674,11 +796,31 @@ function initializeFormFields() {
     }
 }
 
+document.addEventListener("DOMContentLoaded", function () {
+    const itemTypeInput = document.querySelector('select[name="item_type"]');
+    const advanceSection = document.getElementById("advance-group-section");
+
+    function toggleGroupDropdown() {
+      if (itemTypeInput.value === "advances") {
+        advanceSection.style.display = "block";
+      } else {
+        advanceSection.style.display = "none";
+      }
+    }
+
+    if (itemTypeInput) {
+      itemTypeInput.addEventListener("change", toggleGroupDropdown);
+      toggleGroupDropdown(); // initial load
+    }
+  });
+
 // Update form fields when changes are made (e.g., item_type, transaction_option)
 function updateFormFields() {
     const transactionOption = document.querySelector('[name="transaction_option"]').value;
     const itemType = document.querySelector('[name="item_type"]').value;
+
     console.log("Item Type Selected:", itemType);  // Debugging log
+    console.log("Selected option:", transactionOption);
     
     // Toggling visibility of vehicle-related options based on the item type (Conveyance)
     const vehicleOptions = document.querySelectorAll('.vehicle-option');
@@ -689,10 +831,11 @@ function updateFormFields() {
     } else {
         vehicleOptions.forEach(option => option.style.display = "none");
     }
+  
+
     
     // Additional toggling of fields based on the selected transaction option
-    const amountField = document.getElementById('
-    ');
+    const amountField = document.getElementById('totalAmount');
     const kilometersInput = document.getElementById("kilometers");
     const totalAmountField = document.getElementById("totalAmount");
     const voucherInput = document.getElementById('voucherInput');
@@ -701,7 +844,7 @@ function updateFormFields() {
     // Toggle fields based on selected transaction option
     document.getElementById('billPhotoContainer').style.display = transactionOption === 'bill' ? 'block' : 'none';
     document.getElementById('gstPhotoContainer').style.display = transactionOption === 'gst' ? 'block' : 'none';
-    voucherInput.style.display = transactionOption === 'voucher' ? 'block' : 'none';
+
     
     // Check if the selected transactionOption is a vehicle type dynamically
     const isVehicleType = ["2_wheeler", "4_wheeler"].includes(transactionOption);
@@ -829,5 +972,65 @@ document.querySelector('[name="transaction_option"]').addEventListener('change',
     
 
 </script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const transactionCategorySelect = document.getElementById("transactionCategory");
+        const externalNameInput = document.getElementById("externalType");
+    
+        // Only auto-select if not already set (e.g. on fresh form, not on edit/draft)
+        if (!transactionCategorySelect.value) {
+            transactionCategorySelect.value = "external";
+            transactionCategorySelect.dispatchEvent(new Event('change'));  // Trigger any onchange logic
+        }
+    
+        if (!externalNameInput.value) {
+            externalNameInput.value = "TPA";
+        }
+    });
+    </script>
+    <script>
+        const dateInput = document.getElementById('transactionDate');
+        
+        function setDateLimits() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = today.getMonth(); // 0-based
+        
+            let minDate, maxDate;
+        
+            // Determine the current month's 1st and next month's 5th
+            const currentMonthFirst = new Date(yyyy, mm, 1);
+            const nextMonth = mm + 1 > 11 ? 0 : mm + 1;
+            const nextYear = mm + 1 > 11 ? yyyy + 1 : yyyy;
+            const nextMonthFifth = new Date(nextYear, nextMonth, 5);
+        
+            // If today is <= 5th, user can upload previous month bills
+            if (today.getDate() <= 5) {
+                // minDate = 1st of previous month
+                const prevMonth = mm - 1 < 0 ? 11 : mm - 1;
+                const prevYear = mm - 1 < 0 ? yyyy - 1 : yyyy;
+                minDate = new Date(prevYear, prevMonth, 1);
+            } else {
+                minDate = currentMonthFirst;
+            }
+        
+            // maxDate should never go beyond today
+            maxDate = today;
+        
+            // Format date to yyyy-mm-dd
+            const formatDate = (d) => {
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${y}-${m}-${day}`;
+            };
+        
+            dateInput.setAttribute('min', formatDate(minDate));
+            dateInput.setAttribute('max', formatDate(maxDate));
+        }
+        
+        // Initialize
+        setDateLimits();
+        </script>
 
 {% endblock content %} 

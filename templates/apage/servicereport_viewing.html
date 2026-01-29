@@ -4,36 +4,75 @@
 <div class="container-fluid mt-5">
     <h2>Service Reports</h2>
     <div class="row row-cards mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <form action="{% url 'servicereport' %}" method="GET" class="row g-2 d-flex justify-content-between">
-                        <!-- Left side: Create Report and Export buttons -->
-                        <div class="col-md-4 d-flex justify-content-start">
-                            <a href="{% url 'service_report_new' %}" class="btn btn-success me-2">Create Report</a>
-                            <div class="dropdown">
-                                <button class="btn btn-info dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Export
-                                </button>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="{% url 'export_service_reports_pdf' %}">Export to PDF</a></li>
-                                    <li><a class="dropdown-item" href="{% url 'export_service_reports_csv' %}">Export to CSV</a></li>
-                                    <li><a class="dropdown-item" href="{% url 'export_service_reports_xlsx' %}">Export to XLSX</a></li>
-                                </ul>
-                            </div>
-                        </div>
-                
-                        <!-- Right side: Search input and buttons -->
-                        <div class="col-md-4 d-flex justify-content-end">
-                            <input type="text" name="search" class="form-control me-2" placeholder="Search reports by site name, date, or keywords...">
-                            <button type="submit" class="btn btn-primary me-2">Search</button>
-                            <a href="{% url 'servicereport' %}" class="btn btn-secondary">Clear Search</a>
-                        </div>
-                    </form>
+      <div class="col-12">
+        <div class="card">
+          <div class="card-body">
+            <form action="{% url 'servicereport' %}" method="GET" class="row g-3 align-items-center">
+    
+              <!-- LEFT: Create + Export -->
+              <div class="col-lg-4 col-md-12 d-flex align-items-center gap-2">
+                <a href="{% url 'service_report_new' %}" class="btn btn-success">
+                  Create Report
+                </a>
+    
+                <div class="dropdown">
+                  <button class="btn btn-info dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    Export
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{% url 'export_service_reports_pdf' %}">Export to PDF</a></li>
+                    <li><a class="dropdown-item" href="{% url 'export_service_reports_csv' %}">Export to CSV</a></li>
+                    <li><a class="dropdown-item" href="{% url 'export_service_reports_xlsx' %}">Export to XLSX</a></li>
+                  </ul>
                 </div>
-                
-            </div>
+              </div>
+    
+              <!-- MIDDLE: Filters -->
+              <div class="col-lg-4 col-md-12 d-flex gap-2">
+                {% if user_role == 'Admin' %}
+                <select name="user" class="form-select">
+                  <option value="">All Users</option>
+                  {% for u in users %}
+                    <option value="{{ u.id }}"
+                      {% if selected_user == u.id|stringformat:"s" %}selected{% endif %}>
+                      {{ u.first_name }}
+                    </option>
+                  {% endfor %}
+                </select>
+                {% endif %}
+    
+                <select name="site" class="form-select">
+                  <option value="">All Sites</option>
+                  {% for s in sites %}
+                    <option value="{{ s.id }}"
+                      {% if selected_site == s.id|stringformat:"s" %}selected{% endif %}>
+                      {{ s.name }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+    
+              <!-- RIGHT: Search -->
+              <div class="col-lg-4 col-md-12 d-flex">
+                <input type="text"
+                       name="search"
+                       class="form-control me-2"
+                       value="{{ search_query }}"
+                       placeholder="Search reports...">
+    
+                <button type="submit" class="btn btn-primary me-2">
+                  Search
+                </button>
+    
+                <a href="{% url 'servicereport' %}" class="btn btn-secondary">
+                  Clear
+                </a>
+              </div>
+    
+            </form>
+          </div>
         </div>
+      </div>
     </div>
 
     <div class="page-body">
@@ -49,6 +88,7 @@
                                 <tr>
                                     <th>Service Name</th>
                                     <th>Date of Visit</th>
+                                    <th>Site</th>
                                     <th>Customer Name</th>
                                     <th>State</th>
                                     <th>Status of Call</th>
@@ -65,6 +105,7 @@
                                 <tr>
                                     <td>{{ report.service_name }}</td>
                                     <td>{{ report.date_of_visit }}</td>
+                                    <td>{{ report.site }}</td>
                                     <td>{{ report.customer_name }}</td>
                                     <td>{{ report.state.name }}</td>
                                     <td>{{ report.status_of_call }}</td>
@@ -73,12 +114,27 @@
                                         <a href="{% url 'view_service_report' report.id %}"
                                         class="btn btn-info">View</a>
                                     </td>
-                                    <td>{{ report.get_status_display }}</td>
+                                    <td>
+                                        {% if report.status == 'rejected' %}
+                                          <span class="text-danger" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#reason-{{ report.id }}">
+                                             Rejected (click for reason)
+                                          </span>
+                                          <div id="reason-{{ report.id }}" class="collapse mt-1">
+                                            <small class="text-muted">{{ report.rejection_reason|default:"No reason provided." }}</small>
+                                          </div>
+                                        {% else %}
+                                          {{ report.get_status_display }}
+                                        {% endif %}
+                                      </td>
                                     {% if user_role == 'Admin' %}
                                         <td>
                                             {% if report.status == 'pending' %}
-                                                <a href="{% url 'update_service_report_status' report.pk 'approve' %}" class="btn btn-success">Approve</a>
-                                                <a href="{% url 'update_service_report_status' report.pk 'reject' %}" class="btn btn-danger">Reject</a>
+                                            <a href="{% url 'update_service_report_status' report.pk 'approve' %}"
+                                            class="btn btn-success"
+                                            onclick="return confirm('Are you sure you want to approve this service report?');">
+                                            Approve
+                                         </a>
+                                                <button type="button" class="btn btn-danger" onclick="openRejectModal({{ report.pk }})">Reject</button>
                                             {% else %}
                                             <button class="btn btn-secondary" disabled>{{ report.get_status_display }}</button>
                                             {% endif %}
@@ -93,10 +149,66 @@
                             </tbody>
                         </table>
                     </div>
+                    <!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <form id="rejectForm" method="POST">
+        {% csrf_token %}
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Reject Service Report</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" name="report_id" id="rejectReportId">
+            <div class="mb-3">
+              <label for="rejection_reason" class="form-label">Reason for Rejection</label>
+              <textarea class="form-control" name="rejection_reason" id="rejectionReason" required></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-danger">Reject</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
                 {% comment %} </div> {% endcomment %}
             </div>
         </div>
     </div>
 </div>
 </div>
+
+<script>
+    function openRejectModal(reportId) {
+      document.getElementById('rejectReportId').value = reportId;
+      document.getElementById('rejectionReason').value = '';
+      var rejectModal = new bootstrap.Modal(document.getElementById('rejectModal'));
+      rejectModal.show();
+    }
+    
+    // On form submit
+    document.getElementById('rejectForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const reportId = document.getElementById('rejectReportId').value;
+      const reason = document.getElementById('rejectionReason').value;
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+      fetch(`/service-report/${reportId}/reject/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
+        body: JSON.stringify({ reason: reason }),
+      })
+      .then(response => {
+        if (response.redirected) {
+          window.location.href = response.url;  // Refresh the page
+        }
+      });
+    });
+    </script>
 {% endblock content %}

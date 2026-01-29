@@ -12,10 +12,45 @@
                         Export
                     </button>
                     <ul class="dropdown-menu" aria-labelledby="exportDropdown">
-                        <li><a href="{% url 'export_payments' %}?format=xlsx" class="dropdown-item">Export as XLSX</a></li>
-                        <li><a href="{% url 'export_payments' %}?format=csv" class="dropdown-item">Export as CSV</a></li>
-                        <li><a href="{% url 'export_payments' %}?format=pdf" class="dropdown-item">Export as PDF</a></li>
+                        <li><a class="dropdown-item" href="{% url 'export_payments' %}?format=xlsx">Export as XLSX</a></li>
+                        <li><a class="dropdown-item" href="{% url 'export_payments' %}?format=csv">Export as CSV</a></li>
+                        <li><a class="dropdown-item" href="{% url 'export_payments' %}?format=pdf">Export as PDF</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><button class="dropdown-item text-primary" data-bs-toggle="modal" data-bs-target="#customExportModal">📅 Export by Date</button></li>
                     </ul>
+                </div>
+
+                <!-- Custom Export Modal -->
+                <div class="modal fade" id="customExportModal" tabindex="-1" aria-labelledby="customExportModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <form method="get" action="{% url 'export_payments' %}" class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="customExportModalLabel">Export by Date Range</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="exportFormat" class="form-label">Select Format</label>
+                                    <select name="format" class="form-select" required>
+                                        <option value="xlsx">Excel (XLSX)</option>
+                                        <option value="csv">CSV</option>
+                                        <option value="pdf">PDF</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">From Date</label>
+                                    <input type="date" name="from" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">To Date</label>
+                                    <input type="date" name="to" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-success">Export</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
 
                 {% if user.is_staff %}
@@ -59,38 +94,158 @@
     </div>
 </div>
 
-    {% if payments %}
-    <div class="table-responsive me-1 ms-1">
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Transaction ID</th>
-                    <th>Paid To</th>
-                    <th>From</th>
-                    <th>To</th>
-                    <th>Amount</th>
-                    <th>Screenshot</th>
-                    <th>Date</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for payment in payments %}
-                    <tr>
-                        <td>{{ payment.transaction_id }}</td>
-                        <td>{{ payment.paid_to }}</td>
-                        <td>{{ payment.from_date }}</td>
-                        <td>{{ payment.to_date }}</td>
-                        <td>{{ payment.amount }}</td>
-                        <td>
-                            <a href="{{ payment.screenshot }}" target="_blank">View Screenshot</a>
-                        </td>
-                        <td>{{ payment.created_at|date:"d M Y, H:i" }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>No payments found.</p>
-    {% endif %}
+{% if payments %}
+<div class="table-responsive me-1 ms-1">
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Transaction ID</th>
+                <th>Paid To</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Amount</th>
+                <th>Remark</th>
+                <th>Screenshot</th>
+                <th>Date</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for payment in payments %}
+            <tr>
+                <td>{{ payment.transaction_id }}</td>
+                <td>{{ payment.paid_to }}</td>
+                <td>{{ payment.from_date }}</td>
+                <td>{{ payment.to_date }}</td>
+                <td>{{ payment.amount }}</td>
+                <td>{{ payment.remarks|default:"—" }}</td>
+                <td>
+                    {% if payment.screenshot %}
+                        <a href="{{ payment.screenshot }}" target="_blank">View Screenshot</a>
+                    {% else %}
+                        <span class="text-muted">No Screenshot</span>
+                    {% endif %}
+                </td>
+                <td>{{ payment.created_at|date:"d M Y, H:i" }}</td>
+                <td>
+                    {% if payment.screenshot %}
+                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editPaymentModal{{ payment.id }}">
+                            Edit
+                        </button>
+                    {% else %}
+                        <span class="text-muted">—</span>
+                    {% endif %}
+                </td>
+            </tr>
+
+            <!-- Edit Modal -->
+            <div class="modal fade" id="editPaymentModal{{ payment.id }}" tabindex="-1" aria-labelledby="editPaymentModalLabel{{ payment.id }}" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title" id="editPaymentModalLabel{{ payment.id }}">Payment Details</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form method="post" enctype="multipart/form-data" action="{% url 'update_payment' payment.id %}">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label class="form-label">Transaction ID</label>
+                                    <input type="text" class="form-control" value="{{ payment.transaction_id }}" readonly>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Paid To</label>
+                                    <input type="text" class="form-control" value="{{ payment.paid_to }}" readonly>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">From Date</label>
+                                        <input type="text" class="form-control" value="{{ payment.from_date }}" readonly>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">To Date</label>
+                                        <input type="text" class="form-control" value="{{ payment.to_date }}" readonly>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Amount</label>
+                                    <input type="text" class="form-control" value="{{ payment.amount }}" readonly>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Remarks</label>
+                                    <input type="text" name="remarks" class="form-control" value="{{ payment.remarks }}">
+                                </div>
+                                <div class="mb-3 text-center">
+                                    {% if payment.screenshot %}
+                                      <p><strong>Current Upload:</strong></p>
+                                  
+                                      {% if payment.screenshot_name|lower|slice:"-4:" == ".jpg" or payment.screenshot_name|lower|slice:"-5:" == ".jpeg" or payment.screenshot_name|lower|slice:"-4:" == ".png" %}
+                                        <!-- 🖼 Image preview -->
+                                        <img src="{{ payment.screenshot }}" class="img-fluid rounded shadow mb-2" style="max-height: 350px;">
+                                  
+                                      {% elif payment.screenshot|lower|slice:"-4:" == ".txt" %}
+                                        <!-- 📜 Text file display -->
+                                        <a href="{{ payment.screenshot }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                          View Text File
+                                        </a>
+                                  
+                                      {% else %}
+                                        <!-- 📄 Other file types (like PDF, etc.) -->
+                                        <a href="{{ payment.screenshot }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                          Open Uploaded File
+                                        </a>
+                                      {% endif %}
+                                    {% else %}
+                                      <p class="text-muted">No file uploaded.</p>
+                                    {% endif %}
+                                  
+                                    <label class="form-label mt-3">Replace File (optional)</label>
+                                    <input type="file" name="screenshot" accept="image/*,.txt" class="form-control">
+                                  </div>
+                                <div class="text-center">
+                                    <button type="submit" class="btn btn-success">Update Screenshot</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
+{% else %}
+<p>No payments found.</p>
+{% endif %}
+</div>
+
+{% if messages %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        {% for message in messages %}
+            Swal.fire({
+                icon: "{% if message.tags == 'error' %}error{% elif message.tags == 'warning' %}warning{% else %}success{% endif %}",
+                title: "{{ message|escapejs }}",
+                showConfirmButton: false,
+                timer: 2500
+            });
+        {% endfor %}
+    });
+</script>
+{% endif %}
+
+<!-- Optional CSS for styling -->
+<style>
+.modal-content {
+  border-radius: 12px;
+  overflow: hidden;
+}
+.modal-header {
+  background: linear-gradient(90deg, #007bff, #0056b3);
+}
+.modal-body img {
+  border: 2px solid #e0e0e0;
+}
+</style>
 {% endblock %}

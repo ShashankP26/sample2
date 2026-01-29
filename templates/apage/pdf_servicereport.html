@@ -91,9 +91,9 @@
                         {% for status in electronic_item_statuses %}
                         <tr>
                             <td>{{ status.item.name }}</td>
-                            <td>{{ status.checked|yesno:"Yes,No" }}</td>
-                            <td>{{ status.repair|yesno:"Yes,No" }}</td>
-                            <td>{{ status.replacement|yesno:"Yes,No" }}</td>
+                            <td>{{ status.checked|yesno:"Yes,-" }}</td>
+                            <td>{{ status.repair|yesno:"Yes,-" }}</td>
+                            <td>{{ status.replacement|yesno:"Yes,-" }}</td>
                             <td>{{ status.remark }}</td>
                         </tr>
                         {% empty %}
@@ -122,9 +122,9 @@
                         {% for panel_status in panel_statuses %}
                         <tr>
                             <td>{{ panel_status.panel.name }}</td>
-                            <td>{{ panel_status.checked|yesno:"Yes,No" }}</td>
-                            <td>{{ panel_status.repair|yesno:"Yes,No" }}</td>
-                            <td>{{ panel_status.replacement|yesno:"Yes,No" }}</td>
+                            <td>{{ panel_status.checked|yesno:"Yes,-" }}</td>
+                            <td>{{ panel_status.repair|yesno:"Yes,-" }}</td>
+                            <td>{{ panel_status.replacement|yesno:"Yes,-" }}</td>
                             <td>{{ panel_status.remark }}</td>
                         </tr>
                         {% empty %}
@@ -153,9 +153,9 @@
                         {% for item_status in chemical_item_statuses %}
                         <tr>
                             <td>{{ item_status.item.name }}</td>
-                            <td>{{ item_status.checked|yesno:"Yes,No" }}</td>
-                            <td>{{ item_status.repair|yesno:"Yes,No" }}</td>
-                            <td>{{ item_status.replacement|yesno:"Yes,No" }}</td>
+                            <td>{{ item_status.checked|yesno:"Yes,-" }}</td>
+                            <td>{{ item_status.repair|yesno:"Yes,-" }}</td>
+                            <td>{{ item_status.replacement|yesno:"Yes,-" }}</td>
                             <td>{{ item_status.remark }}</td>
                         </tr>
                         {% empty %}
@@ -184,9 +184,9 @@
                         {% for pump_status in pump_statuses %}
                         <tr>
                             <td>{{ pump_status.pump.name }}</td>
-                            <td>{{ pump_status.checked|yesno:"Yes,No" }}</td>
-                            <td>{{ pump_status.repair|yesno:"Yes,No" }}</td>
-                            <td>{{ pump_status.replacement|yesno:"Yes,No" }}</td>
+                            <td>{{ pump_status.checked|yesno:"Yes,-" }}</td>
+                            <td>{{ pump_status.repair|yesno:"Yes,-" }}</td>
+                            <td>{{ pump_status.replacement|yesno:"Yes,-" }}</td>
                             <td>{{ pump_status.remark }}</td>
                         </tr>
                         {% empty %}
@@ -215,9 +215,9 @@
                         {% for misc_item_status in miscellaneous_item_statuses %}
                         <tr>
                             <td>{{ misc_item_status.item.name }}</td>
-                            <td>{{ misc_item_status.checked|yesno:"Yes,No" }}</td>
-                            <td>{{ misc_item_status.repair|yesno:"Yes,No" }}</td>
-                            <td>{{ misc_item_status.replacement|yesno:"Yes,No" }}</td>
+                            <td>{{ misc_item_status.checked|yesno:"Yes,-" }}</td>
+                            <td>{{ misc_item_status.repair|yesno:"Yes,-" }}</td>
+                            <td>{{ misc_item_status.replacement|yesno:"Yes,-" }}</td>
                             <td>{{ misc_item_status.remark }}</td>
                         </tr>
                         {% empty %}
@@ -246,9 +246,9 @@
                         {% for wastewater_param_status in wastewater_parameter_statuses %}
                         <tr>
                             <td>{{ wastewater_param_status.parameter.name }}</td>
-                            <td>{{ wastewater_param_status.checked|yesno:"Yes,No" }}</td>
-                            <td>{{ wastewater_param_status.repair|yesno:"Yes,No" }}</td>
-                            <td>{{ wastewater_param_status.replacement|yesno:"Yes,No" }}</td>
+                            <td>{{ wastewater_param_status.checked|yesno:"Yes,-" }}</td>
+                            <td>{{ wastewater_param_status.repair|yesno:"Yes,-" }}</td>
+                            <td>{{ wastewater_param_status.replacement|yesno:"Yes,-" }}</td>
                             <td>{{ wastewater_param_status.remark }}</td>
                         </tr>
                         {% empty %}
@@ -281,9 +281,9 @@
                             <td>{{ run_time.run_type }}</td>
                             <td>{{ run_time.run_time }}</td>
                             <td>{{ run_time.end_time }}</td>
-                            <td>{{ run_time.checked|yesno:"Yes,No" }}</td>
-                            <td>{{ run_time.pass_status|yesno:"Yes,No" }}</td>
-                            <td>{{ run_time.fail_status|yesno:"Yes,No" }}</td>
+                            <td>{{ run_time.checked|yesno:"Yes,-" }}</td>
+                            <td>{{ run_time.pass_status|yesno:"Yes,-" }}</td>
+                            <td>{{ run_time.fail_status|yesno:"Yes,-" }}</td>
                             <td>{{ run_time.remark }}</td>
                         </tr>
                         {% empty %}
@@ -312,7 +312,7 @@
                         <tr>
                             <td>{{ tool_status.tool.name }}</td>
                             <td>{{ tool_status.quantity }}</td>
-                            <td>{{ tool_status.taken_status|yesno:"Yes,No" }}</td>
+                            <td>{{ tool_status.taken_status|yesno:"Yes,-" }}</td>
                             <td>{{ tool_status.remark }}</td>
                         </tr>
                         {% empty %}
@@ -332,7 +332,22 @@
         
                 <p><strong>Spares Details:</strong></p>
                 <p>{{ service_report.spares_details }}</p>
-        
+                {% if attachments %}
+                <h4>Attachments</h4>
+                <div>
+                    {% for attachment in attachments %}
+                    {% with ext=attachment.file.name|lower %}
+                        {% if ext|slice:"-4:" == ".jpg" or ext|slice:"-5:" == ".jpeg" or ext|slice:"-4:" == ".png" %}
+                        <div style="margin-bottom: 10px;">
+                            <img src="{{ attachment.web_url }}" style="max-width: 100%; max-height: 400px;" />
+
+
+                        </div>
+                        {% endif %}
+                    {% endwith %}
+                    {% endfor %}
+                </div>
+                {% endif %}
                 <div class="row">
                     <div class="col-md-6">
                         <p><strong>Service Person Name:</strong></p>

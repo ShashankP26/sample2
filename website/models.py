@@ -2,7 +2,42 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 
+class AdvanceGroup(models.Model):
+    name = models.CharField(max_length=255)
+    total_advance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    used_advance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    remaining_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    is_closed = models.BooleanField(default=False)
+    leader = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="led_advance_groups")
+    payment_mode = models.CharField(max_length=50,
+    choices=[
+        ("cash", "Cash"),
+        ("upi", "UPI"),
+        ("net_banking", "Net Banking"),
+        ("cheque", "Cheque"),
+        ("other", "Other"),
+    ],
+    default="net_banking",
+)
 
+
+    def __str__(self):
+        leader_name = self.leader.get_full_name() if self.leader else "No Leader"
+        return f"{self.name} (Leader: {leader_name})"
+
+
+class AdvanceAssignment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    group = models.ForeignKey(AdvanceGroup, on_delete=models.CASCADE)
+    is_leader = models.BooleanField(default=False)  # ✅ New field
+
+    class Meta:
+        unique_together = ('user', 'group')
+
+    def __str__(self):
+        role = " (Leader)" if self.is_leader else ""
+        return f"{self.user.username} - {self.group.name}{role}"
 
 class Expense(models.Model):
     ITEM_TYPES = [
@@ -22,6 +57,7 @@ class Expense(models.Model):
         ('conveyance', 'Conveyance'),
         ('stationary_printing', 'Stationary and Printing'),
         ('hospitality', 'Hospitality'),
+        ('medicine', 'Medicine'),
     ]
 
     TRANSACTION_CATEGORY_CHOICES = [
@@ -49,7 +85,7 @@ class Expense(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_expenses', null=True, blank=True)
     item_type = models.CharField(max_length=50, choices=ITEM_TYPES, blank=True, null=True)
     item_name = models.CharField(max_length=100, blank=True, null=True)
-    date = models.DateField(default=timezone.now)
+    date = models.DateField(auto_now_add=True)
     transaction_option = models.CharField(max_length=20, choices=PAYMENT_OPTIONS, null=True)
     bill_photo = models.FileField(upload_to='bills/', blank=True, null=True)
     voucher_number = models.CharField(max_length=100, blank=True, null=True)
@@ -63,11 +99,18 @@ class Expense(models.Model):
     transaction_details = models.TextField(null=True, blank=True)
     evoucher_number = models.CharField(max_length=100, blank=True, null=True)
     transaction_date = models.DateField(null=True, blank=True)
-    status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('paid', 'Paid')], default='pending')
+    status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('paid', 'Paid'), ('rejected', 'Rejected')], default='pending')
     is_draft = models.BooleanField(default=False)
+    advance_group = models.ForeignKey('AdvanceGroup', on_delete=models.SET_NULL, null=True, blank=True)
+    rejection_reason = models.TextField(blank=True, null=True, default='NONE')
+    is_approved = models.BooleanField(default=False)
+    is_rejected = models.BooleanField(default=False)
     
     km = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # Kilometers field
     conveyance = models.ForeignKey('Conveyance', on_delete=models.SET_NULL, null=True, blank=True)  # Use string for Conveyance
+    delete_requested = models.BooleanField(default=False)
+    is_allocation = models.BooleanField(default=False)
+
 
     # Method to calculate the amount based on km and vehicle type
     def calculate_amount(self):
@@ -77,14 +120,14 @@ class Expense(models.Model):
 
     # Override save method to calculate amount conditionally
     def save(self, *args, **kwargs):
-        # Calculate amount only if both conveyance and km are provided
-        if self.conveyance and self.km is not None:
+        # Only calculate amount if it's a conveyance type and no amount was manually assigned
+        if self.item_type == 'conveyance' and self.conveyance and self.km is not None:
             self.amount = self.calculate_amount()
         super().save(*args, **kwargs)
 
     # Display format for the model instance
     def __str__(self):
-        return f"{self.created_by} - {self.item_type}"
+        return f"{self.created_by} - {self.item_type} - {self.evoucher_number}"
 
 
 # BorrowedAmount Model
@@ -96,6 +139,18 @@ class BorrowedAmount(models.Model):
 
     def __str__(self):
         return f"{self.borrowed_from} - {self.amount}"
+    
+# models.py
+class AdvanceGroupUpdateLog(models.Model):
+    group = models.ForeignKey(AdvanceGroup, on_delete=models.CASCADE, related_name='update_logs')
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    previous_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    new_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    proof_file = models.FileField(upload_to='advance_proofs/', null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.group.name} updated by {self.updated_by} at {self.timestamp.strftime('%Y-%m-%d %H:%M:%S')}"
 
 # CashVoucher Model
 from django.db import models
@@ -103,7 +158,7 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 
 class CashVoucher(models.Model):
-    expense = models.ForeignKey(Expense, on_delete=models.CASCADE, null=True, blank=True)
+    expense = models.ForeignKey(Expense, on_delete=models.CASCADE, null=True, blank=True,related_name='cash_vouchers')
     voucher_number = models.CharField(max_length=20, unique=True)
     date = models.DateField(auto_now_add=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -142,6 +197,7 @@ class Payment(models.Model):
     to_date = models.DateField()    # End date for the payment duration
     screenshot = models.ImageField(upload_to='payment_screenshots/')
     created_at = models.DateTimeField(auto_now_add=True)
+    remarks = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
         return f"{self.paid_to} - {self.transaction_id}"
@@ -162,6 +218,14 @@ class Notification(models.Model):
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=[('unread', 'Unread'), ('read', 'Read')], default='unread')
+
+
+class FCMToken(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    token = models.CharField(max_length=255, unique=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+
 
 
 from django.db import models
@@ -194,3 +258,58 @@ class AdvancePayment(models.Model):
 class ProofPhoto(models.Model):
     expense = models.ForeignKey(Expense, related_name='proof_photos', on_delete=models.CASCADE)
     file = models.FileField(upload_to='proofs/')
+
+
+
+
+from django.db import models
+from django.contrib.auth.models import User
+
+class PaymentRequest(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_resolved = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.user.username} "
+
+class PaymentRequestMessage(models.Model):
+    request = models.ForeignKey(PaymentRequest, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE)
+    message = models.TextField(null=True,blank=True)
+    attachment = models.FileField(upload_to='attachments/', blank=True, null=True)
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.sender.username} - {self.message[:30]}"
+    
+
+
+
+class DirectPay(models.Model):
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    e_voucher_number = models.CharField(max_length=20, unique=True, null=True, blank=True)
+    item_type = models.CharField(max_length=50, choices=Expense.ITEM_TYPES)
+    item_name = models.CharField(max_length=255)
+    payment_category = models.CharField(max_length=20, choices=Expense.PAYMENT_OPTIONS)
+    transaction_category = models.CharField(max_length=20, choices=Expense.TRANSACTION_CATEGORY_CHOICES)
+    external_name = models.CharField(max_length=255, null=True, blank=True)
+    bill_file = models.FileField(upload_to="directpay/bills/", null=True, blank=True)
+    gst_file = models.FileField(upload_to="directpay/gst/", null=True, blank=True)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_mode = models.CharField(max_length=20, choices=Expense.PAYMENT_MODE_CHOICES)
+    proof_photo = models.FileField(upload_to="directpay/proofs/", null=True, blank=True)
+    transaction_date = models.DateField()
+    status = models.CharField(max_length=20, default="draft")  # draft / completed
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"DirectPay {self.e_voucher_number} ({self.status})"
+    
+
+
+class MobileSession(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    token = models.CharField(max_length=128, unique=True)
+    created = models.DateTimeField(auto_now_add=True)

@@ -239,32 +239,4 @@ input[type="text"] {
   </div>
 </div>
 
-
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    console.log("JavaScript Loaded");
-
-    // Get the input element and error message container by ID
-    const visitDateInput = document.getElementById("visit-date");
-    const errorDiv = document.getElementById("visit-date-error");
-
-    // Add event listener for the 'input' event on the visit-date field
-    visitDateInput.addEventListener("change", function () {
-        const selectedDate = new Date(visitDateInput.value); // Convert selected date to Date object
-        const today = new Date(); // Get today's date
-        today.setHours(0, 0, 0, 0);  // Set today's time to 00:00:00 for comparison
-
-        // Check if the selected date is in the future
-        if (selectedDate > today) {
-            errorDiv.style.display = "block"; // Show error message
-            visitDateInput.classList.add("is-invalid"); // Add 'is-invalid' class to the input field for styling
-        } else {
-            errorDiv.style.display = "none"; // Hide error message
-            visitDateInput.classList.remove("is-invalid"); // Remove the 'is-invalid' class
-        }
-    });
-});
-
-  
-<script>
 {% endblock %}

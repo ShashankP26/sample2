@@ -16,6 +16,7 @@
                 <th style="width: 10%; border: 1px solid #ddd; padding: 8px;">T Category</th>
                 <th style="width: 10%; border: 1px solid #ddd; padding: 8px;">T Details</th>
                 <th style="width: 10%; border: 1px solid #ddd; padding: 8px;">Amount</th>
+                <th style="width: 15%; border: 1px solid #ddd; padding: 8px;">Advance Group</th>
                 <th style="width: 10%; border: 1px solid #ddd; padding: 8px;">Transaction Date</th>
                 <th style="width: 15%; border: 1px solid #ddd; padding: 8px;">Uploaded File</th>
                 <th style="width: 10%; border: 1px solid #ddd; padding: 8px;">Payment Mode</th>
@@ -56,6 +57,15 @@
                     {% endif %}
                 </td>
                 <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">{{ exp.amount }}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">
+                    {% if exp.advance_group %}
+                        {{ exp.advance_group.name }}<br>
+                        <small>₹{{ exp.advance_group.total_advance }} total</small><br>
+                        <small>₹{{ exp.advance_group.used_advance }} used</small>
+                    {% else %}
+                        <span class="text-muted">—</span>
+                    {% endif %}
+                </td>
                 <td style="border: 1px solid #ddd; padding: 8px;">{{ exp.transaction_date }}</td>
                 <td style="border: 1px solid #ddd; padding: 8px;">
                     {% if exp.proof_photo %}

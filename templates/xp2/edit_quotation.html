@@ -1,42 +1,44 @@
 {% extends "base.html" %}
+{% load static %}
+{% block content %}
+<style>
+    .form-check-inline { display: flex; align-items: center; }
+    .form-check-inline input[type="checkbox"] { margin-right: 8px; }
+    .form-check-inline input[type="text"] { flex: 1; }
+    .section-group { margin-bottom: 24px; }
+    .section-hide { display: none !important; }
+    .section-disabled input, .section-disabled select, .section-disabled textarea, .section-disabled button {
+        pointer-events: none; opacity: 0.45;
+    }
+</style>
+<div class="container-fluid mt-5 ">
+    <h2>Edit Techno-Commercial AMC Proposal </h2><br>
 
-{% block content %} 
-    <style>
-        .form-check-inline {
-            display: flex;
-            align-items: center;
-        }
-        .form-check-inline input[type="checkbox"] {
-            margin-right: 8px;
-        }
-        .form-check-inline input[type="text"] {
-            flex: 1;
-        }
-    </style>
-    <div class="container-fluid mt-5 ">
-        <h2>Edit Techno-Commercial AMC Proposal</h2><br>
-
-        <form id="quotationForm"  method="POST">
-            {% csrf_token %}
-            <div class="mb-4">
-                <label for="quotation_number" class="form-label">Quotation Number</label>
-                <input type="text" id="quotation_number" name="quotation_number" class="form-control" value="{{ quotation_data.quotation_number }}" readonly>
+    <form id="quotationForm"  method="POST">
+        {% csrf_token %}
+        <div class="mb-4">
+            <label for="quotation_number" class="form-label">Quotation Number</label>
+            <input type="text" id="quotation_number" name="quotation_number" class="form-control" value="{{ quotation_data.quotation_number }}" readonly>
+        </div>
+        <h3>Contents</h3>
+        <div class="mb-4" id="contentsSection">
+            {% for content in quotation_data.contents %}
+            <div class="form-check-inline mb-2">
+                <input type="hidden" name="content_select_{{ forloop.counter }}" value="0">
+                <input type="checkbox" name="content_select_{{ forloop.counter }}" class="form-check-input content-checkbox"
+                    value="1" {% if content.is_checked %}checked{% endif %}
+                    data-section="{{ content.value|cut:'-------------------'|slugify }}">
+                <input type="text" name="content_{{ forloop.counter }}" value="{{ content.value }}" class="form-control">
             </div>
-            <h3>Contents</h3>
-            <div class="mb-4">
-                {% for content in quotation_data.contents %}
-                <div class="form-check-inline mb-2">
-                    <input type="hidden" name="content_select_{{ forloop.counter }}" value="0">
-                    <input type="checkbox" name="content_select_{{ forloop.counter }}" class="form-check-input" value="1" {% if content.is_checked %}checked{% endif %}>
-                    <input type="text" name="content_{{ forloop.counter }}" value="{{ content.value }}" class="form-control">
-                </div>
-                {% endfor %}
-            </div>
+            {% endfor %}
+        </div>
+        <button type="button" class="btn btn-primary mb-2" id="addContentButton" onclick="addContent()">Add</button>
 
-            <!-- AMC Proposal Section -->
+        <!-- AMC Proposal Section -->
+        <div class="section-group" id="section-amc-proposal" data-section="amc-proposal">
             <h3>AMC Proposal</h3>
             <div class="table-responsive">
-                <table class="table table-bordered ">
+                <table class="table table-bordered " id="amcTable">
                     <thead>
                         <tr>
                             <th>select</th>
@@ -52,7 +54,7 @@
                         <tr>
                             <td>
                                 <input type="hidden" name="select_amc_{{ forloop.counter }}" value="0">
-                                <input type="checkbox" name="select_amc_check_{{ forloop.counter }}" class="form-check-input" value="1" {% if inst.is_checked %}checked{% endif %}>
+                                <input type="checkbox" name="select_amc_check_{{ forloop.counter }}" class="form-check-input amc-proposal-checkbox" value="1" {% if inst.is_checked %}checked{% endif %}>
                             </td>
                             <td>
                                 <input type="text" name="pd_name_{{ forloop.counter }}" value="{{ inst.pd_name }}" class="form-control">
@@ -74,46 +76,63 @@
                     </tbody>
                 </table>
             </div>
+            <div class="d-flex justify-content-start mb-3">
+                <button type="button" class="btn btn-primary" id="addAMCButton" onclick="addAMCRow()">Add Row</button>
+                <button type="button" class="btn btn-danger ms-2" id="removeAMCButton" onclick="removeAMCRow()" disabled>Remove Row</button>
+            </div>
+        </div>
 
-
-            <!-- Inclusions Section -->
+        <!-- Inclusions Section parent -->
+        <div class="section-group" id="section-inclusions-comprehensive-amc" data-section="inclusions-comprehensive-amc">
             <h4>Inclusions: Comprehensive AMC</h4>
-            <h6>Maintenance Support Package</h6>
-            <div class="mb-4">
-                {% for line in quotation_data.maintenance_support %}
-                <div class="form-check-inline mb-2">
-                    <input type="hidden" name="maintenance_support_check_{{ forloop.counter }}" value="0">
-                    <input type="checkbox" name="maintenance_support_check_{{ forloop.counter }}" class="form-check-input" value="1" {% if line.is_checked %}checked{% endif %}>
-                    <input type="text" name="maintenance_support_{{ forloop.counter }}" value="{{ line.value }}" class="form-control">
+            <!-- Maintenance Support Section -->
+            <div class="section-group" id="section-maintenance-support-package" data-section="maintenance-support-package">
+                <h6>Maintenance Support Package</h6>
+                <div class="mb-4" id="maintenanceSupportSection">
+                    {% for line in quotation_data.maintenance_support %}
+                    <div class="form-check-inline mb-2">
+                        <input type="hidden" name="maintenance_support_check_{{ forloop.counter }}" value="0">
+                        <input type="checkbox" name="maintenance_support_check_{{ forloop.counter }}" class="form-check-input" value="1" {% if line.is_checked %}checked{% endif %}>
+                        <input type="text" name="maintenance_support_{{ forloop.counter }}" value="{{ line.value }}" class="form-control">
+                    </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
+                <button type="button" class="btn btn-primary mb-2" onclick="addMaintenanceSupportField()">Add Line</button>
             </div>
-
-            <h6>Yearly Maintenance and Upkeep</h6>
-            <div class="mb-4">
-                {% for line in quotation_data.yearly_maintenance %}
-                <div class="form-check-inline mb-2">
-                    <input type="hidden" name="yearly_maintenance_check_{{ forloop.counter }}" value="0">
-                    <input type="checkbox" name="yearly_maintenance_check_{{ forloop.counter }}" class="form-check-input" value="1" {% if line.is_checked %}checked{% endif %}>
-                    <input type="text" name="yearly_maintenance_{{ forloop.counter }}" value="{{ line.value }}" class="form-control">
+            <!-- Yearly Maintenance Section -->
+            <div class="section-group" id="section-yearly-maintenance-and-upkeep" data-section="yearly-maintenance-and-upkeep">
+                <h6>Yearly Maintenance and Upkeep</h6>
+                <div class="mb-4" id="yearlyMaintenanceSection">
+                    {% for line in quotation_data.yearly_maintenance %}
+                    <div class="form-check-inline mb-2">
+                        <input type="hidden" name="yearly_maintenance_check_{{ forloop.counter }}" value="0">
+                        <input type="checkbox" name="yearly_maintenance_check_{{ forloop.counter }}" class="form-check-input" value="1" {% if line.is_checked %}checked{% endif %}>
+                        <input type="text" name="yearly_maintenance_{{ forloop.counter }}" value="{{ line.value }}" class="form-control">
+                    </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
+                <button type="button" class="btn btn-primary mb-2" onclick="addYearlyMaintenanceField()">Add Line</button>
             </div>
-
-            <h6>Running Consumables and Chemicals Required</h6>
-            <div class="mb-4">
-                {% for line in quotation_data.yearly_maintenance %}
-                <div class="form-check-inline mb-2">
-                    <input type="hidden" name="running_consumables_check_{{ forloop.counter }}" value="0">
-                    <input type="checkbox" name="running_consumables_check_{{ forloop.counter }}" class="form-check-input" value="1" {% if line.is_checked %}checked{% endif %}>
-                    <input type="text" name="running_consumables_{{ forloop.counter }}" value="{{ line.value }}" class="form-control">
+            <!-- Running Consumables Section -->
+            <div class="section-group" id="section-running-consumables-and-chemicals-as-required" data-section="running-consumables-and-chemicals-as-required">
+                <h6>Running Consumables and Chemicals Required</h6>
+                <div class="mb-4" id="runningConsumablesSection">
+                    {% for line in quotation_data.running_consumables %}
+                    <div class="form-check-inline mb-2">
+                        <input type="hidden" name="running_consumables_check_{{ forloop.counter }}" value="0">
+                        <input type="checkbox" name="running_consumables_check_{{ forloop.counter }}" class="form-check-input" value="1" {% if line.is_checked %}checked{% endif %}>
+                        <input type="text" name="running_consumables_{{ forloop.counter }}" value="{{ line.value }}" class="form-control">
+                    </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
+                <button type="button" class="btn btn-primary mb-2" onclick="addRunningConsumablesField()">Add Line</button>
             </div>
+        </div>
 
-            <!-- Exclusions Section -->
+        <!-- Exclusions Section -->
+        <div class="section-group" id="section-exclusions-comprehensive-amc" data-section="exclusions-comprehensive-amc">
             <h6>Exclusions: Comprehensive AMC</h6>
-            <div class="mb-4">
+            <div class="mb-4" id="exclusionsSection">
                 {% for line in quotation_data.exclusions %}
                 <div class="form-check-inline mb-2">
                     <input type="hidden" name="exclusions_check_{{ forloop.counter }}" value="0">
@@ -122,11 +141,14 @@
                 </div>
                 {% endfor %}
             </div>
+            <button type="button" class="btn btn-primary mb-2" onclick="addExclusionsField()">Add Line</button>
+        </div>
 
-            <!-- AMC Pricing Section -->
+        <!-- AMC Pricing Section -->
+        <div class="section-group" id="section-pricing-amc-for-one-year" data-section="pricing-amc-for-one-year">
             <h3>AMC Pricing For One Year</h3>
             <div class="table-responsive">
-                <table class="table table-bordered">
+                <table class="table table-bordered" id="amcpTable">
                     <thead>
                         <tr>
                             <th>select</th>
@@ -164,9 +186,17 @@
                     </tbody>
                 </table>
             </div>
-            <br>
+            <div class="d-flex justify-content-start mb-3">
+                <button type="button" class="btn btn-primary" onclick="addAMCPricingRow()">Add Row</button>
+                <button type="button" id="removeAMCPricingButton" class="btn btn-danger ms-2" onclick="removeAMCPricingRow()" disabled>Remove Row</button>
+            </div>
+        </div>
+        <br>
+        <!-- AMC Particulars: always visible and enabled! -->
+        <div id="section-amc-particulars-static">
+            <h3>AMC Particulars</h3>
             <div class="table-responsive">
-                <table class="table table-bordered">
+                <table class="table table-bordered" id="amcParticularsTable">
                     <thead>
                         <tr>
                             <th>select</th>
@@ -179,7 +209,7 @@
                         <tr>
                             <td>
                                 <input type="hidden" name="select_per_{{ forloop.counter }}" value="0">
-                                <input type="checkbox" name="select_per_check_{{ forloop.counter }}" class="form-check-input" value="1" {% if particular.is_checked %}checked{% endif %} >
+                                <input type="checkbox" name="select_per_check_{{ forloop.counter }}" class="form-check-input" value="1" {% if particular.is_checked %}checked{% endif %}>
                             </td>
                             <td>
                                 <input type="text" name="particulars_{{ forloop.counter }}" value="{{ particular.particulars }}" class="form-control">
@@ -195,62 +225,124 @@
                     </tbody>
                 </table>
             </div>
-            <!-- Pricing Table -->
-            <div class="row mb-1">
-                <div class="col-auto">
-                    <p>
-                        <label>
-                            <input type="checkbox" class="form-check-input" name="content_select_sub" id="subtotal-checkbox">
-                            <strong>Subtotal:</strong> 
-                            <input type="hidden" name="Subtotal1" id="Subtotal1">
-                            <span id="subtotal"></span>
-                        </label>
-                    </p>
-                    <p>
-                        <label>
-                            <input type="checkbox" class="form-check-input" name="content_select_gst" id="gst-checkbox">
-                            <strong>GST (18%):</strong> 
-                            <input type="hidden" name="gst1" id="gst1">
-                            <span id="gst"></span>
-                        </label>
-                    </p>
-                    <p>
-                        <label>
-                            <input type="checkbox" class="form-check-input"  name="content_select_gtotal" id="grand-total-checkbox">
-                            <strong>Grand Total:</strong> 
-                            <input type="hidden" name="grand" id="grand">
-                            <span id="grand-total"></span>
-                        </label>
-                    </p>
-                </div>
+             <!-- Add Row / Remove Row buttons: -->
+            <div class="d-flex justify-content-start mb-3">
+                <button type="button" class="btn btn-primary" onclick="addAMCParticularRow()">Add Row</button>
+                <button type="button" id="removeAMCParticularButton" class="btn btn-danger ms-2" onclick="removeAMCParticularRow()" disabled>Remove Row</button>
             </div>
-
-            
-    
-            <p>Subtotal Value: {{ quotation_data.Subtotal_list.0.value }}</p>
-            <p>GST Value: {{ quotation_data.GST.0.value }}</p>
-            <p>Grand Total Value: {{ quotation_data.Grand_Total.0.value }}</p>
-
-            
-            <!-- Terms and Conditions Section -->
-            <h3>Terms and Conditions</h3>
-            <div class="mb-4">
-                {% for line in quotation_data.terms %}
-                <div class="form-check-inline mb-2">
-                    <!-- Hidden input to store unchecked values -->
-                    <input type="hidden" name="terms_check_{{ forloop.counter }}" value="0">
-                    <!-- Checkbox with dynamic 'checked' status -->
-                    <input type="checkbox" name="terms_check_{{ forloop.counter }}" class="form-check-input" value="1" {% if line.is_checked %}checked{% endif %}>
-                    <!-- Input field pre-filled with value -->
-                    <input type="text" name="terms_{{ forloop.counter }}" id="term_{{ forloop.counter }}" value="{{ line.value }}" class="form-control">
-                </div>
-                {% endfor %}
+        </div>
+        <!-- Pricing Table -->
+        <div class="row mb-1">
+            <div class="col-auto">
+                <p>
+                    <label>
+                        <input type="checkbox" class="form-check-input" name="content_select_sub" id="subtotal-checkbox">
+                        <strong>Subtotal:</strong> 
+                        <input type="hidden" name="Subtotal1" id="Subtotal1">
+                        <span id="subtotal"></span>
+                    </label>
+                </p>
+                <p>
+                    <label>
+                        <input type="checkbox" class="form-check-input" name="content_select_gst" id="gst-checkbox">
+                        <strong>GST (18%):</strong> 
+                        <input type="hidden" name="gst1" id="gst1">
+                        <span id="gst"></span>
+                    </label>
+                </p>
+                <p>
+                    <label>
+                        <input type="checkbox" class="form-check-input"  name="content_select_gtotal" id="grand-total-checkbox">
+                        <strong>Grand Total:</strong> 
+                        <input type="hidden" name="grand" id="grand">
+                        <span id="grand-total"></span>
+                    </label>
+                </p>
             </div>
-            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-            <button type="submit" id="ssaveButton" class="btn btn-primary">Save Changes</button>
-        </form>
-    </div>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        </div>
+        
+        <p>Subtotal Value: {{ quotation_data.Subtotal_list.0.value }}</p>
+        <p>GST Value: {{ quotation_data.GST.0.value }}</p>
+        <p>Grand Total Value: {{ quotation_data.Grand_Total.0.value }}</p>
+
+        <!-- Terms and Conditions Section -->
+        <h3>Terms and Conditions</h3>
+        <div class="mb-4">
+            {% for line in quotation_data.terms %}
+            <div class="form-check-inline mb-2">
+                <input type="hidden" name="terms_check_{{ forloop.counter }}" value="0">
+                <input type="checkbox" name="terms_check_{{ forloop.counter }}" class="form-check-input" value="1" {% if line.is_checked %}checked{% endif %}>
+                <input type="text" name="terms_{{ forloop.counter }}" id="term_{{ forloop.counter }}" value="{{ line.value }}" class="form-control">
+            </div>
+            {% endfor %}
+        </div>
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+        <button type="submit" id="ssaveButton" class="btn btn-primary">Save Changes</button>
+    </form>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{% static 'js/addextraamc.js' %}"></script>
+<script src="{% static 'js/addextrapr.js' %}"></script>
+<script>
+function slugify(txt) {
+    return txt.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+// --- Helper: Ensure section table has at least one row when made visible ---
+function ensureSectionHasRow(sectionId, addRowFunc) {
+    const section = $("#" + sectionId);
+    const tableBody = section.find("tbody");
+    if (tableBody.length && tableBody.children("tr").length === 0) {
+        if (typeof addRowFunc === "function") addRowFunc();
+    }
+    // For non-table sections (like exclusions)
+    if (sectionId.includes('exclusions') && section.find('.form-check-inline').length === 0) {
+        if (typeof addRowFunc === "function") addRowFunc();
+    }
+}
+
+// --- Main toggle and auto-row logic ---
+function updateSectionVisibilityByContents() {
+    let enabledSections = [];
+    $('.content-checkbox').each(function() {
+        var isChecked = $(this).is(':checked');
+        var label = $(this).siblings('input[type="text"]').val();
+        var section = slugify((label || '').split('-------------------')[0] || label);
+        if (isChecked) enabledSections.push(section);
+    });
+    $('.section-group').not('#section-amc-particulars').each(function() {
+        var sectionName = $(this).attr('data-section');
+        if (enabledSections.includes(sectionName)) {
+            $(this).removeClass('section-hide section-disabled');
+            $(this).find('input,select,button,textarea').prop('disabled', false);
+        } else {
+            $(this).addClass('section-hide section-disabled');
+            $(this).find('input,select,button,textarea').prop('disabled', true);
+        }
+    });
+
+    if (enabledSections.includes('amc-proposal'))
+        ensureSectionHasRow("section-amc-proposal", window.addAMCRow);
+    if (enabledSections.includes('pricing-amc-for-one-year'))
+        ensureSectionHasRow("section-pricing-amc-for-one-year", window.addAMCPricingRow);
+    if (enabledSections.includes('inclusions-comprehensive-amc'))
+        ensureSectionHasRow("section-inclusions-comprehensive-amc", window.addMaintenanceSupportField);
+    if (enabledSections.includes('maintenance-support-package'))
+        ensureSectionHasRow("section-maintenance-support-package", window.addMaintenanceSupportField);
+    if (enabledSections.includes('yearly-maintenance-and-upkeep'))
+        ensureSectionHasRow("section-yearly-maintenance-and-upkeep", window.addYearlyMaintenanceField);
+    if (enabledSections.includes('running-consumables-and-chemicals-as-required'))
+        ensureSectionHasRow("section-running-consumables-and-chemicals-as-required", window.addRunningConsumablesField);
+    if (enabledSections.includes('exclusions-comprehensive-amc'))
+        ensureSectionHasRow("section-exclusions-comprehensive-amc", window.addExclusionsField);
+}
+$(document).ready(function(){
+    $('.content-checkbox').on('change', function() { updateSectionVisibilityByContents(); });
+    updateSectionVisibilityByContents();
+});
+// Extra script for totals, calculations, AJAX etc. as in your original - keep below here
+</script>
+
+
     <script>
         var enquiryId = {{ quotation_data.enquiry_id }}
         console.log("enq");
@@ -293,6 +385,14 @@
         document.addEventListener('DOMContentLoaded', function () {
             // Parse context data safely
             const data = JSON.parse('{{ data|safe }}');
+            // Attach listeners add only on existing rows at ready
+            document.querySelectorAll('.form-check-input').forEach(checkbox => {
+                checkbox.addEventListener('change', calculateTotals);
+            });
+            document.querySelectorAll('.first-year-exgst').forEach(input => {
+                input.addEventListener('input', calculateTotals);
+            });
+
 
             // Set Subtotal values
             if (data.Subtotal_list && data.Subtotal_list.length > 0) {

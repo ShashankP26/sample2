@@ -1,6 +1,8 @@
 from django.contrib import admin
-from .models import Enquiry ,Products,Hidrec_wash ,ConfirmedHidrecWash, Executive,quotation,ConfirmedOrder,FollowUp,ConfirmedOrderFollowUp, Xpredict,BankDetails,CommercialQuote, QuotationItem,companydetails,confirmed_enquiry,RevertRemark
+from Riva.models import Enquiry ,Products ,Hidrec_wash ,ConfirmedHidrecWash, Executive,quotation,ConfirmedOrder,FollowUp,ConfirmedOrderFollowUp, Xpredict,BankDetails,CommercialQuote, QuotationItem,companydetails,confirmed_enquiry,RevertRemark
 # Register your models here.
+admin.site.register(Hidrec_wash)
+admin.site.register(ConfirmedHidrecWash)
 admin.site.register(Enquiry)
 admin.site.register(Products)
 admin.site.register(Executive)
@@ -15,9 +17,6 @@ admin.site.register( QuotationItem)
 admin.site.register(companydetails)
 admin.site.register(confirmed_enquiry)
 admin.site.register(RevertRemark)
-admin.site.register(Hidrec_wash)
-admin.site.register(ConfirmedHidrecWash)
-
 
 from .models import (
     QuotationProduct,

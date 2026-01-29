@@ -2,198 +2,224 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quotation Preview - {{ quotation_number }}</title>
-    <style>
-        /* A4 Page Layout */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0 auto;
-            padding: 20px;
-            width: 21cm;
-            min-height: 29.7cm;
-            box-sizing: border-box;
-            background-color: #fff;
-            max-height: 99vh;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 10px;
-            margin-top: 0px;
-            padding-bottom: 10px;
-        }
-
-        header h1 {
-            font-size: 28px;
-            font-weight: bold;
-            margin: 0;
-        }
-
-        .details-section {
-            margin-bottom: 20px;
-        }
-
-        .details-section h3 {
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        .details-section p {
-            margin: 5px 0;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        table th, table td {
-            border: 1px solid #ddd;
-            padding: 6px;
-            text-align: center;
-        }
-
-        table th {
-            background-color: #f4f4f4;
-            font-weight: bold;
-        }
-
-        /* Adjust column widths */
-        table th:nth-child(1), table td:nth-child(1) {
-            width: 10%;
-        }
-        table th:nth-child(2), table td:nth-child(2) {
-            width: 30%;
-        }
-        table th:nth-child(3), table td:nth-child(3),
-        table th:nth-child(4), table td:nth-child(4) {
-            width: 15%;
-        }
-        table th:nth-child(5), table td:nth-child(5) {
-            width: 20%;
-        }
-
-        .totals-container {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-        }
-
-        .totals-container .section {
-            width: 48%;
-        }
-
-        footer {
-            text-align: center;
-            margin-top: 30px;
-            font-size: 12px;
-            page-break-inside: avoid;
-        }
-
-        .line-border {
-            border-top: 1px solid #ddd;
-            margin-top: 20px;
-        }
-
-        @media print {
-            /* Print specific styles */
-            body {
-                width: 100%;
-                min-height: auto;
-                margin: 0;
-                padding: 20mm;
-            }
-
-            .details-section h3, .totals-container h3 {
-                font-size: 16px;
-                font-weight: normal;
-            }
-
-            .totals-container {
-                flex-direction: column;
-            }
-
-            table th, table td {
-                padding: 4px;
-            }
-
-            footer {
-                font-size: 10px;
-            }
-
-            .print-button {
-                display: none;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Quotation Preview - {{ quotation_number }}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f8f9fb;
+    color: #19202A;
+    margin: 0;
+}
+header {
+    text-align: center;
+    padding: 32px 0 0 0;
+    background: #fff;
+    border-bottom: 1.5px solid #e5e5e5;
+}
+.logo {
+    height: 38px;
+}
+.container {
+    max-width: 900px;
+    margin: 32px auto 0 auto;
+    background: #fff;
+    border-radius: 7px;
+    box-shadow: 0 2px 12px 0 rgba(0,0,0,0.04);
+    padding: 36px 36px 30px 36px;
+    min-height: 80vh;
+}
+h1, h2, h3, h4 {
+    text-align: left;
+    margin: 0 0 18px 0;
+}
+h1 { font-size: 2rem; font-weight: 600; margin-bottom: 28px; }
+h2 { font-size: 1.3rem; font-weight: 600; margin-top: 1.7em; }
+h3 { font-size: 1.13rem; font-weight: 600; margin-top: 1.4em;}
+h4 { font-size: 1.06rem; font-weight: 600; margin-top: 1em;}
+.company-block {
+    margin-bottom: 18px;
+}
+.company-block .cname {
+    font-weight: 600;
+    font-size: 1.13rem;
+}
+.company-block .cmail {
+    font-size: 1rem;
+    color: #355;
+}
+.info-table {
+    width: 100%;
+    max-width: 480px;
+    margin: 15px 0 28px 0;
+    border: 1px solid #e2e6ef;
+    border-radius: 4px;
+    border-collapse: collapse;
+    font-size: 15px;
+}
+.info-table td {
+    border-bottom: 1px solid #eaeaea;
+    padding: 7px 13px;
+}
+.info-table td:first-child {
+    background: #f7f8fa;
+    font-weight: 500;
+    width: 36%;
+}
+.info-table tr:last-child td { border-bottom: none; }
+.section-title {
+    font-size: 1.13rem;
+    font-weight: 600;
+    background: #f5f7fa;
+    border-radius: 5px 5px 0 0;
+    border-bottom: 1.5px solid #e4e7ea;
+    padding: 9px 0 7px 15px;
+    margin: 2.2em 0 1em 0;
+    letter-spacing: 0.04em;
+}
+.details-section {
+    margin-bottom: 18px;
+    padding-left: 2px; padding-right:2px;
+}
+ul, ol { margin: 2px 0 0 18px; font-size: 1em; }
+li { margin-bottom: 3.5px; font-size: 1em; }
+.styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 14px;
+    font-size: 15px;
+}
+.styled-table th, .styled-table td {
+    border: 1px solid #dde2e7;
+    padding: 9px 7px;
+    text-align: center;
+}
+.styled-table th {
+    background: #f5f7fa;
+    font-weight: 600;
+}
+.styled-table td { font-weight: 400; }
+.styled-table tbody tr:nth-child(even) { background: #fafbfc; }
+.print-button {
+    padding: 9px 23px;
+    margin-top: 14px;
+    background: #2234c9;
+    border: none;
+    border-radius: 20px;
+    font-size: 1.01rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.18s;
+}
+.print-button:hover { background: #1a247d; }
+footer {
+    text-align: center;
+    font-size: 12px;
+    margin: 38px 0 0 0;
+}
+hr {
+    border: none;
+    height: 1.5px;
+    background: #e5e8ee;
+    margin: 31px 0 25px 0;
+}
+@media print {
+    body, .container, .details-section, .company-block {
+        background: #fff !important;
+        color: #222 !important;
+    }
+    .container {
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    header { border: none; }
+    .styled-table th {
+        background: #f5f7fa !important;
+        color: #242F3A !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    .section-title {
+        background: #f5f7fa !important;
+        color: #111 !important;
+        border-radius: 5px 5px 0 0 !important;
+        border-bottom: 1.5px solid #e4e7ea !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    .print-button { display: none !important; }
+}
+</style>
 </head>
 <body>
-    <header>
-        <img src="{% static 'xpredictlogo.jpg' %}" width="110" height="32" alt="Xpredict" class="navbar-brand-image">
-    </header>
+<header>
+    <img src="{% static 'xlogo.png' %}" width="130" height="40" alt="Xpredict" class="logo">
+</header>
 
-    <h1>Proposal Details</h1>
-    {% for comp in company  %}
-        <p><strong>{{ comp.c_name }} </strong></p>
-        <p><strong>{{ comp.mail }} / {{ comp.phone }} </strong></p>
-        
-        <table class="table table-bordered">
+
+<div class="container">
+    <h2>Proposal Details</h2>
+    {% for comp in company %}
+        <div class="company-block">
+            <div class="cname">{{ comp.c_name }}</div>
+            <div class="cmail">{{ comp.mail }} / {{ comp.phone }} </div>
+        </div>
+        <table class="info-table">
             <tbody>
                 <tr>
-                    <td><strong>Date</strong></td>
+                    <td>Date</td>
                     <td>{{ current_date }}</td>
                 </tr>
                 <tr>
-                    <td><strong>Quotation No</strong></td>
+                    <td>Quotation No</td>
                     <td>{{ quotation_no }}</td>
                 </tr>
                 <tr>
-                    <td><strong>Validity</strong></td>
+                    <td>Validity</td>
                     <td>15 days</td>
                 </tr>
                 <tr>
-                    <td><strong>Prepared by</strong></td>
+                    <td>Prepared by</td>
                     <td>Kirti</td>
                 </tr>
             </tbody>
         </table>
-        
-        {% endfor %}
+    {% endfor %}
 
-    
-    
-    <h3 class="mt-4">Contents</h3>
-    <div class="mb-4">
+    {% if has_contents %}
+    <div class="details-section">
+        <div class="section-title">Contents</div>
+        <ul>
         {% for cont in data.contents %}
-        <div class="mb-2">
-            <p>{{ cont.value }}</p>
-        </div>
+            <li>{{ cont.value }}</li>
         {% endfor %}
+        </ul>
     </div>
-    
-    <h2 class="mt-4">Site Information</h2>
-    <ul>
+    {% endif %}
+
+    {% if has_site_info %}
+    <div class="details-section">
+        <div class="section-title">Site Information</div>
+        <ul>
         {% for item in data.site_info %}
             {% if item.is_checked %}
-            <li class="mb-2">
-                <p>{{ item.info_text }}</p>
-            </li>
+            <li>{{ item.info_text }}</li>
             {% endif %}
-            
             {% if item.is_standard_checked %}
-            <li class="mb-2">
-                <p>{{ item.standard_text }}</p>
-            </li>
+            <li>{{ item.standard_text }}</li>
             {% endif %}
         {% endfor %}
-    </ul>
+        </ul>
+    </div>
+    {% endif %}
 
-    
-    <h3 class="mt-4">Raw Sewage Characteristics</h3>
-    <table class="table table-bordered table-striped">
+    {% if has_raw_sewage %}
+    <div class="details-section">
+        <div class="section-title">Raw Sewage Characteristics</div>
+        <table class="styled-table">
         <thead>
             <tr>
                 <th>Sl. No</th>
@@ -203,29 +229,32 @@
             </tr>
         </thead>
         <tbody>
-            {% for t1 in data.table_data %}
-                {% if t1.is_checked %}
-                <tr>
-                    <td>{{ t1.sl_no }}</td>
-                    <td>{{ t1.raw_sewage_characteristics }}</td>
-                    <td>{{ t1.unit }}</td>
-                    <td>{{ t1.value }}</td>
-                </tr>
-                {% endif %}
-            {% endfor %}
-        </tbody>
-    </table>
-
-
-    <h2 class="mt-4">Treatment Processes and Purpose of Each Process in a Treatment System</h2>
-    <table class="table table-bordered table-striped">
-        <thead>
+        {% for t1 in data.table_data %}
+            {% if t1.is_checked %}
             <tr>
-                <th>Principal Purpose Unit Process</th>
-                <th>Unit Processes</th>
+                <td>{{ t1.sl_no }}</td>
+                <td>{{ t1.raw_sewage_characteristics }}</td>
+                <td>{{ t1.unit }}</td>
+                <td>{{ t1.value }}</td>
             </tr>
-        </thead>
-        <tbody>
+            {% endif %}
+        {% endfor %}
+        </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if has_treatment %}
+    <div class="details-section">
+        <div class="section-title">Treatment Processes and Purpose</div>
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th>Principal Purpose Unit Process</th>
+                    <th>Unit Processes</th>
+                </tr>
+            </thead>
+            <tbody>
             {% for treat in data.treatment_processes %}
                 {% if treat.is_checked %}
                 <tr>
@@ -234,47 +263,67 @@
                 </tr>
                 {% endif %}
             {% endfor %}
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
 
-    <h2 class="mt-4">Observations and Suggestions</h2>
-    <ul>
+    {% if has_obs_sugg %}
+    <div class="details-section">
+        <div class="section-title">Observations and Suggestions</div>
+        <h4>Observations</h4>
+        <ul>
         {% for obs in data.observations_and_suggestions %}
             {% if obs.observation_checked %}
-            <h3 class="mt-4">Observations</h3>
-            <li class="mb-2">
-                <p>{{ obs.observation }}</p>
-            </li>
-            {% endif %}
-            {% if obs.suggestion_checked %}
-            <h3 class="mt-4">Suggestions</h3>
-            <li class="mb-2">
-                <p>{{ obs.suggestion }}</p>
-            </li>
+                <li>{{ obs.observation }}</li>
             {% endif %}
         {% endfor %}
-    </ul>
+        </ul>
+        <h4>Suggestions</h4>
+        <ul>
+        {% for obs in data.observations_and_suggestions %}
+            {% if obs.suggestion_checked %}
+                <li>{{ obs.suggestion }}</li>
+            {% endif %}
+        {% endfor %}
+        </ul>
+        {% for obs in data.observations_and_suggestions %}
+            {% if obs.features %}
+                <h3 class="mt-4">HIDREC Features and Advantages</h3>
+                <div>{{ obs.features|linebreaksbr }}</div>
+            {% endif %}
+            {% if obs.salient %}
+                <h3 class="mt-4">Salient features</h3>
+                <div>{{ obs.salient|linebreaksbr }}</div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
 
-    <h2 class="mt-4">Requirements and Specifications</h2>
-    <ul>
+    {% if has_requirements %}
+    <div class="details-section">
+        <div class="section-title">Requirements and Specifications</div>
+        <ul>
         {% for req in data.requirements_and_specifications %}
             {% if req.requirement_checked %}
-            <li class="mb-2">
-                <p>{{ req.requirement_text }}</p>
-            </li>
+                <li>{{ req.requirement_text }}</li>
             {% endif %}
         {% endfor %}
-    </ul>
-
-    <h2 class="mt-4">Specs</h2>
-    <table class="table table-bordered table-striped">
-                <thead>
-                    <tr>
-                        <th>Specs for 25 KLD</th>
-                        <th>HIDREC</th>
-                    </tr>
-                </thead>
-        <tbody>
+        </ul>
+    </div>
+    {% endif %}
+    
+    {% if has_specs %}
+    <div class="details-section">
+        <div class="section-title">Specs</div>
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th>Specs for 25 KLD</th>
+                    <th>HIDREC</th>
+                </tr>
+            </thead>
+            <tbody>
             {% for spec in data.specifications %}
                 {% if spec.spec_checked %}
                     <tr>
@@ -283,51 +332,64 @@
                     </tr>
                 {% endif %}
             {% endfor %}
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
 
-
-    <h2 class="mt-4">Process Diagram</h2>
-    <ul>
+    {% if has_process_diagram %}
+    <div class="details-section">
+      <div class="section-title">Process Diagram</div>
+      <ul>
         {% for pro in data.process_diagram %}
-            {% if pro.process_diagram_checked %}
-            <li class="mb-2">
-                <p>{{ pro.req_text }}</p>
-            </li>
-            <li class="mb-2">
-                {% if pro.process_diagram1_path %}
-                    <img src="{% static pro.process_diagram1_path %}" alt="Process Diagram 1" class="img-fluid"  width="280" height="280"/>
-                {% endif %}
-            </li>
-            <li class="mb-2">
-                {% if pro.process_diagram2_path %}
-                    <img src="{% static pro.process_diagram2_path %}" alt="Process Diagram 2" class="img-fluid" width="280" height="280" />
-                    
-                    {% endif %}
-                </li>
+          {% if pro.process_diagram_checked %}
+            {% if pro.req_text %}
+              <li>{{ pro.req_text }}</li>
+            {% endif %}
+  
+            {% if pro.process_diagram1_path %}
+              <li>
+                <img src="/static/{{ pro.process_diagram1_path }}" alt="Diagram 1" width="280" height="280"
+                     onerror="this.onerror=null;this.src='https://via.placeholder.com/280?text=Missing+Image';">
+              </li>
+            {% endif %}
+  
+            {% if pro.process_diagram2_path %}
+              <li>
+                <img src="/static/{{ pro.process_diagram2_path }}" alt="Diagram 2" width="280" height="280"
+                     onerror="this.onerror=null;this.src='https://via.placeholder.com/280?text=Missing+Image';">
+              </li>
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+    
+    {% if has_process_desc %}
+    <div class="details-section">
+        <div class="section-title">Process Description</div>
+        {% for des in data.process_description %}
+            {% if des.process_data.process_description_checked %}
+                <p>{{ des.process_data.process_description }}</p>
             {% endif %}
         {% endfor %}
-    </ul>
+    </div>
+    {% endif %}
 
-
-    <h2>Process Description</h2>
-    {% for des in data.process_description %}
-        {% if des.process_data.process_description_checked %}
-        <p>{{ des.process_data.process_description }}</p>
-        {% endif %}
-    {% endfor %}
-
-    <h2 class="mt-4">Output Treated Water Quality as per KSPCB</h2>
-    <table class="table table-bordered table-striped">
-        <thead>
-            <tr>
-                <th>Sl</th>
-                <th>Treated Water Characteristics</th>
-                <th>Unit</th>
-                <th>Standard Value as per KSPCB</th>
-            </tr>
-        </thead>
-        <tbody>
+    {% if has_output %}
+    <div class="details-section">
+        <div class="section-title">Output Treated Water Quality as per KSPCB</div>
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th>Sl</th>
+                    <th>Treated Water Characteristics</th>
+                    <th>Unit</th>
+                    <th>Standard Value as per KSPCB</th>
+                </tr>
+            </thead>
+            <tbody>
             {% for outt in data.output_table %}
                 {% if outt.output_data.is_checked %}
                 <tr>
@@ -338,98 +400,112 @@
                 </tr>
                 {% endif %}
             {% endfor %}
-        </tbody>
-    </table>
-    <ul>
-        <h3 class="mt-4">Sludge Handling System</h3>
-        {% for des in data.process_description %}
-            {% if des.process_data.process_description_checked %}
-                <p>{{ des.shs_text }}</p>
-            {% endif %}
-        {% endfor %}
+            </tbody>
+        </table>
+        <div style="margin-top: 20px;">
+            <h4>Sludge Handling System</h4>
+            {% for des in data.process_description %}
+                {% if des.process_data.process_description_checked %}
+                    <p>{{ des.shs_text }}</p>
+                {% endif %}
+            {% endfor %}
+            <h4>Automation</h4>
+            {% for des in data.process_description %}
+                {% if des.is_checked %}
+                    <p>{{ des.automation_text }}</p>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 
-        <h3 class="mt-4">Automation</h3>
-        {% for des in data.process_description %}
-            {% if des.is_checked %}
-                <p>{{ des.automation_text }}</p>
-            {% endif %}
-        {% endfor %}
-    </ul>
-
-    <h2 class="mt-4">Pricing: Machine Costs</h2>
-    <ul>
+    {% if has_pricing %}
+    <div class="details-section">
+        <div class="section-title">Pricing: Machine Costs</div>
+        <ul>
         {% for pri in data.pricing %}
             {% if pri.is_checked %}
-                <p>{{ pri.machine_cost_text }}</p>
+                <li>{{ pri.machine_cost_text }}</li>
             {% endif %}
         {% endfor %}
-    </ul>
-
-    <table class="table table-bordered table-striped">
-        <thead>
-            <tr>
-                <th>Product on Offer</th>
-                <th>Capacity</th>
-                <th>Total Needed Capacity</th>
-                <th>Wastewater Type</th>
-                <th>Total Number of Machines</th>
-            </tr>
-        </thead>
-        <tbody>
+        </ul>
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th>Product on Offer</th>
+                    <th>Capacity</th>
+                    <th>Total Needed Capacity</th>
+                    <th>Wastewater Type</th>
+                    <th>Total Number of Machines</th>
+                </tr>
+            </thead>
+            <tbody>
             {% for instal in data.installation %}
-            {% if instal.is_checked %}
-                <tr>
-                    <td>{{ instal.product_name }}</td>
-                    <td>{{ instal.capacity }}</td>
-                    <td>{{ instal.total_needed_capacity }}</td>
-                    <td>{{ instal.waste_water_type }}</td>
-                    <td>{{ instal.total_no_machines }}</td>
-                </tr>
-            {% endif %}
+                {% if instal.is_checked %}
+                    <tr>
+                        <td>{{ instal.product_name }}</td>
+                        <td>{{ instal.capacity }}</td>
+                        <td>{{ instal.total_needed_capacity }}</td>
+                        <td>{{ instal.waste_water_type }}</td>
+                        <td>{{ instal.total_no_machines }}</td>
+                    </tr>
+                {% endif %}
             {% endfor %}
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
 
-    <table class="table table-bordered table-striped">
-        <thead>
-            <tr>
-                <th>Sl</th>
-                <th>Specification</th>
-                <th>Quantity</th>
-                <th>Unit</th>
-                <th>Unit Rate</th>
-                <th>Pricing Excluding GST (18%)</th>
-                <th>Total</th>
-            </tr>
-        </thead>
-        <tbody>
+    {% if has_specification %}
+    <div class="details-section">
+        <div class="section-title">Specification Pricing</div>
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th>Sl</th>
+                    <th>Specification</th>
+                    <th>Quantity</th>
+                    <th>Unit</th>
+                    <th>Unit Rate</th>
+                    <th>Pricing Excluding GST (18%)</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
             {% for sp in data.specification %}
-            {% if sp.is_checked %}
-                <tr>
-                    <td>{{ sp.sl_no }}</td>
-                    <td>{{ sp.specification }}</td>
-                    <td>{{ sp.qnty }}</td>
-                    <td>{{ sp.unit }}</td>
-                    <td>{{ sp.unit_rate }}</td>
-                    <td>{{ sp.price_exgst }}</td>
-                    <td>{{ sp.total }}</td>
-                </tr>
-            {% endif %}
+                {% if sp.is_checked %}
+                    <tr>
+                        <td>{{ sp.sl_no }}</td>
+                        <td>{{ sp.specification }}</td>
+                        <td>{{ sp.qnty }}</td>
+                        <td>{{ sp.unit }}</td>
+                        <td>{{ sp.unit_rate }}</td>
+                        <td>{{ sp.price_exgst }}</td>
+                        <td>{{ sp.total }}</td>
+                    </tr>
+                {% endif %}
             {% endfor %}
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
 
-    <h3 class="mt-4">Terms and Conditions</h3>
-    <ul>
-        {% for pri in data.terms %}
-            {% if pri.is_checked %}
-                <p>{{ pri.text }}</p>
-            {% endif %}
-        {% endfor %}
-    </ul>
+    {% if has_terms %}
+    <div class="details-section">
+        <div class="section-title">Terms and Conditions</div>
+        <ul>
+            {% for pri in data.terms %}
+                {% if pri.is_checked %}
+                    <li>{{ pri.text }}</li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
 
-    <h3 class="mt-4">General Terms and Conditions</h3>
-    <ul>
+    {% if has_general_terms %}
+    <div class="details-section">
+        <div class="section-title">General Terms and Conditions</div>
         {% for gterms in data.general_terms_conditions %}
             {% if gterms.performance_checked %}
                 <h4>Performance</h4>
@@ -472,80 +548,121 @@
                 <p>{{ gterms.validity_text }}</p>
             {% endif %}
         {% endfor %}
-    </ul>
+    </div>
+    {% endif %}
 
-    <h2>Appendix A</h2>
-    <h3>Scope of Work</h3>
-    <table class="table table-bordered table-striped">
-        <thead>
-            <tr>
-                <th>Product on Offer</th>
-                <th>Capacity</th>
-                <th>Total Needed Capacity</th>
-                <th>Wastewater Type</th>
-                <th>Total Number of Machines</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for instal in data.installation %}
-            {% if instal.is_checked %}
+    {% if has_appendix %}
+    <div class="details-section">
+        <div class="section-title">Appendix A: Scope of Work</div>
+        {% if has_appendix_table %}
+        <table class="styled-table">
+            <thead>
                 <tr>
-                    <td>{{ instal.product_name }}</td>
-                    <td>{{ instal.capacity }}</td>
-                    <td>{{ instal.total_needed_capacity }}</td>
-                    <td>{{ instal.waste_water_type }}</td>
-                    <td>{{ instal.total_no_machines }}</td>
+                    <th>Product on Offer</th>
+                    <th>Capacity</th>
+                    <th>Total Needed Capacity</th>
+                    <th>Wastewater Type</th>
+                    <th>Total Number of Machines</th>
                 </tr>
-            {% endif %}
+            </thead>
+            <tbody>
+            {% for instal in data.installation %}
+                {% if instal.is_checked %}
+                    <tr>
+                        <td>{{ instal.product_name }}</td>
+                        <td>{{ instal.capacity }}</td>
+                        <td>{{ instal.total_needed_capacity }}</td>
+                        <td>{{ instal.waste_water_type }}</td>
+                        <td>{{ instal.total_no_machines }}</td>
+                    </tr>
+                {% endif %}
             {% endfor %}
-        </tbody>
-    </table>
-
-    <h3 class="mt-4">Inclusions:</h3>
-    <ul>
-        <h4>Supply of Equipment</h4>
-        {% for apen in data.appendix %}
-            {% if apen.supply_eq_checked %}
-                <p>{{ apen.supply_eq_text }}</p>
+            </tbody>
+        </table>
+        {% endif %}
+        <br>
+        <h4>Inclusions</h4>
+        <ul>
+            {% if has_supply_eq %}
+            <li>
+                <b>Supply of Equipment</b>
+                <ul>
+                {% for apen in data.appendix %}
+                    {% if apen.supply_eq_checked %}
+                        <li>{{ apen.supply_eq_text }}</li>
+                    {% endif %}
+                {% endfor %}
+                </ul>
+            </li>
             {% endif %}
-        {% endfor %}
-
-        <h4>Installation & Commissioning of Equipment</h4>
-        {% for apen in data.appendix %}
-            {% if apen.instal_commissioning_checked %}
-                <p>{{ apen.instal_commissioning_text }}</p>
+            {% if has_instal_commissioning %}
+            <li>
+                <b>Installation & Commissioning of Equipment</b>
+                <ul>
+                {% for apen in data.appendix %}
+                    {% if apen.instal_commissioning_checked %}
+                        <li>{{ apen.instal_commissioning_text }}</li>
+                    {% endif %}
+                {% endfor %}
+                </ul>
+            </li>
             {% endif %}
-        {% endfor %}
-
-        <h4>Client's Scope</h4>
-        {% for apen in data.appendix %}
-            {% if apen.clients_scope_checked %}
-                <p>{{ apen.clients_scope_text }}</p>
+            {% if has_clients_scope %}
+            <li>
+                <b>Client's Scope</b>
+                <ul>
+                {% for apen in data.appendix %}
+                    {% if apen.clients_scope_checked %}
+                        <li>{{ apen.clients_scope_text }}</li>
+                    {% endif %}
+                {% endfor %}
+                </ul>
+            </li>
             {% endif %}
-        {% endfor %}
-
-        <h4>Note:</h4>
-        {% for apen in data.appendix %}
-            {% if apen.note_checked %}
-                <p>{{ apen.note_text }}</p>
+            {% if has_note %}
+            <li>
+                <b>Note</b>
+                <ul>
+                {% for apen in data.appendix %}
+                    {% if apen.note_checked %}
+                        <li>{{ apen.note_text }}</li>
+                    {% endif %}
+                {% endfor %}
+                </ul>
+            </li>
             {% endif %}
-        {% endfor %}
-
-        <h4>DRISTI Software Subscription and XHUB:</h4>
-        {% for apen in data.appendix %}
-            {% if apen.dristi_checked %}
-                <p>{{ apen.dristi_subscription_text }}</p>
+            {% if has_dristi %}
+            <li>
+                <b>DRISTI Software Subscription and XHUB</b>
+                <ul>
+                {% for apen in data.appendix %}
+                    {% if apen.dristi_checked %}
+                        <li>{{ apen.dristi_subscription_text }}</li>
+                    {% endif %}
+                {% endfor %}
+                </ul>
+            </li>
             {% endif %}
-        {% endfor %}
-
-        <h4>IOT Hardware:</h4>
-        {% for apen in data.appendix %}
-            {% if apen.iot_checked %}
-                <p>{{ apen.iot_hardware_text }}</p>
+            {% if has_iot %}
+            <li>
+                <b>IOT Hardware</b>
+                <ul>
+                {% for apen in data.appendix %}
+                    {% if apen.iot_checked %}
+                        <li>{{ apen.iot_hardware_text }}</li>
+                    {% endif %}
+                {% endfor %}
+                </ul>
+            </li>
             {% endif %}
-        {% endfor %}
-    </ul>
-     <footer>
+        </ul>
+    </div>
+    {% endif %}
+    <hr>
+    <footer>
         <p>© Xpredict Labs. All rights reserved.</p>
-    </footer> 
+        <button class="print-button" onclick="window.print()">Print this quotation</button>
+    </footer>
+</div>
+</body>
 </html>

@@ -1,27 +1,31 @@
 from django.db import models
-import datetime
+from datetime import datetime, timedelta
 from django.utils.timezone import now
 import json
 from django.contrib.auth.models import User
 from django.utils import timezone
+from app.models import Zone
 
 
 from django.core.exceptions import ValidationError
-from datetime import date
+from datetime import date ,timedelta
+
 
 def no_future_dates(value):
     print(f"Validating date: {value}")
-    if value > date.today():
+    if value > date.today() + timedelta(days=1):  # Allows today, restricts tomorrow onward
         raise ValidationError("Future dates are not allowed.")
+
 
 class Site(models.Model):
     name = models.CharField(max_length=100)
-    
+    zone = models.ForeignKey(Zone, on_delete=models.CASCADE , null=True, blank=True)
+
     def __str__(self):
         return self.name
 
 class GeneralReport(models.Model):
-    site = models.ForeignKey(Site, on_delete=models.CASCADE)
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, null=True, blank=True)
     date_of_visit = models.DateField(validators=[no_future_dates])
     point1 = models.TextField()
     point2 = models.TextField()
@@ -34,7 +38,7 @@ class GeneralReport(models.Model):
     created_date = models.DateField(default=timezone.now)
     
     def update_history(self, field_name, old_value, new_value):
-        import datetime
+        from datetime import datetime, timedelta
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         history_entry = f"- {field_name} changed from '{old_value}' to '{new_value}' on {timestamp}\n"
         
@@ -322,15 +326,17 @@ class State(models.Model):
     def __str__(self):
         return self.name
     
+
+
 class ServiceReport(models.Model):
-    # Static fields
     service_name = models.CharField(max_length=255)
-    date_of_visit = models.DateField()
-    zone = models.CharField(max_length=100, choices=[('G', 'GKN'), ('C', 'CHP'), ('S', 'SRS')])
-    phone_no = models.CharField(max_length=15)
-    reason_of_visit = models.CharField(max_length=255)
-    in_time = models.TimeField()
-    out_time = models.TimeField()
+    date_of_visit = models.DateField(validators=[no_future_dates], null=True, blank=True)
+    zone = models.ForeignKey(Zone, on_delete=models.SET_NULL, null=True, blank=True, related_name='service_reports')
+    site = models.ForeignKey(Site, on_delete=models.SET_NULL, null=True, blank=True, related_name='service_reports')
+    phone_no = models.CharField(max_length=15, null=True, blank=True)    
+    reason_of_visit = models.CharField(max_length=255, null=True, blank=True)
+    in_time = models.TimeField(null=True, blank=True)
+    out_time = models.TimeField(null=True, blank=True)
     other_remarks = models.TextField(blank=True, null=True, help_text="Store all other remarks concatenated.")
     spares_details = models.TextField(blank=True, null=True, help_text="Concatenated spares details")
     service_person_signature = models.TextField(blank=True, null=True, help_text="Base64-encoded signature of the service person.")
@@ -340,25 +346,30 @@ class ServiceReport(models.Model):
     created_by = models.ForeignKey(User,on_delete=models.SET_NULL,null=True,blank=True)
     created_date = models.DateField(default=timezone.now)
     # Customer Information
-    customer_name = models.CharField(max_length=255)
-    contact_number = models.CharField(max_length=15)
-    location = models.CharField(max_length=255)
+    customer_name = models.CharField(max_length=255, null=True, blank=True)
+    contact_number = models.CharField(max_length=15, null=True, blank=True)
+    location = models.CharField(max_length=255, null=True, blank=True)
     state = models.ForeignKey(State, on_delete=models.SET_NULL, null=True)
-    date_of_complaint = models.DateField(validators=[no_future_dates])
-    status_of_call = models.CharField(max_length=100)
+    date_of_complaint = models.DateField(null=True, blank=True)
+    status_of_call = models.CharField(max_length=100, null=True, blank=True)
 
+    
     electronic_items = models.ManyToManyField(ElectronicItem, through='ElectronicItemStatus')
     electronic_panels = models.ManyToManyField(ElectronicPanel, through='ElectronicPanelStatus')
     chemical_items = models.ManyToManyField(ChemicalItem, through='ChemicalItemStatus')
     pumps = models.ManyToManyField(Pump, through='PumpStatus')
     miscellaneous_items = models.ManyToManyField(MiscellaneousItem, through='MiscellaneousItemStatus')
     wastewater_parameters = models.ManyToManyField(WastewaterParameter, through='WastewaterParameterStatus')
+    client_signed = models.BooleanField(default=False)  # ✅ NEW
+    client_remark = models.TextField(blank=True, null=True, help_text="Remarks given by the client while signing.")
+    is_draft = models.BooleanField(default=False)
 
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('approved', 'Approved'),
         ('rejected', 'Rejected'),
     ]
+    rejection_reason = models.TextField(blank=True, null=True)
 
     status = models.CharField(
         max_length=20,
@@ -368,10 +379,12 @@ class ServiceReport(models.Model):
 
     def approve(self):
         self.status = 'approved'
+        self.rejection_reason = None  # Clear if previously rejected
         self.save()
 
-    def reject(self):
+    def reject(self, reason=None):
         self.status = 'rejected'
+        self.rejection_reason = reason
         self.save()
 
     def __str__(self):
@@ -381,6 +394,32 @@ class ServiceReport(models.Model):
         verbose_name = 'Service Report'
         verbose_name_plural = 'Service Reports'
 
+# models.py
+
+from django.db import models
+from datetime import timedelta
+from django.utils import timezone
+from .models import Site  # Adjust import as per your structure
+
+class SiteVisitSchedule(models.Model):
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name='visit_schedules', unique=True)
+    last_visit = models.DateField()
+    next_due = models.DateField()
+
+    def __str__(self):
+        return f"{self.site.name} - Last: {self.last_visit}, Next Due: {self.next_due}"
+
+class ServiceReportAttachment(models.Model):
+    service_report = models.ForeignKey(
+        ServiceReport,
+        on_delete=models.CASCADE,
+        related_name='attachments'
+    )
+    file = models.FileField(upload_to="service_reports/")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Attachment for {self.service_report.service_name} - {self.file.name}"
 
 class ElectronicItemStatus(models.Model):
     report = models.ForeignKey(ServiceReport, on_delete=models.CASCADE)
@@ -488,3 +527,65 @@ class ServiceReportEditLog(models.Model):
 
     def __str__(self):
         return f"Edit log for {self.report} on {self.edit_timestamp}"
+
+# ---------------------------------------------Generator Report ----------------------------------------------
+
+from django.db import models
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+
+
+class GeneratorReport(models.Model):
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    date = models.DateField()
+    start_time = models.TimeField()
+    end_time = models.TimeField(null=True, blank=True)
+    total_time = models.DurationField(null=True, blank=True)
+
+    def clean(self):
+        """
+        Ensures that a new entry cannot be created if the last entry is missing an 'end_time'.
+        Also validates that end_time is always after start_time, allowing next-day shifts.
+        """
+        last_entry = GeneratorReport.objects.filter(created_by=self.created_by).order_by('-id').first()
+
+        if last_entry and last_entry.end_time is None and self.pk is None:
+            raise ValidationError("Cannot create a new entry while the last entry has an empty 'end_time'.")
+
+        # Validate time sequence
+        if self.start_time and self.end_time:
+            start_datetime = datetime.combine(self.date, self.start_time)
+            end_datetime = datetime.combine(self.date, self.end_time)
+
+            # ✅ Handle overnight shift (next-day)
+            if self.end_time < self.start_time:
+                end_datetime += timedelta(days=1)
+
+            duration_minutes = (end_datetime - start_datetime).total_seconds() / 60
+
+            # ✅ Ensure duration is valid (between 1 minute and 24 hours max)
+            if duration_minutes <= 0 or duration_minutes > 1440:
+                raise ValidationError("⚠️ Invalid End Time: Must be after Start Time and within 24 hours!")
+
+    def save(self, *args, **kwargs):
+        """
+        Auto-compute total_time when end_time is provided, supporting next-day shifts.
+        """
+        self.full_clean()  # Run validation before saving
+
+        if self.start_time and self.end_time:
+            start_datetime = datetime.combine(self.date, self.start_time)
+            end_datetime = datetime.combine(self.date, self.end_time)
+
+            if self.end_time < self.start_time:  # ✅ Handle next-day shifts
+                end_datetime += timedelta(days=1)
+
+            self.total_time = end_datetime - start_datetime
+        else:
+            self.total_time = None
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Generator Report - {self.date} ({self.start_time} - {self.end_time or 'Ongoing'})"
+

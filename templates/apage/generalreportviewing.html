@@ -91,9 +91,7 @@
                     <th>Notes</th>
                     <th>Attachment</th>
                     <th>Actions</th>
-                    {% if user_role == 'Admin' %}
-                        <th>Actions</th>
-                    {% endif %}
+                    <th>History</th>
                     
                 </tr>
             </thead>
@@ -118,11 +116,9 @@
                         <a href="{% url 'edit_general_report' report.id %}" class="btn btn-sm btn-warning">Edit</a>
                         <a href="{% url 'generate_report_pdf' report.id %}" class="btn btn-primary btn-sm" target="_blank">Download PDF</a>
                     </td>
-                    {% if user_role == 'Admin' %}
-                        <td>
-                            <a href="{% url 'view_edit_history' report.id %}" class="btn btn-sm btn-info">Edit History</a>
-                        </td>
-                    {% endif %}
+                    <td>
+                        <a href="{% url 'view_edit_history' report.id %}" class="btn btn-sm btn-info">Edit History</a>
+                    </td>
                 </tr>
                 {% empty %}
                 <tr>

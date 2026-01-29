@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3 class="mb-3">Payment Requests</h3>
+
+{% for req in requests %}
+<div class="card mb-3">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <div>{{ req.user.username }} requested ₹{{ req.amount }}</div>
+    {% if req.is_resolved %}
+      <span class="badge bg-success">Resolved</span>
+    {% endif %}
+  </div>
+
+  <div class="card-body">
+    {% for msg in req.messages.all %}
+      <div class="mb-2">
+        <strong>{{ msg.sender.username }}</strong> ({{ msg.sent_at|timesince }} ago):<br>
+        <div class="ms-2">{{ msg.message }}</div>
+      </div>
+    {% empty %}
+      <p>No messages yet.</p>
+    {% endfor %}
+
+    <form method="POST" class="mt-2">
+      {% csrf_token %}
+      <input type="hidden" name="request_id" value="{{ req.id }}">
+      <textarea name="message" class="form-control" rows="2" placeholder="Add a reply..."></textarea>
+      <button type="submit" class="btn btn-sm btn-primary mt-1">Send</button>
+    </form>
+  </div>
+</div>
+{% endfor %}
+
+{% endblock %}

@@ -1,485 +1,434 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Automation Solutions</title>
-    <style>
-        /* General Styles */
-        body {
-            font-family: 'Arial', sans-serif;
-            margin: 0;
-            padding: 0;
-            background: #F5F5F5;
-        }
+{% extends 'base.html' %}
+{% block content %}
+<style>
 
-        /* Navbar */
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #0A1F3F;
-            color: white;
-            padding: 15px 30px;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
+    .reply-form {
+      background-color: #f0f0f0;
+      border-radius: 25px;
+      padding: 10px 15px;
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+    }
+  
+    .reply-form .input-row {
+      display: flex;
+      align-items: center;
+    }
+  
+    .reply-form textarea {
+      flex: 1;
+      border: none;
+      border-radius: 20px;
+      padding: 10px 15px;
+      resize: none;
+      background: #fff;
+      height: 45px;
+      margin: 0 10px;
+      font-size: 14px;
+    }
+  
+    .reply-form textarea:focus {
+      outline: none;
+    }
+  
+    .reply-form .send-btn
+     {
+      background: #008069;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .reply-form .attach-btn {
+      background: #ffffff;               /* White background */
+      color: #333;                       /* Dark icon for contrast */
+      border: 1px solid #ccc;            /* Soft border */
+      border-radius: 50%;
+      width: 42px;
+      height: 42px;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      transition: background 0.2s;
+    }
+    
+    .reply-form .attach-btn:hover {
+      background: #f0f0f0;
+    }
+  
+    .reply-form .send-btn[disabled] {
+      background: gray;
+      cursor: not-allowed;
+    }
+  
+    .reply-form .resolve-checkbox {
+      margin-top: 8px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+    }
+  
+    .reply-form .resolve-checkbox input {
+      margin-right: 8px;
+    }
+  
+    #selected-file-{{ req.id }} {
+      font-size: 13px;
+      margin-top: 6px;
+      color: gray;
+    }
+  
+    @media (max-width: 576px) {
+      .reply-form textarea {
+        height: 40px;
+      }
+  
+      .reply-form .send-btn,
+      .reply-form .attach-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+      }
+    }
 
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-        }
+  .attachment-preview {
+    display: flex;
+    flex-direction: row;
+    background: #fff;
+    padding: 10px;
+    border-radius: 10px;
+    margin-top: 6px;
+    border: 1px solid #ddd;
+    flex-wrap: wrap;
+  }
 
-        nav ul {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            display: flex;
-        }
+  .file-icon {
+    font-size: 32px;
+    margin-right: 10px;
+    align-self: center;
+  }
 
-        nav ul li {
-            position: relative;
-            padding: 10px 15px;
-        }
+  .file-info .file-name {
+    font-weight: 600;
+  }
 
-        nav ul li a {
-            color: white;
-            text-decoration: none;
-            transition: 0.3s;
-        }
+  .file-info .file-meta {
+    font-size: 12px;
+    color: #666;
+  }
 
-        nav ul li a:hover {
-            color: #FF6B35;
-        }
+  .chat-container {
+    background-color: #ece5dd;
+    padding: 15px;
+    border-radius: 10px;
+    max-width: 100%;
+  }
 
-        /* Dropdown Menu (Horizontal) */
-        .dropdown-menu {
-            display: flex;
-            position: absolute;
-            background: white;
-            color: black;
-            top: 100%;
-            left: 0;
-            padding: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            border-radius: 5px;
-            opacity: 0;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            flex-direction: row; /* Horizontal layout */
-            white-space: nowrap;
-            visibility: hidden;
-        }
+  .chat-bubble {
+    max-width: 100%;
+    padding: 10px 15px;
+    border-radius: 15px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    line-height: 1.4;
+    word-wrap: break-word;
+  }
 
-        /* Show dropdown menu on hover */
-        .dropdown:hover .dropdown-menu {
-            opacity: 1;
-            visibility: visible;
-        }
+  .chat-left {
+    background-color: #ffffff;
+    color: #000;
+    border-top-left-radius: 0;
+    align-self: flex-start;
+  }
 
-        /* Dropdown items */
-        .dropdown-menu .dropdown-item {
-            display: flex;
-            justify-content: center;
-            flex-direction: column;
-            align-items: center;
-            margin: 0 15px;
-            text-align: center;
-        }
+  .chat-right {
+    background-color: #dcf8c6;
+    color: #000;
+    border-top-right-radius: 0;
+    align-self: flex-end;
+    margin-left: auto;
+  }
 
-        .dropdown-menu .dropdown-item img {
-            width: 100px;
-            height: 100px;
-            margin-bottom: 10px;
-        }
+  .sender {
+    font-weight: bold;
+    font-size: 13px;
+    margin-bottom: 4px;
+    display: block;
+  }
 
-        .dropdown-menu .dropdown-item h3 {
-            font-size: 16px;
-            margin: 0;
-            color: #0A1F3F;
-        }
+  .chat-meta {
+    font-size: 11px;
+    text-align: right;
+    margin-top: 4px;
+    color: gray;
+  }
 
-        .dropdown-menu .dropdown-item a {
-            color: #FF6B35;
-            text-decoration: none;
-            font-size: 14px;
-            margin-top: 10px;
-        }
+  .card {
+    background: #f0f0f0;
+  }
 
-        /* Hero Section */
-        .hero {
-            text-align: center;
-            padding: 100px 20px;
-            background: url('hero-bg.jpg') no-repeat center center/cover;
-            color: black;
-        }
+  @media (max-width: 576px) {
+    .chat-bubble {
+      max-width: 100%;
+    }
 
-        .hero h1 {
-            font-size: 36px;
-        }
+    .attachment-preview {
+      flex-direction: column;
+      align-items: flex-start;
+    }
 
-        .hero p {
-            font-size: 18px;
-        }
+    .file-icon {
+      margin-bottom: 6px;
+      margin-right: 0;
+    }
 
-        .cta-btn {
-            background: #FF6B35;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            cursor: pointer;
-            font-size: 18px;
-            transition: 0.3s;
-        }
+    .reply-form .row > div {
+      padding-left: 5px !important;
+      padding-right: 5px !important;
+    }
+  }
+  
+</style>
 
-        .cta-btn:hover {
-            background: #E65A2E;
-        }
-
-        /* What We Do Section */
-        .what-we-do {
-            text-align: center;
-            padding: 60px 20px;
-        }
-
-        .what-we-do h2 {
-            font-size: 28px;
-            margin-bottom: 20px;
-        }
-
-        .grid {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .card {
-            background: white;
-            padding: 20px;
-            width: 200px;
-            border-radius: 10px;
-            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .card:hover {
-            transform: scale(1.05);
-            box-shadow: 4px 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        /* World Map Section */
-        .world-map-section {
-            text-align: center;
-            padding: 60px 20px;
-            background: #ffffff;
-        }
-
-        .world-map-section h2 {
-            font-size: 28px;
-            margin-bottom: 20px;
-            color: #0A1F3F;
-            animation: fadeIn 1.5s ease-in-out; /* Animation for the title */
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .world-map {
-            position: relative;
-            max-width: 1600px; /* Adjusted for wider map */
-            margin: 0 auto;
-            transition: transform 0.3s ease;
-        }
-
-        .world-map svg {
-            width: 100%;
-            height: auto;
-        }
-
-        .world-map .location {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background: #FF6B35;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-            cursor: pointer;
-        }
-
-        .world-map .location::after {
-            content: '';
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #FF6B35;
-            border-radius: 50%;
-            top: -5px;
-            left: -5px;
-            opacity: 0;
-            animation: ripple 2s infinite;
-        }
-
-        .world-map .location:hover {
-            transform: scale(1.5);
-            transition: transform 0.3s ease;
-        }
-
-        /* Footer */
-        footer {
-            background: #0A1F3F;
-            color: white;
-            text-align: center;
-            padding: 20px;
-        }
+<div class="container-fluid mt-4">
+  <div class="chat-container">
+    <div class="card mb-4">
+      <div class="card-header bg-light d-flex justify-content-between align-items-start flex-wrap">
+        <div>
+          <strong class="d-block mb-1">{{ req.user.username }}</strong>
+          <small class="text-muted">{{ req.created_at|date:"d M Y, H:i" }}</small>
+        </div>
         
-        .world-map {
-            width: 100%;
-            height: auto;
-            object-fit: contain;
-        }
-        
-        .world-map-container {
-            width: 100%;
-            height: 400px; /* Adjust as needed */
-        }
-        
-        @media (max-width: 600px) {
-            .world-map-container {
-                height: 300px;
-            }
-        }
-
-        /* Main Container for Services */
-        .main-container {
-            display: flex;
-            padding: 20px;
-            display: none; /* Initially hidden */
-        }
-
-        .sidebar {
-            width: 200px;
-            background: white;
-            padding: 10px;
-            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
-            margin-right: 20px;
-            overflow-y: auto; /* Add this line */
-            max-height: 600px; /* Adjust as needed */
-        }
-
-        .sidebar .card {
-            background: #f9f9f9;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: background 0.3s, box-shadow 0.3s;
-        }
-
-        .sidebar .card:hover {
-            background: #e0e0e0;
-            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
-        }
-
-        .sidebar .card.active {
-            background: #FF6B35;
-            color: white;
-            box-shadow: 2px 2px 10px rgba(255, 107, 53, 0.3);
-        }
-
-        .content {
-            flex-grow: 1;
-            background: white;
-            padding: 20px;
-            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
-        }
-    </style>
-</head>
-<body>
-
-    <!-- Navbar -->
-    <header>
-        <div class="logo"><img src="" alt="XpredictLabs"></div>
-        <nav>
-            <ul>
-                <li class="dropdown">
-                    <a href="#">Products</a>
-                    <div class="dropdown-menu">
-                        <div class="dropdown-item">
-                            <img src="https://xpredictlabs.com/static/img/carousel-1.jpg" alt="Product 1">
-                            <h3>Wifi-Enabled Xcon Controllers</h3>
-                            <a href="#">Learn More</a>
-                        </div>
-                        <div class="dropdown-item">
-                            <img src="product2.jpg" alt="Product 2">
-                            <h3>LAN-Based Xcon Controllers</h3>
-                            <a href="#">Learn More</a>
-                        </div>
-                        <div class="dropdown-item">
-                            <img src="product3.jpg" alt="Product 3">
-                            <h3>Standalone Controllers</h3>
-                            <a href="#">Learn More</a>
-                        </div>
+        {% if req.is_resolved %}
+          <span class="badge bg-success text-white ms-auto mt-1">Resolved</span>
+        {% endif %}
+      </div>
+      <div class="card-body d-flex flex-column">
+        <div class="messages-container d-flex flex-column" id="messages-{{ req.id }}">
+          {% for msg in req.messages.all %}
+            <div class="chat-bubble {% if msg.sender == request.user %}chat-right{% else %}chat-left{% endif %}">
+              <span class="sender">{{ msg.sender.username }}</span>
+              {{ msg.message }}
+              {% if msg.attachment %}
+              <div class="attachment-preview">
+                  <a href="{{ msg.attachment.url }}" target="_blank" class="d-block text-decoration-none text-dark">
+                    <div class="file-icon">📄</div>
+                    <div class="file-info">
+                      <div class="file-name">{{ msg.attachment.name|cut:"attachments/" }}</div>
+                      <div class="file-meta">{{ msg.attachment.size|filesizeformat }} • {{ msg.attachment.name|slice:"-4:"|upper }}</div>
                     </div>
-                </li>
-                <li class="dropdown">
-                    <a href="#">Softwares</a>
-                    <div class="dropdown-menu">
-                        <div class="dropdown-item">
-                            <img src="https://xpredictlabs.com/static/img/carousel-1.jpg" alt="Software 1">
-                            <h3>Automation Software</h3>
-                            <a href="#">Learn More</a>
-                        </div>
-                        <div class="dropdown-item">
-                            <img src="software2.jpg" alt="Software 2">
-                            <h3>IoT Management</h3>
-                            <a href="#">Learn More</a>
-                        </div>
-                    </div>
-                </li>
-                <li><a href="#">About Us</a></li>
-                <li><a href="#">Contact</a></li>
-            </ul>
-        </nav>
-    </header>
-
-    <!-- World Map Section -->
-    <section class="world-map-section">
-        <h2>Our Global Presence</h2> <!-- Added title above the map -->
-        <div class="world-map">
-            <!-- World Map SVG -->
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 800" width="100%" height="auto">
-                <image href="https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg" width="1600" height="800" />
-                <!-- Location for Karnataka -->
-                <div class="location" id="karnataka-location" style="top: 48%; left: 65.6%;"></div>
-            </svg>
+                  </a>
+                </div>
+              {% endif %}
+              <div class="chat-meta">{{ msg.sent_at|timesince }} ago</div>
+            </div>
+          {% empty %}
+            <p>No messages yet.</p>
+          {% endfor %}
         </div>
-    </section>
 
-    <!-- Hero Section -->
-    <section class="hero">
-        <h1>Empowering Industries with Digital Automation</h1>
-        <p>Cutting-edge solutions for industrial control systems</p>
-        <button class="cta-btn" id="explore-btn">Explore Our Solutions</button>
-    </section>
-
-    <!-- What We Do Section -->
-    <section class="what-we-do">
-        <h2>What We Do</h2>
-        <div class="grid">
-            <div class="card"><a href="erp-software.html">ERP Software</a></div>
-            <div class="card">Simulations</div>
-            <div class="card">CAD Customization</div>
-            <div class="card">Embedded Software</div>
-            <div class="card">Android App Development</div>
-            <div class="card">IOS App Development</div>
-            <div class="card">System Application</div>
-            <div class="card">Server Deployment & Installation with networking </div>
-
-        </div>
-    </section>
-
-    <!-- Main Container for Services -->
-    <div class="main-container" id="main-container">
-        <div class="sidebar" id="solution-list">
-            <h2>Our Services</h2>
-            {% comment %} <div class="card" data-info="Information about ERP Software.<h3>ERP Software - Voucher Management</h3>
-                <p>
-                    Our ERP Software includes a powerful Voucher Management System designed to streamline financial transactions, improve transparency, and enhance accountability.
-                </p>
+        <form class="reply-form" data-request-id="{{ req.id }}" enctype="multipart/form-data">
+          {% csrf_token %}
+          <input type="hidden" name="request_id" value="{{ req.id }}">
+          <div class="input-row">
+            <button type="button" class="attach-btn" onclick="document.getElementById('file-input-{{ req.id }}').click();">➕</button>
+            <input type="file" name="attachment" id="file-input-{{ req.id }}" class="d-none" onchange="showFileName(event, {{ req.id }})">
+            <textarea name="message" rows="1" placeholder="Type a message"></textarea>
+            <button type="submit" class="send-btn" {% if req.is_resolved %}disabled{% endif %}>➤</button>
+          </div>
         
-                <h4>Key Features:</h4>
-                <ul>
-                    <li><strong>Automated Voucher Generation:</strong> Generate, approve, and track vouchers for various transactions.</li>
-                    <li><strong>Expense Tracking:</strong> Record and categorize expenses under multiple payment modes (cash, UPI, bank transfer, etc.).</li>
-                    <li><strong>Approval Workflow:</strong> Multi-level approval process ensuring accuracy and authorization control.</li>
-                    <li><strong>GST & Invoice Integration:</strong> Upload and verify bills with GST compliance.</li>
-                    <li><strong>Digital Proof Attachments:</strong> Upload and store proof photos for verification and audits.</li>
-                    <li><strong>Comprehensive Reporting:</strong> Generate detailed reports on claimed, approved, and pending vouchers.</li>
-                    <li><strong>User Role Management:</strong> Define access controls for employees, managers, and finance teams.</li>
-                </ul>
+          <div id="selected-file-{{ req.id }}"></div>
         
-                <h4>Benefits:</h4>
-                <ul>
-                    <li>Reduces manual work and automates financial workflows.</li>
-                    <li>Improves compliance and audit readiness.</li>
-                    <li>Enhances financial transparency across departments.</li>
-                    <li>Enables real-time tracking and analytics.</li>
-                </ul>
-        ">ERP Software</div> {% endcomment %}
-            <div class="card" data-info="Information about Iot Core.">IOT Core</div>
-            <div class="card" data-info="Information about CAD Customization.">CAD Customization</div>
-            <div class="card" data-info="Information about Embedded Software.">Embedded Software</div>
-            <div class="card" data-info="Information about Industrial Plant Automation.">Industrial Plant Automation</div>
-            <div class="card" data-info="Information about Industrial Machine Automation.">Industrial Machine Automation </div>
-            <div class="card" data-info="Information about Industrial Process Automation.">Industrial Process Automation </div>
-            <div class="card" data-info="Information about Standalone Controllers.">Standalone Controllers </div>
-            <div class="card" data-info="Information about Automation Boards.">Automation Boards </div>
-            <div class="card" data-info="Information about Special Purpose Boards.">Special Purpose Boards </div>
-            <div class="card" data-info="Information about Electrical Panel Design and Implementation.">Electrical Panel Design and Implementation </div>
-        </div>
-        <div class="content" id="solution-details">
-            <h2>Select a service to see details</h2>
-        </div>
+          {% if not req.is_resolved and request.user.is_staff %}
+            <div class="resolve-checkbox">
+              <input class="form-check-input" type="checkbox" name="resolve" id="resolve{{ req.id }}">
+              <label class="form-check-label" for="resolve{{ req.id }}">Mark as resolved</label>
+            </div>
+          {% endif %}
+        </form>
+      </div>
     </div>
 
-    <!-- Footer -->
-    <footer>
-        <p>&copy; 2025 Automation Solutions | Contact: info@example.com</p>
-    </footer>
+    <div class="text-center">
+      <a href="{% url 'view_requests' %}" class="btn btn-secondary mt-2">← Back to All Requests</a>
+    </div>
+  </div>
+</div>
 
+<script>
+  document.querySelectorAll('.reply-form').forEach(form => {
+    const checkbox = form.querySelector('input[name="resolve"]');
+    const requestId = form.getAttribute('data-request-id');
+    const csrfToken = form.querySelector('input[name="csrfmiddlewaretoken"]').value;
+    const container = document.getElementById(`messages-${requestId}`);
+  
+    // ✅ Handle form submission (Send message / attachment / resolve)
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const formData = new FormData(form);
+      formData.append('request_id', requestId);
+  
+      fetch("{% url 'ajax_reply_request' %}", {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
+        body: formData,
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          if (data.message || data.attachment_url) {
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble chat-right';
+            bubble.innerHTML = `
+              <span class="sender">${data.sender}</span>
+              ${data.message || ''}
+              ${data.attachment_url ? `<div><a href="${data.attachment_url}" target="_blank">📎 ${data.attachment_name}</a></div>` : ''}
+              <div class="chat-meta">just now</div>
+            `;
+            container.appendChild(bubble);
+          }
+  
+          if (data.resolved) {
+            const header = form.closest('.card').querySelector('.card-header');
+            if (!header.querySelector('.badge')) {
+              const badge = document.createElement('span');
+              badge.className = 'badge bg-success text-white ms-auto mt-1';
+              badge.textContent = 'Resolved';
+              header.appendChild(badge);
+            }
+  
+            // Disable form if resolved
+            form.querySelectorAll('textarea, button, input[type="file"]').forEach(el => el.disabled = true);
+            if (checkbox) checkbox.disabled = true;
+          }
+  
+          form.reset();
+          document.getElementById(`selected-file-${requestId}`).textContent = '';
+        } else {
+          alert(data.error || "Something went wrong.");
+        }
+      });
+    });
+  
+    // ✅ Handle "Mark as resolved" checkbox directly
+    if (checkbox) {
+      checkbox.addEventListener('change', function () {
+        if (!checkbox.checked) return;
+  
+        const confirmed = confirm("Are you sure you want to mark this request as resolved?");
+        if (!confirmed) {
+          checkbox.checked = false;
+          return;
+        }
+  
+        const formData = new FormData();
+        formData.append('request_id', requestId);
+        formData.append('resolve', 'on');
+  
+        fetch("{% url 'ajax_reply_request' %}", {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': csrfToken,
+          },
+          body: formData,
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.resolved) {
+            const header = form.closest('.card').querySelector('.card-header');
+            if (!header.querySelector('.badge')) {
+              const badge = document.createElement('span');
+              badge.className = 'badge bg-success text-white ms-auto mt-1';
+              badge.textContent = 'Resolved';
+              header.appendChild(badge);
+            }
+  
+            // Disable all inputs
+            form.querySelectorAll('textarea, button, input[type="file"]').forEach(el => el.disabled = true);
+            checkbox.disabled = true;
+          }
+        });
+      });
+    }
+  });
+  </script>
     <script>
-        // Dropdown functionality for smooth hover behavior
-        const dropdowns = document.querySelectorAll('.dropdown');
+        function showFileName(event, requestId) {
+          const input = event.target;
+          const fileName = input.files[0] ? input.files[0].name : '';
+          const display = document.getElementById(`selected-file-${requestId}`);
+          display.textContent = fileName ? `📎 ${fileName}` : '';
+        }
+        </script>
 
-        dropdowns.forEach(dropdown => {
-            const menu = dropdown.querySelector('.dropdown-menu');
+<script>
+function renderMessages(messages, container) {
+  container.innerHTML = "";
+  messages.forEach(msg => {
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble ' + (msg.is_me ? 'chat-right' : 'chat-left');
+    bubble.innerHTML = `
+      <span class="sender">${msg.sender}</span>
+      ${msg.message}
+      ${msg.attachment ? `
+        <div class="attachment-preview">
+            <a href="${msg.attachment}" target="_blank" class="d-block text-decoration-none text-dark">
+            <div class="file-icon">📄</div>
+            <div class="file-info">
+                <div class="file-name">${msg.attachment_name}</div>
+                <div class="file-meta">${msg.attachment_size} • ${msg.attachment_ext}</div>
+            </div>
+            </a>
+        </div>
+        ` : ''}
+      <div class="chat-meta">${msg.timestamp}</div>
+    `;
+    container.appendChild(bubble);
+  });
+  container.scrollTop = container.scrollHeight;
+}
 
-            dropdown.addEventListener('mouseenter', () => {
-                menu.style.visibility = 'visible';
-                menu.style.opacity = '1';
-            });
+function startPolling(requestId) {
+  const container = document.getElementById(`messages-${requestId}`);
 
-            dropdown.addEventListener('mouseleave', () => {
-                menu.style.visibility = 'hidden';
-                menu.style.opacity = '0';
-            });
-        });
+  function fetchAndRender() {
+    console.log("Polling... for request", requestId);
+    fetch(`/website/ajax/fetch-messages/${requestId}/`)
+      .then(res => {
+        console.log("Status:", res.status);
+        return res.json();
+      })
+      .then(data => {
+        console.log("Received:", data);
+        if (data.success) {
+          renderMessages(data.messages, container);
+        }
+      })
+      .catch(err => console.error("Polling error:", err));
+  }
 
-        // Show solutions list when button is clicked
-        document.getElementById('explore-btn').addEventListener('click', function() {
-            document.getElementById('main-container').style.display = 'flex';
-            const mainContainer = document.getElementById('main-container');
-            mainContainer.scrollIntoView({ behavior: 'smooth' });
-        });
+  fetchAndRender(); // Load immediately
+  setInterval(fetchAndRender, 3000); // Poll every 3s
+}
 
-        // Add click event to cards to show detailed information
-        const cards = document.querySelectorAll('.sidebar .card');
-        const solutionDetails = document.getElementById('solution-details');
-
-        cards.forEach(card => {
-            card.addEventListener('click', function() {
-                // Remove active class from all cards
-                cards.forEach(c => c.classList.remove('active'));
-                // Add active class to the clicked card
-                this.classList.add('active');
-
-                const info = this.getAttribute('data-info');
-                solutionDetails.innerHTML = `<h2>${this.innerText}</h2><p>${info}</p>`;
-            });
-        });
-
-    </script>
-
-</body>
-</html>
+document.addEventListener('DOMContentLoaded', () => {
+    const container = document.querySelector('.messages-container');
+    if (container) {
+      const requestId = container.id.split('-')[1];  // from messages-<id>
+      if (requestId) startPolling(requestId);  // ✅ ONLY if valid
+    }
+  });
+</script>
+{% endblock %}

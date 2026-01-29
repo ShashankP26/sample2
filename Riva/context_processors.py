@@ -1,4 +1,4 @@
-from .models import ConfirmedOrderFollowUp, FollowUp
+from Riva.models import ConfirmedOrderFollowUp, FollowUp
 from django.utils import timezone
 from datetime import timedelta
 

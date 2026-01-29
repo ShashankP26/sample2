@@ -117,9 +117,11 @@
                 {% endif %}
               </tr>
             </thead>
+
+
             <tbody>
               {% for voucher in vouchers %}
-              <tr>
+              <tr data-voucher-id="{{ voucher.id }}">
                 <td>{{ forloop.counter }}</td>
                 <td>{{ voucher.created_by }}</td>
                 <td>{{ voucher.voucher_number }}</td>
@@ -127,11 +129,32 @@
                 <td>{{ voucher.paid_to }}</td>
                 <td>{{ voucher.item_name }}</td>
                 <td>{{ voucher.amount }}</td>
-                <td>{% if voucher.proof_photo %}
-                  <a href="{{ voucher.proof_photo.url }}" target="_blank">Download Proof</a>
-                {% else %}
-                  No file uploaded
-                {% endif %}</td>
+                <!-- Download Proof Column -->
+                <td>
+                  {% if voucher.proof_photo %}
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#proofModal{{ voucher.id }}">View Proof</a>
+                
+                    <!-- Modal -->
+                    <div class="modal fade" id="proofModal{{ voucher.id }}" tabindex="-1" aria-labelledby="proofModalLabel{{ voucher.id }}" aria-hidden="true">
+                      <div class="modal-dialog modal-dialog-centered modal-lg">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" id="proofModalLabel{{ voucher.id }}">Proof Photo</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+                          <div class="modal-body text-center">
+                            <img src="{{ voucher.proof_photo.url }}" alt="Proof Photo" class="img-fluid rounded shadow mb-3" style="max-height: 500px;">
+                            <div>
+                              <a href="{{ voucher.proof_photo.url }}" download class="btn btn-success">Download</a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  {% else %}
+                    No file uploaded
+                  {% endif %}
+                </td>
                 <td>{{ voucher.transaction_date }}</td>
                 <td>{{ voucher.status }}</td>
                 <td>
@@ -151,11 +174,21 @@
                 {% if user_role == "Admin" %}
                 {% if voucher.status == "pending" %}
                 <td>
-                  <a href="?verify_id={{ voucher.id }}" class="btn btn-success btn-sm" onclick="return confirm('Approve voucher {{ voucher.voucher_number }}?');">Approve</a>
+                  <button class="btn btn-success btn-sm approve-btn" data-voucher-id="{{ voucher.id }}">
+                    Approve
+                  </button>
                 </td>
+                
                 <td>
-                  <a href="#" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#rejectModal" onclick="setVoucherId({{ voucher.id }})">Reject</a>
-                </td>
+                  <button class="btn btn-danger btn-sm reject-btn" 
+                      data-bs-toggle="modal" 
+                      data-bs-target="#rejectModal"
+                      data-voucher-id="{{ voucher.id }}">
+                  Reject
+              </button>
+
+              </td>
+              
                 {% elif voucher.status == "approved" %}
                 <td><button class="btn btn-success btn-sm" disabled>Approved</button></td>
                 <td><button class="btn btn-secondary btn-sm" disabled>Reject</button></td>
@@ -180,55 +213,37 @@
         {% else %}
         <p class="text-center text-muted">No vouchers available.</p>
         {% endif %}
-    <!-- Reject Modal -->
-    <!-- Reject Modal -->
-    <div
-      class="modal modal-blur"
-      id="rejectModal"
-      tabindex="-1"
-      aria-labelledby="rejectModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="rejectModalLabel">Reject Voucher</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <form
-              id="rejectForm"
-              method="post"
-              action="{% url 'reject_voucher' %}"
-            >
-              {% csrf_token %}
-              <input type="hidden" name="voucher_id" id="voucherId" />
-              <div class="mb-3">
-                <label for="rejectionReason" class="form-label"
-                  >Reason for Rejection:</label
-                >
-                <textarea
-                  class="form-control"
-                  id="rejectionReason"
-                  name="reason"
-                  rows="4"
-                  required
-                ></textarea>
-              </div>
-              <div class="mb-3">
-                <button type="submit" class="btn btn-danger">
-                  Reject Voucher
-                </button>
-              </div>
-            </form>
-         
+<!-- Reject Reason Modal -->
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      
+      <div class="modal-header bg-light">
+        <h5 class="modal-title" id="rejectModalLabel">Reject Voucher</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
+
+      <form id="rejectForm" method="post">
+        {% csrf_token %}
+        <input type="hidden" id="voucherId" name="voucher_id">
+
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="rejectionReason" class="form-label">Reason</label>
+            <textarea class="form-control" id="rejectionReason" name="reason" rows="3" required placeholder="Enter reason..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Submit Rejection</button>
+        </div>
+      </form>
+      
     </div>
+  </div>
+</div>
     <!-- Modify the Reject Button -->
 </div>
   
@@ -238,6 +253,132 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set voucher ID when clicking reject button
+      document.querySelectorAll('.reject-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          document.getElementById('voucherId').value = btn.getAttribute('data-voucher-id');
+        });
+      });
+    
+      // Handle reject form submit
+      document.getElementById('rejectForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const voucherId = document.getElementById('voucherId').value;
+        const reason = document.getElementById('rejectionReason').value;
+    
+        fetch("{% url 'reject_cash_voucher_ajax' %}", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: new URLSearchParams({
+            'voucher_id': voucherId,
+            'reason': reason
+          })
+        })
+        .then(response => {
+          if (!response.ok) throw new Error('Network response was not ok');
+          return response.json();
+        })
+        .then(data => {
+          // Update UI
+          const row = document.querySelector(`tr[data-voucher-id="${voucherId}"]`);
+          if (row) {
+            row.querySelector('td:nth-child(10)').textContent = 'rejected';
+            const approveCell = row.querySelector('td:nth-child(13)');
+            const rejectCell = row.querySelector('td:nth-child(14)');
+            if (approveCell) approveCell.innerHTML = '<button class="btn btn-secondary btn-sm" disabled>Approve</button>';
+            if (rejectCell) rejectCell.innerHTML = '<button class="btn btn-danger btn-sm" disabled>Rejected</button>';
+          }
+          // Hide modal and remove stuck backdrop
+          const modalEl = document.getElementById('rejectModal');
+          const modal = bootstrap.Modal.getInstance(modalEl);
+          modal.hide();
+          document.body.classList.remove('modal-open');
+          document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+        })
+        .catch(error => {
+          alert('Rejection failed: ' + error.message);
+        });
+      });
+    });
+    
+    
+
+document.addEventListener('DOMContentLoaded', function() {
+  const rejectForm = document.getElementById('rejectForm');
+  const rejectModal = new bootstrap.Modal(document.getElementById('rejectModal'));
+
+  rejectForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const formData = new FormData(this);
+      const voucherId = formData.get('voucher_id');
+      const reason = formData.get('reason');
+
+      fetch("{% url 'reject_cash_voucher_ajax' %}", {
+          method: 'POST',
+          headers: {
+              'X-CSRFToken': getCookie('csrftoken'),
+              'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: new FormData(this)
+      })
+      .then(response => {
+          if (!response.ok) throw new Error('Network response was not ok');
+          return response.json();
+      })
+      .then(data => {
+          if (data.message === 'Voucher rejected successfully!') {
+              // Update UI
+              const row = document.querySelector(`tr[data-voucher-id="${voucherId}"]`);
+              if (row) {
+                  row.querySelector('[data-status]').innerHTML = `
+                      <span class="badge bg-danger">Rejected</span>
+                  `;
+                  row.querySelector('.reject-btn').remove();
+              }
+              rejectModal.hide();
+          }
+      })
+      .catch(error => {
+          console.error('Error:', error);
+          alert(`Rejection failed: ${error.message}`);
+      });
+  });
+});
+
+
+
+   
+      $(document).ready(function() {
+          $('.approve-btn').click(function(e) {
+              e.preventDefault();
+              var btn = $(this);
+              var voucherId = btn.data('voucher-id');
+              if (confirm('Approve voucher ' + voucherId + '?')) {
+                  $.ajax({
+                      url: "{% url 'approve_voucher_ajax' %}", // update with your URL name
+                      type: "POST",
+                      data: {
+                          'voucher_id': voucherId,
+                          'csrfmiddlewaretoken': '{{ csrf_token }}'
+                      },
+                      success: function(response) {
+                          // Optionally update the UI, e.g., disable button or show a message
+                          btn.prop('disabled', true).text('Approved');
+                      },
+                      error: function(xhr) {
+                          alert('Approval failed!');
+                      }
+                  });
+              }
+          });
+      });
+ 
 
     {% comment %} $('.dropdown-item').on('click', function () {
         $(this).closest('.dropdown-menu').removeClass('show');  // Hide the dropdown after selection

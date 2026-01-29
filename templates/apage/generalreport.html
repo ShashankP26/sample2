@@ -94,7 +94,7 @@
     const errorDiv = document.getElementById("date-error");
 
     dateInput.addEventListener("change", function () {
-      const selectedDate = new Date(dateInput.value);
+      const selectedDate = new Date(dateInput.value + "T00:00:00");
       const today = new Date();
       today.setHours(0, 0, 0, 0);  // Set today's time to 00:00:00 for comparison
   

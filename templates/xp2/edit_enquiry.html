@@ -1,105 +1,159 @@
 {% extends "base.html" %}
 {% load static %}
 
-
 {% block content %}
-<script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta14/dist/js/tabler.min.js"></script>
-<div class="container-fluid"><br>
-  <h2>Edit Enquiry</h2>
-  
-  <div class="card">
-    <div class="card-body">
-      <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        
-        <!-- Render form fields -->
-        <div class="mb-3">
-          <label for="companyname" class="form-label">Company Name</label>
-          {{ form.companyname }}
-        </div>
-
-        <div class="mb-3">
-          <label for="customername" class="form-label">Customer Name</label>
-          {{ form.customername }}
-        </div>
-
-        <div class="mb-3">
-          <label for="email" class="form-label">Email</label>
-          {{ form.email }}
-        </div>
-
-        <div class="mb-3">
-          <label for="contact" class="form-label">Contact</label>
-          {{ form.contact }}
-        </div>
-
-        <div class="mb-3">
-          <label for="location" class="form-label">Location</label>
-          {{ form.location }}
-        </div>
-
-        <div class="mb-3">
-          <label for="status" class="form-label">Status</label>
-          {{ form.status }}
-        </div>
-
-        <div class="mb-3">
-            <label for="executive" class="form-label">Products</label>
-            {{ form.products }}
-          </div>
-
-        <div class="mb-3">
-          <label for="closuredate" class="form-label">Closure Date</label>
-          {{ form.closuredate }}
-        </div>
-
-       
-        <div class="mb-3">
-          <label for="executive" class="form-label">Executive</label>
-          {{ form.executive}}
-        </div>
-        <div class="mb-3">
-          <label for="attachment" class="form-label">Files</label><br>
-          <input type="file" class="form-control" name="attachment[]" multiple><br>
-          {% comment %} <button type="button" class="btn btn-outline-primary" id="add-attachment-btn">Add More</button> {% endcomment %}
-      
-          <!-- Add some space between the file input and the form files -->
-          <div style="margin-top: 10px;">
-              {{ form.files }}
-          </div>
-        {% comment %} <div class="row" id="attachment-section">
-          <div class="col-md-6 mb-3">
-            <label class="form-label" for="attachment">Attachment</label>
-            <input type="file" class="form-control" name="attachment[]" multiple>
-          </div>
-          <div class="col-md-6 mb-3 d-flex align-items-end">
-            <button type="button" class="btn btn-outline-primary" id="add-attachment-btn">Add More</button>
-          </div>
-        </div> {% endcomment %}
-
-        <div class="mb-3">
-          <label for="remarks" class="form-label">Remarks</label>
-          {{ form.remarks }}
-        </div>
-
-        <div class="d-flex justify-content-between">
-          <button type="submit" class="btn btn-primary">Save Changes</button>
-          <a href="{% url 'enquiry_details' enquiry_id %}" class="btn btn-secondary">Cancel</a>
-        </div>
-      </form>
+<div class="page-header d-print-none">
+  <div class="container-fluid">
+    <div class="row g-2 align-items-center">
+      <div class="col"><br>
+        <h2 class="page-title">Edit Enquiry</h2>
+      </div>
     </div>
   </div>
 </div>
-{% if form.errors %}
-    <div class="alert alert-danger">
-        <ul>
-        {% for field, errors in form.errors.items %}
-            {% for error in errors %}
-                <li>{{ field }}: {{ error }}</li>
-            {% endfor %}
-        {% endfor %}
-        </ul>
-    </div>
-{% endif %}
 
+<div class="page-body">
+  <div class="container-fluid">
+    <form method="post" class="card" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div class="card-header">
+        <h4 class="card-title">Edit Enquiry</h4>
+      </div>
+
+      <div class="card-body">
+        <div class="row g-4">
+
+          <!-- LEFT COLUMN -->
+          <div class="col-lg-6">
+            <div class="mb-3">
+              <label class="form-label">Company Name</label>
+              {{ form.companyname }}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Customer Name</label>
+              {{ form.customername }}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Reference</label>
+              {{ form.refrence }}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Email</label>
+              {{ form.email }}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Contact</label>
+              {{ form.contact }}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Location</label>
+              {{ form.location }}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Status</label>
+              {{ form.status }}
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN -->
+          <div class="col-lg-6">
+            <div class="mb-3">
+              <label class="form-label">Product</label>
+              {{ form.products }}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Sub Product</label>
+              {{ form.subproduct }}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Enquiry Date</label>
+              {{ form.closuredate }}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Executive</label>
+              {{ form.executive }}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Remarks</label>
+              {{ form.remarks }}
+            </div>
+          </div>
+
+        </div>
+
+        <hr>
+
+        <!-- ATTACHMENTS -->
+        <h4 class="mb-3">Attachments</h4>
+
+        {% if enquiry.files.all %}
+        <div class="row g-3 mb-3">
+          {% for file in enquiry.files.all %}
+          {% with file.file.name|lower as fname %}
+          <div class="col-md-3">
+            <div class="card card-sm">
+
+              {% if ".jpg" in fname or ".jpeg" in fname or ".png" in fname or ".gif" in fname %}
+                <a href="{{ file.file.url }}" target="_blank">
+                  <img src="{{ file.file.url }}"
+                       class="card-img-top"
+                       style="height:120px;object-fit:cover;">
+                </a>
+              {% else %}
+                <div class="card-body text-center">
+                  <a href="{{ file.file.url }}" target="_blank">
+                    📎 {{ file.name|truncatechars:18 }}
+                  </a>
+                </div>
+              {% endif %}
+
+              <div class="card-footer text-center">
+                <label class="form-check text-danger">
+                  <input type="checkbox"
+                         class="form-check-input"
+                         name="remove_files"
+                         value="{{ file.id }}">
+                  Remove
+                </label>
+              </div>
+
+            </div>
+          </div>
+          {% endwith %}
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- NEW FILE UPLOAD -->
+        <div class="mb-3">
+          <label class="form-label">Upload New Files</label>
+          <input type="file" class="form-control" name="attachment[]" multiple>
+          <small class="text-muted">
+            Existing files will stay unless removed.
+          </small>
+        </div>
+
+      </div>
+
+      <div class="card-footer text-end">
+        <a href="{% url 'enquiry_details' enquiry.id %}" class="btn btn-link">Cancel</a>
+        <button type="submit" class="btn btn-primary ms-auto">
+          Save Changes
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
 {% endblock %}

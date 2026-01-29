@@ -1,529 +1,1289 @@
 {% extends "base.html" %}
 {% load custom_filters %}
-
 {% block content %}
-<div class="container-fluid">
-    {% comment %} <h1>Edit Service Report</h1> {% endcomment %}
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
+<div class="page-wrapper">
+    <div class="page-header d-print-none">
+        <div class="container-fluid">
+            <div class="row g-2 align-items-center">
+                <div class="col">
+                    <h2 class="page-title">EDIT SERVICE REPORT</h2>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        <!-- Service Information -->
-        <div class="container-fluid">
-            <h2>SERVICE INFORMATION</h2>
-            <table class="table table-bordered">
-                <tbody>
-                    <tr>
-                        <td>Name:</td>
-                        <td><input type="text" name="service_name" class="form-control" value="{{ user.username }}" placeholder="Enter name..." readonly></td>
-                    </tr>
-                    <tr>
-                        <td>Date of Visit:</td>
-                        <td><input type="date" name="date_of_visit" class="form-control" value="{{ service_report.date_of_visit|date:'Y-m-d' }}"></td>
-                    </tr>
-                    <tr>
-                        <td>Zone:</td>
-                        <td>
-                            <select class="form-select" id="select-zone" name="zone">
-                                <option value="G" {% if service_report.zone == 'G' %}selected{% endif %}>GKN</option>
-                                <option value="C" {% if service_report.zone == 'C' %}selected{% endif %}>CHP</option>
-                                <option value="S" {% if service_report.zone == 'S' %}selected{% endif %}>SRS</option>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Phone No:</td>
-                        <td><input type="number" name="phone_no" class="form-control" value="{{ service_report.phone_no }}" placeholder="Enter number..."></td>
-                    </tr>
-                    <tr>
-                        <td>Reason of Visit:</td>
-                        <td><input type="text" name="reason_of_visit" class="form-control" value="{{ service_report.reason_of_visit }}" placeholder="Enter reason..."></td>
-                    </tr>
-                    <tr>
-                        <td>In Time:</td>
-                        <td><input type="time" name="in_time" class="form-control" value="{{ service_report.in_time|time:'H:i' }}"></td>
-                    </tr>
-                    <tr>
-                        <td>Out Time:</td>
-                        <td><input type="time" name="out_time" class="form-control" value="{{ service_report.out_time|time:'H:i' }}"></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+    <div class="page-body">
+        <style>
+            .wizard-steps {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 45px;
+                position: relative;
+                padding: 10px 10px 30px;
+                overflow-x: auto;
+                scrollbar-width: none;
+            }
 
-        <!-- Customer Information -->
-        <div class="container-fluid">
-            <h2>CUSTOMER INFORMATION</h2>
-            <table class="table table-bordered">
-                <tbody>
-                    <tr>
-                        <td>Customer Name:</td>
-                        <td><input type="text" name="customer_name" class="form-control" value="{{ service_report.customer_name }}" placeholder="Enter customer name..."></td>
-                    </tr>
-                    <tr>
-                        <td>Contact Number:</td>
-                        <td><input type="number" name="contact_number" class="form-control" value="{{ service_report.contact_number }}" placeholder="Enter contact number..."></td>
-                    </tr>
-                    <tr>
-                        <td>Location:</td>
-                        <td><input type="text" name="location" class="form-control" value="{{ service_report.location }}" placeholder="Enter location..."></td>
-                    </tr>
-                    <tr>
-                        <td>State:</td>
-                        <td>
-                            <select id="state" name="state" class="form-control">
-                                <option value="">Select State</option>
-                                {% for state in states %}
-                                    <option value="{{ state.id }}" {% if service_report.state.id == state.id %}selected{% endif %}>{{ state.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </td>
-                    </tr>
+            .wizard-steps::-webkit-scrollbar {
+                display: none;
+            }
 
-                    <tr>
-                        <td>Date of Complaint:</td>
-                        <td><input type="date" name="date_of_complaint" class="form-control" value="{{ service_report.date_of_complaint|date:'Y-m-d' }}"></td>
-                    </tr>
-                    <tr>
-                        <td>Status of Call (Warranty/AMC):</td>
-                        <td><input type="text" name="status_of_call" class="form-control" value="{{ service_report.status_of_call }}" placeholder="Enter status..."></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <!-- Electronic Items -->
-        <div class="container-fluid">
-            <h2>ELECTRONIC ITEMS</h2>
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Item Name</th>
-                        <th>Checked</th>
-                        <th>Repair</th>
-                        <th>Replacement</th>
-                        <th>Remark</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in electronic_items %}
-                    <tr>
-                        <td>{{ item.item.name }}</td>
-                        <td><input type="checkbox" name="checked_{{ item.id }}" {% if item.checked %}checked{% endif %}></td>
-                        <td><input type="checkbox" name="repair_{{ item.id }}" {% if item.repair %}checked{% endif %}></td>
-                        <td><input type="checkbox" name="replacement_{{ item.id }}" {% if item.replacement %}checked{% endif %}></td>
-                        <td><textarea class="form-control" name="remark_eitems_{{ item.id }}" placeholder="Remark">{{ item.remark }}</textarea></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        <!-- Electronic Panels -->
-        <div class="container-fluid">
-            <h2>ELECTRONIC PANELS</h2>
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Electronic Panel Names</th>
-                        <th>Checked</th>
-                        <th>Repair</th>
-                        <th>Replacement</th>
-                        <th>Remark</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for panel in electronic_panels %}
-                    <tr>
-                        <td>{{ panel.panel.name }}</td>
-                        <td><input type="checkbox" name="checked_{{ panel.id }}" {% if panel.checked %}checked{% endif %}></td>
-                        <td><input type="checkbox" name="repair_{{ panel.id }}" {% if panel.repair %}checked{% endif %}></td>
-                        <td><input type="checkbox" name="replacement_{{ panel.id }}" {% if panel.replacement %}checked{% endif %}></td>
-                        <td>
-                            <textarea class="form-control" name="remark_epanels_{{ panel.id }}" placeholder="Remark">{{ panel.remark }}</textarea>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+            .wizard-steps::before {
+                content: "";
+                position: absolute;
+                top: 30px;
+                left: 10px;
+                right: 10px;
+                height: 2px;
+                background: #e6e7e9;
+                z-index: 1;
+            }
 
-        <!-- Chemical Items -->
-        <div class="container-fluid">
-            <h2>CHEMICAL ITEMS</h2>
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Chemical Item Names</th>
-                        <th>Checked</th>
-                        <th>Repair</th>
-                        <th>Replacement</th>
-                        <th>Remark</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in chemical_items %}
-                    <tr>
-                        <td>{{ item.item.name }}</td>
-                        <td><input type="checkbox" name="checked_chemical_{{ item.id }}" {% if item.checked %}checked{% endif %}></td>
-                        <td><input type="checkbox" name="repair_chemical_{{ item.id }}" {% if item.repair %}checked{% endif %}></td>
-                        <td><input type="checkbox" name="replacement_chemical_{{ item.id }}" {% if item.replacement %}checked{% endif %}></td>
-                        <td><textarea class="form-control" name="remark_chemical_{{ item.id }}" placeholder="Remark">{{ item.remark }}</textarea></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+            .wizard-step {
+                width: 32px;
+                height: 32px;
+                min-width: 32px;
+                border-radius: 50%;
+                background: #fff;
+                border: 2px solid #e6e7e9;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                font-weight: bold;
+                position: relative;
+                z-index: 2;
+                transition: all 0.3s ease;
+                cursor: pointer;
+                margin: 0 5px;
+            }
 
-        <!-- Pump / Filters / Airblowers -->
-        <div class="container-fluid">
-            <h2>PUMP / FILTERS / AIRBLOWERS</h2>
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Pump Item Names</th>
-                        <th>Checked</th>
-                        <th>Repair</th>
-                        <th>Replacement</th>
-                        <th>Remark</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for pump in pumps %}
-                    <tr>
-                        <td>{{ pump.pump.name }}</td>
-                        <td><input type="checkbox" name="checked_pump_{{ pump.id }}" {% if pump.checked %}checked{% endif %}></td>
-                        <td><input type="checkbox" name="repair_pump_{{ pump.id }}" {% if pump.repair %}checked{% endif %}></td>
-                        <td><input type="checkbox" name="replacement_pump_{{ pump.id }}" {% if pump.replacement %}checked{% endif %}></td>
-                        <td>
-                            <textarea class="form-control" name="remark_pump_{{ pump.id }}" rows="2" placeholder="Remark">{{ pump.remark }}</textarea>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        
-                <!-- Miscellaneous Items -->
-        <div class="container-fluid">
-            <h2>MISCELLANEOUS ITEMS</h2>
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Miscellaneous Item Names</th>
-                        <th>Checked</th>
-                        <th>Repair</th>
-                        <th>Replacement</th>
-                        <th>Remark</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in miscellaneous_items %}
-                    <tr>
-                        <td>{{ item.item.name }}</td>
-                        <td><input type="checkbox" name="checked_miscellaneous_{{ item.id }}" {% if item.checked %}checked{% endif %}></td>
-                        <td><input type="checkbox" name="repair_miscellaneous_{{ item.id }}" {% if item.repair %}checked{% endif %}></td>
-                        <td><input type="checkbox" name="replacement_miscellaneous_{{ item.id }}" {% if item.replacement %}checked{% endif %}></td>
-                        <td>
-                            <textarea class="form-control" name="remark_miscellaneous_{{ item.id }}" rows="2" placeholder="Remark">{{ item.remark }}</textarea>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+            .wizard-step.active {
+                border-color: #206bc4;
+                color: #206bc4;
+                box-shadow: 0 0 0 4px rgba(32, 107, 196, 0.1);
+                transform: scale(1.1);
+            }
 
-        <!-- Wastewater Parameters -->
-        <div class="container-fluid">
-            <h2>WASTEWATER PARAMETERS</h2>
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Water Parameter</th>
-                        <th>Checked</th>
-                        <th>Repair</th>
-                        <th>Replacement</th>
-                        <th>Remark</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for parameter in wastewater_parameters %}
-                    <tr>
-                        <td>{{ parameter.parameter.name }}</td>
-                        <td><input type="checkbox" name="checked_wastewater_{{ parameter.id }}" {% if parameter.checked %}checked{% endif %}></td>
-                        <td><input type="checkbox" name="repair_wastewater_{{ parameter.id }}" {% if parameter.repair %}checked{% endif %}></td>
-                        <td><input type="checkbox" name="replacement_wastewater_{{ parameter.id }}" {% if parameter.replacement %}checked{% endif %}></td>
-                        <td><textarea class="form-control" name="remark_wastewater_{{ parameter.id }}" rows="2" placeholder="Remark">{{ parameter.remark }}</textarea></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+            .wizard-step.completed {
+                background: #206bc4;
+                border-color: #206bc4;
+                color: #fff;
+            }
 
-        <!-- Machine Run Times -->
-        <div class="container-fluid">
-            <h2>MACHINE RUN TIMES</h2>
-            <table class="table table-bordered" id="machineRunTable">
-                <thead>
-                    <tr>
-                        <th>Run Type</th>
-                        <th>Run Time</th>
-                        <th>End Time</th>
-                        <th>Checked</th>
-                        <th>Pass</th>
-                        <th>Fail</th>
-                        <th>Remark</th>
-                    </tr>
-                </thead>
-                <tbody id="runCycleRows">
-                    {% for run in machine_runs %}
-                    <tr>
-                        <td>{{ run.run_type }}</td>
-                        <td><input type="time" class="form-control" name="run_time_{{ run.id }}" value="{{ run.run_time|time:'H:i' }}"></td>
-                        <td><input type="time" class="form-control" name="end_time_{{ run.id }}" value="{{ run.end_time|time:'H:i' }}"></td>
-                        <td><input type="checkbox" class="form-check-input" name="checked_run_{{ run.id }}" {% if run.checked %}checked{% endif %}></td>
-                        <td><input type="checkbox" class="form-check-input" name="pass_run_{{ run.id }}" {% if run.pass %}checked{% endif %}></td>
-                        <td><input type="checkbox" class="form-check-input" name="fail_run_{{ run.id }}" {% if run.fail %}checked{% endif %}></td>
-                        <td><textarea class="form-control" name="remark_run_{{ run.id }}" rows="2" placeholder="Remark">{{ run.remark }}</textarea></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            <input type="hidden" name="run_cycle_count" id="runCycleCount" value="{{ machine_runs|length }}">
-        </div>
+            .wizard-step .step-label {
+                position: absolute;
+                top: 40px;
+                left: 50%;
+                transform: translateX(-50%);
+                font-size: 10px;
+                white-space: nowrap;
+                color: #626976;
+                text-transform: uppercase;
+                letter-spacing: .02em;
+                font-weight: 600;
+                transition: color 0.3s;
+            }
 
-        <!-- Tool Kits -->
-        <div class="container-fluid">
-            <h2>TOOLS KITS</h2>
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Tools Name</th>
-                        <th>Details</th>
-                        <th>Qty</th>
-                        <th>Remark</th>
-                        <th>Taken Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for tool in tools %}
-                    <tr>
-                        <td>{{ tool.tool.name }}</td>
-                        <td>{{ tool.tool.details }}</td>
-                        <td><input type="number" name="quantity_{{ tool.id }}" class="form-control" value="{{ tool.quantity }}" placeholder="Enter quantity"></td>
-                        <td><input type="text" name="remark_tools_{{ tool.id }}" class="form-control" value="{{ tool.remark }}" placeholder="Enter remark"></td>
-                        <td><input type="checkbox" name="taken_status_{{ tool.id }}" {% if tool.taken_status %}checked{% endif %}></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+            .wizard-step.active .step-label {
+                color: #206bc4;
+            }
+
+            .step {
+                display: none;
+                animation: fadeIn 0.4s ease;
+            }
+
+            .step.active {
+                display: block;
+            }
+
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .wizard-footer {
+                padding: 1.5rem;
+                background: #f8f9fa;
+                border-top: 1px solid rgba(101, 109, 119, .16);
+                display: flex;
+                justify-content: space-between;
+                border-radius: 0 0 4px 4px;
+            }
+
+            @media (max-width: 576px) {
+                .wizard-steps {
+                    justify-content: flex-start;
+                    padding-left: 20px;
+                    padding-right: 20px;
+                }
+
+                .wizard-step .step-label {
+                    display: none;
+                }
+
+                .wizard-step.active .step-label {
+                    display: block;
+                    top: 40px;
+                }
+
+                .wizard-steps::before {
+                    width: calc(100% - 40px);
+                    left: 20px;
+                    top: 26px;
+                }
+            }
+
+            .signature-container {
+                position: relative;
+                background: #fcfcfd;
+                border: 2px dashed #e6e7e9;
+                border-radius: 4px;
+                overflow: hidden;
+            }
+
+            .signature-canvas {
+                width: 100%;
+                height: 200px;
+                cursor: crosshair;
+                touch-action: none;
+            }
+
+            .signature-placeholder {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                color: #adb5bd;
+                pointer-events: none;
+            }
+        </style>
 
         <div class="container-fluid">
-            <h2>OTHER REMARKS</h2>
-            <table class="table table-bordered" id="remarks-table">
-                <tbody>
-                    {% if service_report.other_remarks %}
-                        {% with remarks=service_report.other_remarks|split:", " %}
-                            {% for remark in remarks %}
-                            <tr>
-                                <td>{{ forloop.counter }}</td>
-                                <td>
-                                    <textarea class="form-control" name="remark_orm_{{ forloop.counter }}" rows="2" placeholder="Remark">{{ remark }}</textarea>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        {% endwith %}
-                    {% else %}
-                        <tr>
-                            <td>1</td>
-                            <td>
-                                <textarea class="form-control" name="remark_orm_1" rows="2" placeholder="Enter remark"></textarea>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>
-                                <textarea class="form-control" name="remark_orm_2" rows="2" placeholder="Enter remark"></textarea>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>3</td>
-                            <td>
-                                <textarea class="form-control" name="remark_orm_3" rows="2" placeholder="Enter remark"></textarea>
-                            </td>
-                        </tr>
-                    {% endif %}
-                </tbody>
-            </table>
-        </div>
-        <div class="container-fluid">
-            <h2>SPARES DETAILS</h2>
-            <table class="table table-bordered" id="spares-table">
-                <tbody>
-                    {% if service_report.spares_details %}
-                        {% with spares=service_report.spares_details|split:", " %}
-                            {% for spare in spares %}
-                            <tr>
-                                <td>{{ forloop.counter }}</td>
-                                <td>
-                                    <textarea class="form-control" name="spare_{{ forloop.counter }}" rows="2" 
-                                        placeholder="Enter spare details">{{ spare }}</textarea>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        {% endwith %}
-                    {% else %}
-                        <!-- Display default rows if no spares details are available -->
-                        <tr>
-                            <td>1</td>
-                            <td>
-                                <textarea class="form-control" name="spare_1" rows="2" placeholder="Enter spare details"></textarea>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>
-                                <textarea class="form-control" name="spare_2" rows="2" placeholder="Enter spare details"></textarea>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>3</td>
-                            <td>
-                                <textarea class="form-control" name="spare_3" rows="2" placeholder="Enter spare details"></textarea>
-                            </td>
-                        </tr>
-                    {% endif %}
-                </tbody>
-            </table>
-        </div>
+            <div class="d-flex justify-content-between mb-3 align-items-center">
+                <a href="{% url 'servicereport' %}" class="btn btn-outline-secondary btn-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-arrow-left" width="24"
+                        height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <path d="M5 12l14 0" />
+                        <path d="M5 12l6 6" />
+                        <path d="M5 12l6 -6" />
+                    </svg>
+                    Cancel Edit
+                </a>
+                <h2 class="m-0 text-muted h4">Step <span id="current-step-num">1</span> of 13</h2>
+            </div>
 
-
-        <!-- Certified By -->
-        <div class="container-fluid">
-            <div class="container-fluid mt-3">
-                <div class="row">
-                    <!-- Service Person Column -->
-                    <div class="col-md-6 mb-3">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5>Service Person</h5>
-                            </div>
-                            <div class="card-body">
-                                <canvas id="servicePersonSignature" style="border: 1px solid #000; width: 100%; height: 200px;"></canvas>
-                                <button type="button" class="btn btn-secondary btn-sm mt-2" onclick="clearCanvas('servicePersonSignature')">Clear</button>
-                                <input type="hidden" id="servicePersonSignatureData" name="service_person_signature" value="{{ service_report.service_person_signature }}">
-                                <div class="mt-3">
-                                    <label for="service_person_name">Name:</label>
-                                    <input type="text" id="service_person_name" class="form-control" name="service_person_name" value="{{ service_report.service_person_name }}" placeholder="Enter service person's name...">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-            
-                    <!-- Client Column -->
-                    <div class="col-md-6 mb-3">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5>Client</h5>
-                            </div>
-                            <div class="card-body">
-                                <canvas id="clientSignature" style="border: 1px solid #000; width: 100%; height: 200px;"></canvas>
-                                <button type="button" class="btn btn-secondary btn-sm mt-2" onclick="clearCanvas('clientSignature')">Clear</button>
-                                <input type="hidden" id="clientSignatureData" name="client_signature" value="{{ service_report.client_signature }}">
-                                <div class="mt-3">
-                                    <label for="client_name">Name:</label>
-                                    <input type="text" id="client_name" class="form-control" name="client_name" value="{{ service_report.client_name }}" placeholder="Enter client's name...">
-                                </div>
-                            </div>
-                        </div>
+            <!-- Wizard Progress Bar -->
+            <div class="card mb-3 shadow-sm">
+                <div class="card-body py-4">
+                    <div class="wizard-steps" id="wizard-progress">
+                        <div class="wizard-step active" data-step="1"><span class="step-num">1</span><span
+                                class="step-label">Service</span></div>
+                        <div class="wizard-step" data-step="2"><span class="step-num">2</span><span
+                                class="step-label">Customer</span></div>
+                        <div class="wizard-step" data-step="3"><span class="step-num">3</span><span
+                                class="step-label">Electronics</span></div>
+                        <div class="wizard-step" data-step="4"><span class="step-num">4</span><span
+                                class="step-label">Panels</span></div>
+                        <div class="wizard-step" data-step="5"><span class="step-num">5</span><span
+                                class="step-label">Chemicals</span></div>
+                        <div class="wizard-step" data-step="6"><span class="step-num">6</span><span
+                                class="step-label">Pumps</span></div>
+                        <div class="wizard-step" data-step="7"><span class="step-num">7</span><span
+                                class="step-label">Misc</span></div>
+                        <div class="wizard-step" data-step="8"><span class="step-num">8</span><span
+                                class="step-label">Water</span></div>
+                        <div class="wizard-step" data-step="9"><span class="step-num">9</span><span
+                                class="step-label">Run-Time</span></div>
+                        <div class="wizard-step" data-step="10"><span class="step-num">10</span><span
+                                class="step-label">Tools</span></div>
+                        <div class="wizard-step" data-step="11"><span class="step-num">11</span><span
+                                class="step-label">Remarks</span></div>
+                        <div class="wizard-step" data-step="12"><span class="step-num">12</span><span
+                                class="step-label">Spares</span></div>
+                        <div class="wizard-step" data-step="13"><span class="step-num">13</span><span
+                                class="step-label">Finish</span></div>
                     </div>
                 </div>
             </div>
-            
 
-            </table>
+            <form method="post" enctype="multipart/form-data" id="my-form" class="card shadow-sm">
+                {% csrf_token %}
+                <div class="card-body">
+
+                    <!-- Step 1: Service Information -->
+                    <div class="step step-1 active">
+                        <div class="container-fluid">
+                            <h2>SERVICE INFORMATION</h2>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <tbody>
+                                        <tr>
+                                            <td>Name:</td>
+                                            <td><input type="text" name="service_name" class="form-control"
+                                                    value="{{ user.username }}" readonly></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Date of Visit:</td>
+                                            <td><input type="date" name="date_of_visit" class="form-control"
+                                                    value="{{ service_report.date_of_visit|date:'Y-m-d' }}" required>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Zone:</td>
+                                            <td>
+                                                <select class="form-select" id="select-zone" name="zone"
+                                                    onchange="updateSites()">
+                                                    {% for zone in zones %}
+                                                    <option value="{{ zone.id }}" {% if service_report.zone and service_report.zone.id == zone.id %}selected{% endif %}>
+                                                        {{ zone.name }}
+                                                    </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Site:</td>
+                                            <td>
+                                                <select class="form-select" id="select-site" name="site" required>
+                                                    {% for site in sites %}
+                                                    <option value="{{ site.id }}" {% if service_report.site and service_report.site.id == site.id %}selected{% endif %}>
+                                                        {{ site.name }}
+                                                    </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Phone No:</td>
+                                            <td><input type="number" name="phone_no" class="form-control"
+                                                    value="{{ service_report.phone_no }}" placeholder="Enter number...">
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Reason of Visit:</td>
+                                            <td><input type="text" name="reason_of_visit" class="form-control"
+                                                    value="{{ service_report.reason_of_visit }}"
+                                                    placeholder="Enter reason..."></td>
+                                        </tr>
+                                        <tr>
+                                            <td>In Time:</td>
+                                            <td><input type="time" name="in_time" class="form-control"
+                                                    value="{{ service_report.in_time|time:'H:i' }}"></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Out Time:</td>
+                                            <td><input type="time" name="out_time" class="form-control"
+                                                    value="{{ service_report.out_time|time:'H:i' }}"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Customer Information -->
+                    <div class="step step-2" style="display:none;">
+                        <div class="container-fluid">
+                            <h2>CUSTOMER INFORMATION</h2>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <tbody>
+                                        <tr>
+                                            <td>Customer Name:</td>
+                                            <td><input type="text" name="customer_name" class="form-control"
+                                                    value="{{ service_report.customer_name }}"
+                                                    placeholder="Enter customer name..."></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Contact Number:</td>
+                                            <td><input type="number" name="contact_number" class="form-control"
+                                                    value="{{ service_report.contact_number }}"
+                                                    placeholder="Enter contact number..."></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Location:</td>
+                                            <td><input type="text" name="location" class="form-control"
+                                                    value="{{ service_report.location }}"
+                                                    placeholder="Enter location..."></td>
+                                        </tr>
+                                        <tr>
+                                            <td>State:</td>
+                                            <td>
+                                                <select id="state" name="state" class="form-select">
+                                                    <option value="">Select State</option>
+                                                    {% for state in states %}
+                                                    <option value="{{ state.id }}" {% if service_report.state and service_report.state.id == state.id %}selected{% endif %}>{{ state.name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Date of Complaint:</td>
+                                            <td><input type="date" name="date_of_complaint" class="form-control"
+                                                    value="{{ service_report.date_of_complaint|date:'Y-m-d' }}"></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Status of Call (Warranty/AMC):</td>
+                                            <td><input type="text" name="status_of_call" class="form-control"
+                                                    value="{{ service_report.status_of_call }}"
+                                                    placeholder="Enter status..."></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Step 3: Electronic Items -->
+                    <div class="step step-3" style="display:none;">
+                        <div class="container-fluid">
+                            <h2>ELECTRONIC ITEMS</h2>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Item Name</th>
+                                            <th>Checked</th>
+                                            <th>Repair</th>
+                                            <th>Rep.</th>
+                                            <th>Remark</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in electronic_items %}
+                                        <tr>
+                                            <td>{{ item.item.name }}</td>
+                                            <td><input type="checkbox" name="checked_eitems_{{ item.id }}" {% if item.checked %}checked{% endif %}></td>
+                                            <td><input type="checkbox" name="repair_eitems_{{ item.id }}" {% if item.repair %}checked{% endif %}></td>
+                                            <td><input type="checkbox" name="replacement_eitems_{{ item.id }}" {% if item.replacement %}checked{% endif %}></td>
+                                            <td><textarea class="form-control" name="remark_eitems_{{ item.id }}"
+                                                    placeholder="Remark">{{ item.remark }}</textarea></td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Step 4: Electronic Panels -->
+                    <div class="step step-4" style="display:none;">
+                        <div class="container-fluid">
+                            <h2>ELECTRONIC PANELS</h2>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Panel Names</th>
+                                            <th>Checked</th>
+                                            <th>Repair</th>
+                                            <th>Rep.</th>
+                                            <th>Remark</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for panel in electronic_panels %}
+                                        <tr>
+                                            <td>{{ panel.panel.name }}</td>
+                                            <td><input type="checkbox" name="checked_epanels_{{ panel.id }}" {% if panel.checked %}checked{% endif %}></td>
+                                            <td><input type="checkbox" name="repair_epanels_{{ panel.id }}" {% if panel.repair %}checked{% endif %}></td>
+                                            <td><input type="checkbox" name="replacement_epanels_{{ panel.id }}" {% if panel.replacement %}checked{% endif %}></td>
+                                            <td><textarea class="form-control" name="remark_epanels_{{ panel.id }}"
+                                                    placeholder="Remark">{{ panel.remark }}</textarea></td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 5: Chemical Items -->
+                    <div class="step step-5" style="display:none;">
+                        <div class="container-fluid">
+                            <h2>CHEMICAL ITEMS</h2>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Chemical Item</th>
+                                            <th>Checked</th>
+                                            <th>Repair</th>
+                                            <th>Rep.</th>
+                                            <th>Remark</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in chemical_items %}
+                                        <tr>
+                                            <td>{{ item.item.name }}</td>
+                                            <td><input type="checkbox" name="checked_chemical_{{ item.id }}" {% if item.checked %}checked{% endif %}></td>
+                                            <td><input type="checkbox" name="repair_chemical_{{ item.id }}" {% if item.repair %}checked{% endif %}></td>
+                                            <td><input type="checkbox" name="replacement_chemical_{{ item.id }}" {% if item.replacement %}checked{% endif %}></td>
+                                            <td><textarea class="form-control" name="remark_chemical_{{ item.id }}"
+                                                    placeholder="Remark">{{ item.remark }}</textarea></td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 6: Pumps / Filters -->
+                    <div class="step step-6" style="display:none;">
+                        <div class="container-fluid">
+                            <h2>PUMP / FILTERS / AIRBLOWERS</h2>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Pump Item</th>
+                                            <th>Checked</th>
+                                            <th>Repair</th>
+                                            <th>Rep.</th>
+                                            <th>Remark</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for pump in pumps %}
+                                        <tr>
+                                            <td>{{ pump.pump.name }}</td>
+                                            <td><input type="checkbox" name="checked_pump_{{ pump.id }}" {% if pump.checked %}checked{% endif %}></td>
+                                            <td><input type="checkbox" name="repair_pump_{{ pump.id }}" {% if pump.repair %}checked{% endif %}></td>
+                                            <td><input type="checkbox" name="replacement_pump_{{ pump.id }}" {% if pump.replacement %}checked{% endif %}></td>
+                                            <td><textarea class="form-control" name="remark_pump_{{ pump.id }}" rows="2"
+                                                    placeholder="Remark">{{ pump.remark }}</textarea></td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 7: Miscellaneous Items -->
+                    <div class="step step-7" style="display:none;">
+                        <div class="container-fluid">
+                            <h2>MISCELLANEOUS ITEMS</h2>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Item Name</th>
+                                            <th>Checked</th>
+                                            <th>Repair</th>
+                                            <th>Rep.</th>
+                                            <th>Remark</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in miscellaneous_items %}
+                                        <tr>
+                                            <td>{{ item.item.name }}</td>
+                                            <td><input type="checkbox" name="checked_miscellaneous_{{ item.id }}" {% if item.checked %}checked{% endif %}></td>
+                                            <td><input type="checkbox" name="repair_miscellaneous_{{ item.id }}" {% if item.repair %}checked{% endif %}></td>
+                                            <td><input type="checkbox" name="replacement_miscellaneous_{{ item.id }}" {% if item.replacement %}checked{% endif %}></td>
+                                            <td><textarea class="form-control" name="remark_miscellaneous_{{ item.id }}"
+                                                    rows="2" placeholder="Remark">{{ item.remark }}</textarea></td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 8: Wastewater Parameters -->
+                    <div class="step step-8" style="display:none;">
+                        <div class="container-fluid">
+                            <h2>WASTEWATER PARAMETERS</h2>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Water Parameter</th>
+                                            <th>Checked</th>
+                                            <th>Repair</th>
+                                            <th>Rep.</th>
+                                            <th>Remark</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for parameter in wastewater_parameters %}
+                                        <tr>
+                                            <td>{{ parameter.parameter.name }}</td>
+                                            <td><input type="checkbox" name="checked_wastewater_{{ parameter.id }}" {% if parameter.checked %}checked{% endif %}></td>
+                                            <td><input type="checkbox" name="repair_wastewater_{{ parameter.id }}" {% if parameter.repair %}checked{% endif %}></td>
+                                            <td><input type="checkbox" name="replacement_wastewater_{{ parameter.id }}"
+                                                    {% if parameter.replacement %}checked{% endif %}></td>
+                                            <td><textarea class="form-control"
+                                                    name="remark_wastewater_{{ parameter.id }}" rows="2"
+                                                    placeholder="Remark">{{ parameter.remark }}</textarea></td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 9: Machine Run Times -->
+                    <div class="step step-9" style="display:none;">
+                        <div class="container-fluid">
+                            <h2>MACHINE RUN TIMES</h2>
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="machineRunTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Run Type</th>
+                                            <th>Run</th>
+                                            <th>End</th>
+                                            <th>Ch.</th>
+                                            <th>P</th>
+                                            <th>F</th>
+                                            <th>Remark</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="runCycleRows">
+                                        {% for run in machine_runs %}
+                                        <tr>
+                                            <td>{{ run.run_type }}</td>
+                                            <td><input type="time" class="form-control" name="run_time_{{ run.id }}"
+                                                    value="{{ run.run_time|time:'H:i' }}"></td>
+                                            <td><input type="time" class="form-control" name="end_time_{{ run.id }}"
+                                                    value="{{ run.end_time|time:'H:i' }}"></td>
+                                            <td><input type="checkbox" class="form-check-input"
+                                                    name="checked_run_{{ run.id }}" {% if run.checked %}checked{% endif %}></td>
+                                            <td><input type="checkbox" class="form-check-input"
+                                                    name="pass_run_{{ run.id }}" {% if run.pass_status %}checked{% endif %}></td>
+                                            <td><input type="checkbox" class="form-check-input"
+                                                    name="fail_run_{{ run.id }}" {% if run.fail_status %}checked{% endif %}></td>
+                                            <td><textarea class="form-control" name="remark_run_{{ run.id }}" rows="2"
+                                                    placeholder="Remark">{{ run.remark }}</textarea></td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                                <button type="button" class="btn btn-sm btn-primary mt-2" onclick="addMachineRunRow()">+
+                                    Add More Run</button>
+                            </div>
+                            <!-- Hidden input to track count of NEW rows for backend iteration -->
+                            <input type="hidden" name="new_machine_run_count" id="newMachineRunCount" value="0">
+
+                            <script>
+                                function addMachineRunRow() {
+                                    const tbody = document.getElementById('runCycleRows');
+                                    const countInput = document.getElementById('newMachineRunCount');
+                                    let count = parseInt(countInput.value) + 1;
+                                    countInput.value = count;
+
+                                    const tr = document.createElement('tr');
+                                    tr.innerHTML = `
+                                        <td><input type="text" class="form-control" name="new_run_type_${count}" placeholder="Type"></td>
+                                        <td><input type="time" class="form-control" name="new_run_time_${count}"></td>
+                                        <td><input type="time" class="form-control" name="new_end_time_${count}"></td>
+                                        <td><input type="checkbox" class="form-check-input" name="new_checked_run_${count}"></td>
+                                        <td><input type="checkbox" class="form-check-input" name="new_pass_run_${count}"></td>
+                                        <td><input type="checkbox" class="form-check-input" name="new_fail_run_${count}"></td>
+                                        <td><textarea class="form-control" name="new_remark_run_${count}" rows="2" placeholder="Remark"></textarea></td>
+                                    `;
+                                    tbody.appendChild(tr);
+
+                                    // Trigger auto-save on change for new elements
+                                    tr.querySelectorAll('input, textarea').forEach(el => {
+                                        el.addEventListener('change', () => {
+                                            if (typeof autoSaveDraft === 'function') {
+                                                clearTimeout(window.saveTimeout);
+                                                window.saveTimeout = setTimeout(() => autoSaveDraft(false), 2000);
+                                            }
+                                        });
+                                    });
+                                }
+                            </script>
+                            <input type="hidden" name="run_cycle_count" id="runCycleCount"
+                                value="{{ machine_runs|length }}">
+                        </div>
+                    </div>
+
+                    <!-- Step 10: Tools Kits -->
+                    <div class="step step-10" style="display:none;">
+                        <div class="container-fluid">
+                            <h2>TOOLS KITS</h2>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Tools Name</th>
+                                            <th>Qty</th>
+                                            <th>Remark</th>
+                                            <th>Taken</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for tool in tools %}
+                                        <tr>
+                                            <td>{{ tool.tool.name }}</td>
+                                            <td><input type="number" name="quantity_{{ tool.id }}" class="form-control"
+                                                    value="{{ tool.quantity }}" placeholder="Qty"></td>
+                                            <td><input type="text" name="remark_tools_{{ tool.id }}"
+                                                    class="form-control" value="{{ tool.remark }}" placeholder="Remark">
+                                            </td>
+                                            <td><input type="checkbox" name="taken_status_{{ tool.id }}" {% if tool.taken_status %}checked{% endif %}></td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 11: Other Remarks -->
+                    <div class="step step-11" style="display:none;">
+                        <div class="container-fluid">
+                            <h2>OTHER REMARKS</h2>
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="remarks-table">
+                                    <tbody>
+                                        {% if service_report.other_remarks %} {% with remarks=service_report.other_remarks|split:", " %}
+                                        {% for remark in remarks %}
+                                        <tr>
+                                            <td>{{ forloop.counter }}</td>
+                                            <td><textarea class="form-control" name="remark_orm_{{ forloop.counter }}"
+                                                    rows="2" placeholder="Remark">{{ remark }}</textarea></td>
+                                        </tr>
+                                        {% endfor %}
+                                        {% endwith %}
+                                        {% else %}
+                                        <tr>
+                                            <td>1</td>
+                                            <td><textarea class="form-control" name="remark_orm_1" rows="2"
+                                                    placeholder="Enter remark"></textarea></td>
+                                        </tr>
+                                        <tr>
+                                            <td>2</td>
+                                            <td><textarea class="form-control" name="remark_orm_2" rows="2"
+                                                    placeholder="Enter remark"></textarea></td>
+                                        </tr>
+                                        <tr>
+                                            <td>3</td>
+                                            <td><textarea class="form-control" name="remark_orm_3" rows="2"
+                                                    placeholder="Enter remark"></textarea></td>
+                                        </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Step 12: Spares Details -->
+                    <div class="step step-12" style="display:none;">
+                        <div class="container-fluid">
+                            <h2>SPARES DETAILS</h2>
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="spares-table">
+                                    <tbody>
+                                        {% if service_report.spares_details %} {% with spares=service_report.spares_details|split:", " %}
+                                        {% for spare in spares %}
+                                        <tr>
+                                            <td>{{ forloop.counter }}</td>
+                                            <td><textarea class="form-control" name="spare_{{ forloop.counter }}"
+                                                    rows="2" placeholder="Enter spare details">{{ spare }}</textarea>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                        {% endwith %}
+                                        {% else %}
+                                        <tr>
+                                            <td>1</td>
+                                            <td><textarea class="form-control" name="spare_1" rows="2"
+                                                    placeholder="Enter spare details"></textarea></td>
+                                        </tr>
+                                        <tr>
+                                            <td>2</td>
+                                            <td><textarea class="form-control" name="spare_2" rows="2"
+                                                    placeholder="Enter spare details"></textarea></td>
+                                        </tr>
+                                        <tr>
+                                            <td>3</td>
+                                            <td><textarea class="form-control" name="spare_3" rows="2"
+                                                    placeholder="Enter spare details"></textarea></td>
+                                        </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Step 13: Attachments & Signatures -->
+                    <div class="step step-13" style="display:none;">
+                        <div class="container-fluid">
+                            <h2>ATTACHMENTS & SIGNATURES</h2>
+
+                            <h4>Existing Attachments</h4>
+                            <div class="row mb-4">
+                                {% for file in existing_attachments %}
+                                <div class="col-6 col-md-3 mb-3">
+                                    <div class="card h-100 attachment-card">
+                                        <img src="{{ file.file.url }}" class="card-img-top" alt="Attachment"
+                                            style="height: 120px; object-fit: cover;">
+                                        <div class="card-body p-2 text-center">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="remove_attachment"
+                                                    value="{{ file.id }}" id="remove_{{ file.id }}">
+                                                <label class="form-check-label small"
+                                                    for="remove_{{ file.id }}">Remove</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label font-weight-bold">Upload More Files</label>
+                                <input class="form-control" type="file" name="new_attachment" multiple>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-4">
+                                    <div class="card shadow-sm">
+                                        <div class="card-header bg-light">
+                                            <h5>Service Person Signature</h5>
+                                        </div>
+                                        <div class="card-body p-2 text-center">
+                                            <canvas id="servicePersonSignature" class="signature-pad"
+                                                style="border: 1px solid #ddd; width: 100%; height: 200px; background: #fff;"></canvas>
+                                            <div class="mt-2">
+                                                <button type="button" class="btn btn-outline-danger btn-sm"
+                                                    onclick="clearCanvas('servicePersonSignature')">Clear</button>
+                                            </div>
+                                            <input type="hidden" id="servicePersonSignatureData"
+                                                name="service_person_signature"
+                                                value="{{ service_report.service_person_signature }}">
+                                            <input type="text" class="form-control mt-2" name="service_person_name"
+                                                value="{{ service_report.service_person_name }}"
+                                                placeholder="Service Person Name">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-4">
+                                    <div class="card shadow-sm">
+                                        <div class="card-header bg-light">
+                                            <h5>Client Signature</h5>
+                                        </div>
+                                        <div class="card-body p-2 text-center">
+                                            <canvas id="clientSignature" class="signature-pad"
+                                                style="border: 1px solid #ddd; width: 100%; height: 200px; background: #fff;"></canvas>
+                                            <div class="mt-2">
+                                                <button type="button" class="btn btn-outline-danger btn-sm"
+                                                    onclick="clearCanvas('clientSignature')">Clear</button>
+                                            </div>
+                                            <input type="hidden" id="clientSignatureData" name="client_signature"
+                                                value="{{ service_report.client_signature }}">
+                                            <input type="text" class="form-control mt-2" name="client_name"
+                                                value="{{ service_report.client_name }}" placeholder="Client Name">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="wizard-footer m-0 border-top-0">
+                        <button type="button" class="btn btn-secondary prev-step"> Back</button>
+                        <div class="d-flex gap-2">
+                            <button type="button" id="save-signature-return-btn" class="btn btn-primary"
+                                style="display: none;">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                    class="icon icon-tabler icon-tabler-device-floppy" width="24" height="24"
+                                    viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2">
+                                    </path>
+                                    <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
+                                    <path d="M14 4l0 4l-6 0l0 -4"></path>
+                                </svg>
+                                Save Progress & Return
+                            </button>
+                            <button type="submit" id="submit-btn" class="btn btn-success" style="display: none;">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-check"
+                                    width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                    fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M5 12l5 5l10 -10" />
+                                </svg>
+                                Submit Final Report
+                            </button>
+                        </div>
+                    </div>
+                </div> <!-- End step-13 -->
+
+                <!-- Global Wizard Footer for navigation -->
+                <div class="wizard-footer mt-4" id="wizard-navigation">
+                    <button type="button" class="btn btn-secondary prev-step" style="visibility: hidden;">Back</button>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-primary next-step">Next Step </button>
+                    </div>
+                </div>
+            </form>
         </div>
-
-        <!-- Submit Buttons -->
-        <div class="container-fluid">
-            <div class="card-footer">
-                <button type="submit" class="btn btn-primary">Save Changes</button>
-                <button type="reset" class="btn btn-secondary">Reset</button>
+        <div id="loading-overlay"
+            style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.95); z-index: 10000; justify-content: center; align-items: center; flex-direction: column; transition: all 0.3s ease;">
+            <div class="text-center p-4" style="max-width: 400px; width: 90%;">
+                <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
+                <h4 id="status-text" class="mb-3 font-weight-bold">Processing...</h4>
+                <div class="progress mb-2" style="height: 10px; border-radius: 5px;">
+                    <div id="upload-progress-bar"
+                        class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar"
+                        style="width: 0%"></div>
+                </div>
+                <small id="progress-percent" class="text-muted font-weight-bold">0% Completed</small>
             </div>
         </div>
 
-    </form>
-</div>
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const form = document.getElementById("my-form");
+                const steps = document.querySelectorAll(".step");
+                const wizardSteps = document.querySelectorAll(".wizard-step");
+                const currentStepNumLabel = document.getElementById("current-step-num");
+                const wizardNavigation = document.getElementById("wizard-navigation");
+                // Removed redundant querying of prev/next buttons here if not needed globally, 
+                // but kept for safety if logic uses them.
+                const currentReportId = "{{ service_report.id }}";
 
-<script>
+                let currentStep = 0;
 
-    // Ensure the canvas is initialized with existing signature data when editing
-    initializeCanvas('servicePersonSignature');
-    initializeCanvas('clientSignature');
+                // ─────────────────────────────────────────────────────────────────
+                // 1. WIZARD NAVIGATION
+                // ─────────────────────────────────────────────────────────────────
 
-    function initializeCanvas(canvasId) {
-        const canvas = document.getElementById(canvasId);
-        const ctx = canvas.getContext("2d");
-    
-        // Resize the canvas to match its display size
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
-    
-        let drawing = false;
-    
-        // Start drawing
-        canvas.addEventListener("mousedown", startDrawing);
-        canvas.addEventListener("touchstart", startDrawing);
-    
-        // Draw on the canvas
-        canvas.addEventListener("mousemove", draw);
-        canvas.addEventListener("touchmove", draw);
-    
-        // Stop drawing
-        canvas.addEventListener("mouseup", stopDrawing);
-        canvas.addEventListener("mouseout", stopDrawing);
-        canvas.addEventListener("touchend", stopDrawing);
-    
-        // Clear the canvas
-        document.querySelector(`button[onclick="clearCanvas('${canvasId}')"]`).addEventListener("click", function () {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            const hiddenInput = document.getElementById(`${canvasId}Data`);
-            if (hiddenInput) hiddenInput.value = ""; // Clear hidden input value
-        });
-    
-        function startDrawing(event) {
-            drawing = true;
-            ctx.beginPath();
-            const pos = getPosition(event);
-            ctx.moveTo(pos.x, pos.y);
-        }
-    
-        function draw(event) {
-            if (!drawing) return;
-            const pos = getPosition(event);
-            ctx.lineTo(pos.x, pos.y);
-            ctx.strokeStyle = "black"; // Drawing color
-            ctx.lineWidth = 2; // Line width
-            ctx.stroke();
-        }
-    
-        function stopDrawing() {
-            drawing = false;
-    
-            // Save the canvas data to the hidden input
-            const hiddenInput = document.getElementById(`${canvasId}Data`);
-            if (hiddenInput) hiddenInput.value = canvas.toDataURL();
-        }
-    
-        function getPosition(event) {
-            const rect = canvas.getBoundingClientRect();
-            const touch = event.touches ? event.touches[0] : null;
-    
-            return {
-                x: (touch ? touch.clientX : event.clientX) - rect.left,
-                y: (touch ? touch.clientY : event.clientY) - rect.top,
-            };
-        }
-    }
+                function updateWizardProgress(index) {
+                    wizardSteps.forEach((step, i) => {
+                        step.classList.remove("active", "completed");
+                        if (i === index) {
+                            step.classList.add("active");
+                        } else if (i < index) {
+                            step.classList.add("completed");
+                            const stepNum = step.querySelector(".step-num");
+                            if (stepNum) stepNum.innerHTML = "✓";
+                        } else {
+                            const stepNum = step.querySelector(".step-num");
+                            if (stepNum) stepNum.innerHTML = i + 1;
+                        }
+                    });
 
+                    if (currentStepNumLabel) currentStepNumLabel.textContent = index + 1;
 
-</script>
-{% endblock content %}
+                    // if (prevBtn) prevBtn.style.visibility = index === 0 ? "hidden" : "visible"; // This line is now handled by the new logic below
+                    // if (wizardNavigation) { // This block is now handled by the new logic below
+                    //     wizardNavigation.style.display = (index === steps.length - 1) ? "none" : "flex";
+                    // }
+                }
+
+                function showStep(index) {
+                    steps.forEach((step, i) => {
+                        step.classList.toggle("active", i === index);
+                        step.style.display = (i === index) ? "block" : "none";
+                    });
+                    currentStep = index;
+                    updateWizardProgress(index);
+
+                    // Robustly manage global navigation visibility
+                    if (wizardNavigation) {
+                        if (index === steps.length - 1) {
+                            wizardNavigation.style.setProperty("display", "none", "important");
+                        } else {
+                            wizardNavigation.style.display = "flex";
+                            // Manage Back button visibility in global footer
+                            const globalPrevBtn = wizardNavigation.querySelector(".prev-step");
+                            if (globalPrevBtn) {
+                                globalPrevBtn.style.visibility = index === 0 ? "hidden" : "visible";
+                            }
+                        }
+                    }
+
+                    // Initialize signatures if on last step
+                    if (index === steps.length - 1) {
+                        setTimeout(initSignatures, 50);
+
+                        // Check if all previous steps are valid to show Submit button
+                        let allFieldsFilled = true;
+                        for (let i = 0; i < steps.length - 1; i++) {
+                            if (!validateStep(i, false)) { // Silent check
+                                allFieldsFilled = false;
+                                break;
+                            }
+                        }
+
+                        const submitBtn = document.getElementById("submit-btn");
+                        const saveReturnBtn = document.getElementById("save-signature-return-btn");
+                        if (allFieldsFilled) {
+                            if (submitBtn) submitBtn.style.display = "inline-flex";
+                            if (saveReturnBtn) saveReturnBtn.style.display = "none";
+                        } else {
+                            if (submitBtn) submitBtn.style.display = "none";
+                            if (saveReturnBtn) saveReturnBtn.style.display = "inline-flex";
+                        }
+                    }
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                }
+
+                function validateStep(index, showUI = true) {
+                    const currentStepEl = steps[index];
+                    const requiredFields = currentStepEl.querySelectorAll("[required]");
+                    let isValid = true;
+
+                    requiredFields.forEach(field => {
+                        if (!field.value) {
+                            if (showUI) field.classList.add("is-invalid");
+                            isValid = false;
+                        } else if (field.name === "site" && (field.value === "" || field.value === "None")) {
+                            if (showUI) field.classList.add("is-invalid");
+                            isValid = false;
+                        } else {
+                            if (showUI) field.classList.remove("is-invalid");
+                        }
+                    });
+
+                    if (!isValid && showUI) {
+                        const firstInvalid = currentStepEl.querySelector(".is-invalid");
+                        if (firstInvalid) firstInvalid.focus();
+                    }
+                    return isValid;
+                }
+
+                document.addEventListener("click", function (e) {
+                    if (e.target.closest("#save-signature-return-btn")) {
+                        // Force a draft save immediately
+                        if (typeof window.autoSaveDraft === 'function') {
+                            window.autoSaveDraft();
+                            // Visual feedback
+                            const btn = e.target.closest("#save-signature-return-btn");
+                            const originalContent = btn.innerHTML;
+                            btn.innerHTML = `
+                                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                Saving draft...
+                            `;
+                            btn.disabled = true;
+
+                            setTimeout(() => {
+                                btn.innerHTML = originalContent;
+                                btn.disabled = false;
+                                window.location.href = "{% url 'servicereport' %}";
+                            }, 1000);
+                        } else {
+                            window.location.href = "{% url 'servicereport' %}";
+                        }
+                        return;
+                    }
+
+                    if (e.target.closest(".next-step")) {
+                        if (validateStep(currentStep)) {
+                            if (currentStep < steps.length - 1) showStep(currentStep + 1);
+                        }
+                    }
+                    if (e.target.closest(".prev-step")) {
+                        if (currentStep > 0) showStep(currentStep - 1);
+                    }
+                    if (e.target.closest(".wizard-step")) {
+                        const targetStep = parseInt(e.target.closest(".wizard-step").dataset.step) - 1;
+                        if (targetStep < currentStep || targetStep === steps.length - 1) {
+                            showStep(targetStep);
+                        } else {
+                            if (validateStep(currentStep)) showStep(targetStep);
+                        }
+                    }
+                });
+
+                window.resetForm = function () {
+                    if (confirm("Are you sure you want to reset all changes?")) {
+                        form.reset();
+                        showStep(0);
+                    }
+                };
+
+                // ─────────────────────────────────────────────────────────────────
+                // 2. AUTO-SAVE & SAVE-ON-EXIT
+                // ─────────────────────────────────────────────────────────────────
+
+                let isExitSaveQueued = false;
+
+                function autoSaveDraft(isExiting = false) {
+                    if (form.dataset.submitted === "true") return;
+
+                    // Prevent duplicate exit saves (e.g. beforeunload + pagehide firing together)
+                    if (isExiting) {
+                        if (isExitSaveQueued) return;
+                        isExitSaveQueued = true;
+                    }
+
+                    const formData = new FormData(form);
+                    // Skip cleanup of files for exit saves to ensure speed/stability with Beacon? 
+                    // Actually, Beacon handles FormData well, but minimizing payload is still good.
+                    const fileInputs = form.querySelectorAll('input[type="file"]');
+                    fileInputs.forEach(input => formData.delete(input.name));
+
+                    formData.set("report_id", currentReportId);
+                    const url = "{% url 'service_report_draft' %}";
+
+                    if (isExiting && navigator.sendBeacon) {
+                        // sendBeacon automatically sends FormData as multipart/form-data.
+                        // It doesn't support custom headers (X-CSRFToken), BUT Django accepts 
+                        // csrfmiddlewaretoken in the POST body, which FormData already contains 
+                        // (assuming {% csrf_token %} is in the form, which we verified).
+                        const success = navigator.sendBeacon(url, formData);
+                        if (success) return; // Successfully queued
+                        // If beacon queue full/failed, fall back to fetch keepalive
+                    }
+
+                    const fetchOptions = {
+                        method: "POST",
+                        headers: { "X-CSRFToken": "{{ csrf_token }}" },
+                        body: formData,
+                    };
+
+                    if (isExiting) fetchOptions.keepalive = true;
+
+                    fetch(url, fetchOptions)
+                        .catch(err => { if (!isExiting) console.warn("Auto-save failed", err); });
+                }
+
+                setInterval(() => autoSaveDraft(false), 10000);
+
+                // Robust save triggers
+                const saveOnExit = () => {
+                    if (document.visibilityState === 'hidden') {
+                        // Treat hiding (tab switch) as an exit-like event but allow future saves
+                        isExitSaveQueued = false;
+                        autoSaveDraft(true);
+                    }
+                };
+
+                // Use pagehide as the primary unload trigger (covers close, refresh, nav)
+                window.addEventListener("pagehide", () => autoSaveDraft(true));
+
+                // Keep visibilitychange for tab switching
+                document.addEventListener("visibilitychange", saveOnExit);
+
+                // 4. INSTANT SAVE ON CHANGE (DEBOUNCED) & NAVIGATION
+
+                let saveTimeout;
+                form.addEventListener("change", () => {
+                    clearTimeout(saveTimeout);
+                    saveTimeout = setTimeout(() => autoSaveDraft(false), 2000); // Save 2s after any change
+                    // Mark as 'dirty' could be added here if needed, but we just save frequently.
+                });
+
+                // Save when clicking Wizard "Back" or "Next" buttons to be extra safe
+                document.querySelectorAll(".prev-step, .next-step").forEach(btn => {
+                    btn.addEventListener("click", () => {
+                        // Small delay to let validation/native click handlers finish
+                        setTimeout(() => autoSaveDraft(false), 100);
+                    });
+                });
+
+                // ─────────────────────────────────────────────────────────────────
+                // 3. IMAGE COMPRESSION & SUBMISSION
+                // ─────────────────────────────────────────────────────────────────
+
+                async function compressImage(file) {
+                    if (!file.type.startsWith('image/')) return file;
+                    return new Promise((resolve) => {
+                        const img = new Image();
+                        const url = URL.createObjectURL(file);
+                        img.onload = () => {
+                            URL.revokeObjectURL(url);
+                            const canvas = document.createElement('canvas');
+                            let width = img.width, height = img.height;
+                            const MAX_SIZE = 1200;
+                            if (width > height) {
+                                if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
+                            } else {
+                                if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
+                            }
+                            canvas.width = width; canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+                            canvas.toBlob((blob) => {
+                                if (!blob) { resolve(file); return; }
+                                try {
+                                    resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() }));
+                                } catch (e) { resolve(blob); }
+                            }, 'image/jpeg', 0.8);
+                        };
+                        img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+                        img.src = url;
+                    });
+                }
+
+                form.addEventListener("submit", async (e) => {
+                    e.preventDefault();
+                    if (form.dataset.submitted === "true") return;
+
+                    const overlay = document.getElementById("loading-overlay");
+                    const progressBar = document.getElementById("upload-progress-bar");
+                    const statusText = document.getElementById("status-text");
+
+                    try {
+                        if (overlay) overlay.style.display = "flex";
+                        if (statusText) statusText.innerText = "Preparing Update...";
+                        form.dataset.submitted = "true";
+                        form.querySelectorAll("button").forEach(btn => btn.disabled = true);
+
+                        const finalFormData = new FormData();
+                        const rawFormData = new FormData(form);
+                        const fileInputs = form.querySelectorAll('input[type="file"]');
+                        const fileFieldNames = Array.from(fileInputs).map(i => i.name);
+
+                        for (let [key, value] of rawFormData.entries()) {
+                            if (!fileFieldNames.includes(key)) finalFormData.append(key, value);
+                        }
+
+                        let totalFiles = 0;
+                        fileInputs.forEach(i => totalFiles += i.files.length);
+                        let filesDone = 0;
+
+                        for (let input of fileInputs) {
+                            if (input.files.length > 0) {
+                                for (let f of input.files) {
+                                    filesDone++;
+                                    if (statusText) statusText.innerText = `Optimizing Photo ${filesDone}/${totalFiles}...`;
+                                    if (f.type.startsWith('image/')) {
+                                        const compressed = await compressImage(f);
+                                        finalFormData.append(input.name, compressed, f.name);
+                                    } else {
+                                        finalFormData.append(input.name, f);
+                                    }
+                                }
+                            }
+                        }
+
+                        if (statusText) statusText.innerText = "Saving Changes...";
+                        const xhr = new XMLHttpRequest();
+                        xhr.open("POST", form.getAttribute('action') || window.location.href, true);
+                        xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+
+                        xhr.upload.onprogress = (ev) => {
+                            if (ev.lengthComputable) {
+                                const percent = Math.round((ev.loaded / ev.total) * 90);
+                                if (progressBar) progressBar.style.width = percent + "%";
+                                if (statusText) statusText.innerText = `Uploading (${percent}%)...`;
+                            }
+                        };
+
+                        xhr.onload = () => {
+                            if (xhr.status >= 200 && xhr.status < 400) {
+                                if (statusText) statusText.innerText = "Report Updated!";
+                                if (progressBar) progressBar.style.width = "100%";
+                                setTimeout(() => window.location.href = "{% url 'generalreportsnew' %}", 800);
+                            } else {
+                                alert("Error saving report. Status: " + xhr.status);
+                                resetSubmit();
+                            }
+                        };
+                        xhr.onerror = () => { alert("Network error."); resetSubmit(); };
+                        xhr.send(finalFormData);
+
+                    } catch (err) {
+                        alert("Error: " + err.message);
+                        resetSubmit();
+                    }
+
+                    function resetSubmit() {
+                        form.dataset.submitted = "false";
+                        form.querySelectorAll("button").forEach(btn => btn.disabled = false);
+                        if (overlay) overlay.style.display = "none";
+                    }
+                });
+
+                // ─────────────────────────────────────────────────────────────────
+                // 4. HELPERS (ZONES, SIGNATURES)
+                // ─────────────────────────────────────────────────────────────────
+
+                window.updateSites = function () {
+                    const zoneId = document.getElementById('select-zone').value;
+                    const siteDropdown = document.getElementById('select-site');
+                    if (!siteDropdown) return;
+                    siteDropdown.innerHTML = '<option value="" disabled selected>Loading...</option>';
+                    fetch(`/get-sites/?zone_id=${zoneId}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            siteDropdown.innerHTML = '<option value="" disabled>Select Site</option>';
+                            data.forEach(site => {
+                                const opt = document.createElement("option");
+                                opt.value = site.id; opt.textContent = site.name;
+                                siteDropdown.appendChild(opt);
+                            });
+                        });
+                };
+
+                function initializeCanvas(canvasId) {
+                    const canvas = document.getElementById(canvasId);
+                    if (!canvas || canvas.dataset.initialized) return;
+                    const ctx = canvas.getContext("2d");
+                    const input = document.getElementById(`${canvasId}Data`);
+
+                    canvas.width = canvas.offsetWidth;
+                    canvas.height = canvas.offsetHeight;
+
+                    if (input && input.value) {
+                        const img = new Image();
+                        img.src = input.value;
+                        img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    }
+
+                    let drawing = false;
+                    const getPos = (e) => {
+                        const r = canvas.getBoundingClientRect();
+                        const t = e.touches ? e.touches[0] : e;
+                        return { x: t.clientX - r.left, y: t.clientY - r.top };
+                    };
+
+                    const start = (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); };
+                    const draw = (e) => {
+                        if (!drawing) return;
+                        const p = getPos(e);
+                        ctx.lineTo(p.x, p.y); ctx.strokeStyle = "#000"; ctx.lineWidth = 2; ctx.stroke();
+                    };
+                    const stop = () => { drawing = false; input.value = canvas.toDataURL(); };
+
+                    canvas.addEventListener("mousedown", start);
+                    canvas.addEventListener("mousemove", draw);
+                    canvas.addEventListener("mouseup", stop);
+                    canvas.addEventListener("touchstart", e => { e.preventDefault(); start(e); }, { passive: false });
+                    canvas.addEventListener("touchmove", e => { e.preventDefault(); draw(e); }, { passive: false });
+                    canvas.addEventListener("touchend", stop);
+                    canvas.dataset.initialized = "true";
+                }
+
+                function initSignatures() {
+                    initializeCanvas("servicePersonSignature");
+                    initializeCanvas("clientSignature");
+                }
+
+                window.clearCanvas = function (id) {
+                    const canvas = document.getElementById(id);
+                    if (!canvas) return;
+                    const ctx = canvas.getContext("2d");
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const input = document.getElementById(`${id}Data`);
+                    if (input) input.value = "";
+                };
+
+                // Init first step
+                showStep(0);
+            });
+        </script>
+        {% endblock content %}

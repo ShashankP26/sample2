@@ -12,17 +12,75 @@
                     Export
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="exportDropdown">
-                    <li><a class="dropdown-item" href="{% url 'transaction' %}?export=csv">Export CSV</a></li>
-                    <li><a class="dropdown-item" href="{% url 'transaction' %}?export=xlsx">Export XLSX</a></li>
-                    <li><a class="dropdown-item" href="{% url 'transaction' %}?export=pdf">Export PDF</a></li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'transaction' %}?{{ request.GET.urlencode }}&export=csv">
+                          Export CSV
+                        </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item" href="{% url 'transaction' %}?{{ request.GET.urlencode }}&export=xlsx">
+                          Export XLSX
+                        </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item" href="{% url 'transaction' %}?{{ request.GET.urlencode }}&export=pdf">
+                          Export PDF
+                        </a>
+                      </li>
+                      <!-- Modal Export Button -->
+                        <li>
+                            <button class="dropdown-item text-primary" data-bs-toggle="modal" data-bs-target="#customExportModal">
+                            📅 Custom Date Range
+                            </button>
+                        </li>
                 </ul>
+                <div class="modal fade" id="customExportModal" tabindex="-1" aria-labelledby="customExportModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                      <form method="get" action="{% url 'transaction' %}" class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="customExportModalLabel">Export by Filters</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                  
+                        <div class="modal-body">
+                          <!-- Format dropdown -->
+                          <div class="mb-3">
+                            <label for="exportFormat" class="form-label">Select Format</label>
+                            <select name="export" class="form-select" id="exportFormat" required>
+                              <option value="xlsx">Excel (XLSX)</option>
+                              <option value="csv">CSV</option>
+                              <option value="pdf">PDF</option>
+                            </select>
+                          </div>
+                  
+                          <!-- Date filters -->
+                          <div class="mb-3">
+                            <label for="from" class="form-label">From Date</label>
+                            <input type="date" name="transaction_date_from" class="form-control" required>
+                          </div>
+                  
+                          <div class="mb-3">
+                            <label for="to" class="form-label">To Date</label>
+                            <input type="date" name="transaction_date_to" class="form-control" required>
+                          </div>
+                  
+                          <!-- Item Type filter -->
+                          
+                        </div>
+                  
+                        <div class="modal-footer">
+                          <button type="submit" class="btn btn-success">Export</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
             </div>
 
             {% if user.is_staff %}
             <!-- User Dropdown for Admin -->
             <form method="get" class="d-flex">
                 <div class="dropdown">
-                    <a href="#" class="btn btn-primary dropdown-toggle d-flex align-items-center gap-2 justify-content-center" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="padding: 6px 12px;">
+                    <a href="#" class="btn btn-primary dropdown-toggle d-flex align-items-center gap-2 justify-content-center" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false" >
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color: white" class="icon icon-tabler icon-tabler-user">
                             <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                             <path d="M12 2a5 5 0 1 1 -5 5l.005 -.217a5 5 0 0 1 4.995 -4.783z" fill="white" />
@@ -32,7 +90,7 @@
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="userDropdown">
                         <li>
-                            <a class="dropdown-item" href="?user_id=" style="height: 20px;">--Select User--</a>
+                            <a class="dropdown-item" href="?user_id=" >--Select User--</a>
                         </li>
                         {% for user in users %}
                             <li>

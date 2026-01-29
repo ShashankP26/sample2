@@ -144,7 +144,7 @@ from django.contrib.auth.models import User
 class CashVoucherForm(forms.ModelForm):
     class Meta:
         model = CashVoucher
-        fields = ['voucher_number', 'amount', 'paid_to', 'item_name', 'transaction_date','verified_at']
+        fields = ['voucher_number', 'amount', 'paid_to', 'item_name', 'transaction_date','verified_at','proof_photo']
 
     # Accept the user as an additional argument when initializing the form
     def __init__(self, *args, user=None, **kwargs):

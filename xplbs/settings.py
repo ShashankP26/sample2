@@ -30,27 +30,33 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'django_extensions',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'app',
     'apage',
     'website',
     'Riva',		
+   
 ]
 
 MIDDLEWARE = [
+    
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',  # Make sure this is included
+    # 'website.middleware.MobileTokenMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
+
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
 
 ]
 
@@ -128,7 +134,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 
 # Adding dist directory for static files
 STATICFILES_DIRS = [
@@ -163,8 +169,23 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'sudeepg2020@gmail.com'
-EMAIL_HOST_PASSWORD = 'cpgk diwz yfnq znwb'
-DEFAULT_FROM_EMAIL = 'sudeepg2020@gmail.com'
+EMAIL_HOST_USER = 'xpredictdigitalcontrols@gmail.com'
+EMAIL_HOST_PASSWORD = 'jgpm qjcd ttmr xmpz'
+DEFAULT_FROM_EMAIL = 'xpredictdigitalcontrols@gmail.com'
+
+
+
+SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_HTTPONLY = True
+
+CSRF_COOKIE_SECURE = False
+CSRF_COOKIE_SAMESITE = "Lax"
+
+
+
+FCM_SERVICE_ACCOUNT_FILE = "/Users/shashank/Downloads/sample2/sample/xplbs/xentrix-ed813-firebase-adminsdk-fbsvc-b42147e8c4.json"
+
+
 
 

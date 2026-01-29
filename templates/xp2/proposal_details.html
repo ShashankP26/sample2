@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content  %}
 <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta14/dist/js/tabler.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -9,7 +10,7 @@
     
         <div class="container-fluid mt-5">
             
-            <h1>Proposal Details</h1>
+            <h2>Proposal Details</h2>
             <h2>Enquiry ID: {{ enquiry_id }}</h2>
             <h3>Quotation Number: <input type="text" value="{{ quotation_number }}" class="form-control" readonly></h3>
 
@@ -28,20 +29,22 @@
             
 
             <h2 class="mt-4">Site Information</h2>
-            <ul>
+            <ul id="siteInfoSection">
                 {% for item in site %}
                 <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="site_select_info_{{ forloop.counter }}" class="form-check-input me-2" value="1">
+                    <input type="checkbox" name="site_select_info_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if item.is_selected %}checked{% endif %}>
                     <textarea name="site_info_{{ forloop.counter }}" class="form-control" rows="3">{{ item.info_text }}</textarea>
                 </li>
                 <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="site_select_standard_{{ forloop.counter }}" class="form-check-input me-2 mt-2" value="1">
+                    <input type="checkbox" name="site_select_standard_{{ forloop.counter }}" class="form-check-input me-2 mt-2" value="1" {% if item.is_selected_s %}checked{% endif %}>
                     <textarea name="site_standard_{{ forloop.counter }}" class="form-control" rows="3">{{ item.standard_text }}</textarea>
                 </li>
                 {% endfor %}
             </ul>
-            
-            <div class="table-responsive">
+
+
+<!-- Raw Sewage Characteristics Table (Dynamic Row Section) -->
+            <div class="table-responsive mt-4">
                 <table class="table table-bordered table-striped" id="table1">
                     <thead>
                         <tr>
@@ -57,7 +60,8 @@
                         <tr id="row_t1_{{ forloop.counter }}">
                             <td>
                                 <input type="hidden" name="select_row_t1_{{ forloop.counter }}" value="0">
-                                <input type="checkbox" class="select-row" name="select_row_t1_{{ forloop.counter }}" value="1" {% if t1.is_selected %}checked{% endif %} data-row="{{ forloop.counter }}"/>
+                                <input type="checkbox" class="select-row" name="select_row_t1_{{ forloop.counter }}" value="1"
+                                    {% if t1.is_selected %}checked{% endif %} data-row="{{ forloop.counter }}">
                             </td>
                             <td>
                                 <input type="text" name="sl_no_value_t1_{{ forloop.counter }}" value="{{ t1.sl_no }}" class="form-control">
@@ -76,9 +80,9 @@
                     </tbody>
                 </table>
             </div>
-
             <button type="button" class="btn btn-primary mt-3" onclick="addTable1Row()">Add Row</button>
             <button type="button" class="btn btn-danger mt-3" onclick="removeTable1Row()">Remove Row</button>
+
 
             <h2 class="mt-4">Treatment Processes and Purpose of Each Process in a Treatment System</h2>
             <div class="table-responsive">
@@ -95,13 +99,16 @@
                         <tr id="treatment_process_row_{{ forloop.counter }}">
                             <td>
                                 <input type="hidden" name="standard_select_{{ forloop.counter }}" value="0">
-                                <input type="checkbox" name="standard_select_{{ forloop.counter }}" value="1" class="form-check-input" {% if row.is_selected %}checked{% endif %}>
+                                <input type="checkbox" name="standard_select_{{ forloop.counter }}" value="1"
+                                    class="form-check-input" {% if row.is_selected %}checked{% endif %}>
                             </td>
                             <td>
-                                <input type="text" name="principal_purpose_{{ forloop.counter }}" value="{{ row.principal_purpose_unit_process }}" class="form-control">
+                                <input type="text" name="principal_purpose_{{ forloop.counter }}"
+                                    value="{{ row.principal_purpose_unit_process }}" class="form-control">
                             </td>
                             <td>
-                                <input type="text" name="unit_processes_{{ forloop.counter }}" value="{{ row.unit_processes }}" class="form-control">
+                                <input type="text" name="unit_processes_{{ forloop.counter }}"
+                                    value="{{ row.unit_processes }}" class="form-control">
                             </td>
                         </tr>
                         {% endfor %}
@@ -130,6 +137,7 @@
                 </li>
                 <br>
 
+
                 <h3><strong>HIDREC Features and Advantages:</strong></h3>
                 <li class="d-flex align-items-center mb-2">
                     <input type="checkbox" name="features_select_{{ forloop.counter }}" class="form-check-input me-2" value="1">
@@ -137,14 +145,17 @@
                 </li>
                 <br>
 
+
                 <h3><strong>Salient Features:</strong></h3>
                 <li class="d-flex align-items-center mb-2">
                     <input type="checkbox" name="salient_select_{{ forloop.counter }}" class="form-check-input me-2" value="1">
                     <textarea name="salient_{{ forloop.counter }}" class="form-control" rows="3">{{ product.salient_feat }}</textarea>
                 </li>
 
+
                 {% endfor %}
             </ul>
+
 
             <h2 class="mt-4">Requirement and Specifications</h2>
             <ul>
@@ -183,43 +194,52 @@
                 </table>
             </div>
 
+
             <button type="button" class="btn btn-primary mt-3" onclick="addSpecsRow()">Add Row</button>
             <button type="button" class="btn btn-danger mt-3" onclick="removeSpecsRow()">Remove Row</button>
 
 
+
             <h2 class="mt-4">Process Diagram</h2>
-            <ul>
+            <ul id="processDiagramSection">
                 {% for rq in req %}
+                <!-- Main text field for this diagram requirement -->
                 <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="process_diagram_{{ forloop.counter }}" class="form-check-input me-2" value="1">
+                    <input type="checkbox" name="process_diagram_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if rq.process_diagram_checked %}checked{% endif %}>
                     <textarea name="req_text_{{ forloop.counter }}" class="form-control" rows="3">{{ rq.req_text }}</textarea>
                 </li>
-                <br>
-                
+                <br />
 
+                <!-- Process Diagram 1 row -->
                 <li><strong>Process Diagram 1:</strong></li>
                 <li class="d-flex align-items-center mb-2">
-                    <!-- Checkbox to select Process Diagram 1 -->
-                    <input type="checkbox" name="process_diagram1_checked_{{ forloop.counter }}" class="form-check-input me-2" value="1">
-                    
-                    <!-- File input for uploading Process Diagram 1 -->
+                    <input type="checkbox" name="process_diagram1_checked_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if rq.process_diagram1_checked %}checked{% endif %}>
                     <input type="file" name="process_diagram1_url_{{ forloop.counter }}" class="form-control mt-2">
+                    {% if rq.process_diagram1_path %}
+                    <span class="ms-2">
+                        <a href="{% static rq.process_diagram1_path %}" target="_blank">View uploaded</a>
+                    </span>
+                    {% endif %}
                 </li>
-                
-                <br>
-                
+                <br/>
+
+                <!-- Process Diagram 2 row -->
                 <li><strong>Process Diagram 2:</strong></li>
                 <li class="d-flex align-items-center mb-2">
-                    <!-- Checkbox to select Process Diagram 2 -->
-                    <input type="checkbox" name="process_diagram2_checked_{{ forloop.counter }}" class="form-check-input me-2" value="1">
-                    
-                    <!-- File input for uploading Process Diagram 2 -->
+                    <input type="checkbox" name="process_diagram2_checked_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if rq.process_diagram2_checked %}checked{% endif %}>
                     <input type="file" name="process_diagram2_url_{{ forloop.counter }}" class="form-control mt-2">
-                </li> 
+                    {% if rq.process_diagram2_path %}
+                    <span class="ms-2">
+                        <a href="{% static rq.process_diagram2_path %}" target="_blank">View uploaded</a>
+                    </span>
+                    {% endif %}
+                </li>
                 <p class="text-danger">Note: Please upload two valid images to proceed.</p>
+                <hr>
                 {% endfor %}
             </ul>
-            
+
+
             <h2 class="mt-4">Process Description</h2>
             <h3>Output Treated Water Quality as per KSPCB</h3>
             <div class="table-responsive">
@@ -238,7 +258,8 @@
                         <tr id="output_row_{{ forloop.counter }}">
                             <td>
                                 <input type="hidden" name="select_row_op_{{ forloop.counter }}" value="0">
-                                <input type="checkbox" name="select_row_op_{{ forloop.counter }}" value="1" class="select-row" data-row="{{ forloop.counter }}" {% if item.output_data.is_checked %}checked{% endif %}>
+                                <input type="checkbox" name="select_row_op_{{ forloop.counter }}" value="1" class="select-row" data-row="{{ forloop.counter }}"
+                                    {% if item.output_data.is_checked %}checked{% endif %}>
                             </td>
                             <td>
                                 <input type="text" name="sl_no_value_op_{{ forloop.counter }}" value="{{ item.output_data.sl_no }}" class="form-control">
@@ -257,58 +278,64 @@
                     </tbody>
                 </table>
             </div>
+            <button type="button" class="btn btn-primary mt-3" onclick="addOutputRow()">Add Row</button>
+            <button type="button" class="btn btn-danger mt-3" onclick="removeOutputRow()">Remove Row</button>
+
+            <h2 class="mt-4">Process Description</h2>
             <ul>
                 {% for pro in process %}
-                <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="process_description_text_{{ forloop.counter }}" class="form-check-input me-2" value="1">
-                    <textarea name="process_description_{{ forloop.counter }}" class="form-control" rows="3">{{ pro.process_description_text }}</textarea>
-                </li>
-                <h3><strong>ETP Treatment:</strong></h3>
-                <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="etp_text_{{ forloop.counter }}" class="form-check-input me-2" value="1">
-                    <textarea name="etp_text_value_{{ forloop.counter }}" class="form-control" rows="3">{{ pro.etp_text }}</textarea>
-                </li><br>
-                <h3><strong>STP Treatment:</strong></h3>
-                <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="stp_text_{{ forloop.counter }}" class="form-check-input me-2" value="1">
-                    <textarea name="stp_text_value_{{ forloop.counter }}" class="form-control" rows="3">{{ pro.stp_text }}</textarea>
-                </li><br>
-                <h3><strong>Sludge Handling System:</strong></h3>
-                <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="shs_text_{{ forloop.counter }}" class="form-check-input me-2" value="1">
-                    <textarea name="shs_text_value_{{ forloop.counter }}" class="form-control" rows="3">{{ pro.shs_text }}</textarea>
-                </li><br>
-                <h3><strong>Automation:</strong></h3>
-                <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="automation_text_{{ forloop.counter }}" class="form-check-input me-2" value="1">
-                    <textarea name="automation_text_value_{{ forloop.counter }}" class="form-control" rows="3">{{ pro.automation_text }}</textarea>
-                </li><br>
-                <h3><strong>Footprint/Area required:</strong></h3>
-                <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="footprint_area_{{ forloop.counter }}" class="form-check-input me-2" value="1">
-                    <textarea name="footprint_area_value_{{ forloop.counter }}" class="form-control" rows="3">{{ pro.footprint_area }}</textarea>
-                </li><br>
-                <h3><strong>Tentative BOM:</strong></h3>
-                <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="tentative_{{ forloop.counter }}" class="form-check-input me-2" value="1">
-                    <textarea name="tentative__value_{{ forloop.counter }}" class="form-control" rows="3">{{ pro.tentative_BOM }}</textarea>
-                </li>
-                
-
-
+                    <!-- Process Description Block -->
+                    <li class="d-flex align-items-center mb-2">
+                        <input type="checkbox" name="process_description_text_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if pro.process_description_checked %}checked{% endif %}>
+                        <textarea name="process_description_{{ forloop.counter }}" class="form-control" rows="3">{{ pro.process_description }}</textarea>
+                    </li>
+                    <h3 class="my-2"><strong>ETP Treatment:</strong></h3>
+                    <li class="d-flex align-items-center mb-2">
+                        <input type="checkbox" name="etp_text_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if pro.is_checked %}checked{% endif %}>
+                        <textarea name="etp_text_value_{{ forloop.counter }}" class="form-control" rows="3">{{ pro.etp_text }}</textarea>
+                    </li>
+                    <h3 class="my-2"><strong>STP Treatment:</strong></h3>
+                    <li class="d-flex align-items-center mb-2">
+                        <input type="checkbox" name="stp_text_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if pro.is_standard_checked %}checked{% endif %}>
+                        <textarea name="stp_text_value_{{ forloop.counter }}" class="form-control" rows="3">{{ pro.stp_text }}</textarea>
+                    </li>
+                    <h3 class="my-2"><strong>Sludge Handling System:</strong></h3>
+                    <li class="d-flex align-items-center mb-2">
+                        <input type="checkbox" name="shs_text_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if pro.is_shs_checked %}checked{% endif %}>
+                        <textarea name="shs_text_value_{{ forloop.counter }}" class="form-control" rows="3">{{ pro.shs_text }}</textarea>
+                    </li>
+                    <h3 class="my-2"><strong>Automation:</strong></h3>
+                    <li class="d-flex align-items-center mb-2">
+                        <input type="checkbox" name="automation_text_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if pro.is_atm_checked %}checked{% endif %}>
+                        <textarea name="automation_text_value_{{ forloop.counter }}" class="form-control" rows="3">{{ pro.automation_text }}</textarea>
+                    </li>
+                    <h3 class="my-2"><strong>Footprint/Area required:</strong></h3>
+                    <li class="d-flex align-items-center mb-2">
+                        <input type="checkbox" name="footprint_area_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if pro.is_foot_checked %}checked{% endif %}>
+                        <textarea name="footprint_area_value_{{ forloop.counter }}" class="form-control" rows="3">{{ pro.footprint_area }}</textarea>
+                    </li>
+                    <h3 class="my-2"><strong>Tentative BOM:</strong></h3>
+                    <li class="d-flex align-items-center mb-2">
+                        <input type="checkbox" name="tentative_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if pro.is_tentative_checked %}checked{% endif %}>
+                        <textarea name="tentative__value_{{ forloop.counter }}" class="form-control" rows="3">{{ pro.tentative_BOM }}</textarea>
+                    </li>
+                    <hr>
                 {% endfor %}
             </ul>
+
+
             
             <h2 class="mt-4">Pricing: Machine Costs</h2>
-            <ul>
+            <ul id="machinePricingSection">
                 {% for p in price %}
                 <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="machine_cost_text_{{ forloop.counter }}" class="form-check-input me-2" value="1">
+                    <input type="checkbox" name="machine_cost_text_{{ forloop.counter }}" class="form-check-input me-2" value="1" {% if p.machine_cost_text_checked %}checked{% endif %}>
                     <textarea name="machine_cost_value_{{ forloop.counter }}" class="form-control" rows="3">{{ p.machine_cost_text }}</textarea>
                 </li>
-                
                 {% endfor %}
             </ul>
+
+
 
             <h3 class="mt-4">Machine Specifications</h3>
             <div class="table-responsive">
@@ -328,7 +355,8 @@
                         <tr id="machine_spec_row_{{ forloop.counter }}">
                             <td>
                                 <input type="hidden" name="select_row_spe_{{ forloop.counter }}" value="0">
-                                <input type="checkbox" name="select_row_spe_{{ forloop.counter }}" value="1" class="form-check-input" {% if instal.is_selected %}checked{% endif %}>
+                                <input type="checkbox" name="select_row_spe_{{ forloop.counter }}" value="1" class="form-check-input"
+                                    {% if instal.is_selected %}checked{% endif %}>
                             </td>
                             <td>
                                 <input type="text" name="product_name_spe_{{ forloop.counter }}" value="{{ instal.pd_name }}" class="form-control">
@@ -350,9 +378,9 @@
                     </tbody>
                 </table>
             </div>
-
             <button type="button" class="btn btn-primary mt-3" onclick="addMachineSpecRow()">Add Row</button>
             <button type="button" class="btn btn-danger mt-3" onclick="removeMachineSpecRow()">Remove Row</button>
+
 
             
             <h3 class="mt-4">Detailed Specifications</h3>
@@ -406,326 +434,335 @@
 
             <button type="button" class="btn btn-primary mt-3" onclick="addDetailedSpecRow()">Add Row</button>
             <button type="button" class="btn btn-danger mt-3" onclick="removeDetailedSpecRow()">Remove Row</button>
+
             <h3 class="mt-4">Optional Hardware Specification</h3>
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped" id="optionalHardwareTable">
-                    <thead>
-                        <tr>
-                            <th>Select</th>
-                            <th>Sl. No</th>
-                            <th>Optional Hardware</th>
-                            <th>Qty</th>
-                            <th>Unit</th>
-                            <th>Unit Rate</th>
-                            <th>Price (Excluding GST)</th>
-                            <th>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for hr in hard %}
-                        <tr id="optional_hardware_row_{{ forloop.counter }}">
-                            <td>
-                                <input type="hidden" name="select_row_opt_{{ forloop.counter }}" value="0">
-                                <input type="checkbox" name="select_row_opt_{{ forloop.counter }}" value="1" class="form-check-input" {% if hr.is_selected %}checked{% endif %}>
-                            </td>
-                            <td>
-                                <input type="text" name="sl_no_value_opt_{{ forloop.counter }}" value="{{ hr.sl_no }}" class="form-control">
-                            </td>
-                            <td>
-                                <input type="text" name="optional_hardware_value_opt_{{ forloop.counter }}" value="{{ hr.optional_hardware }}" class="form-control">
-                            </td>
-                            <td>
-                                <input type="text" name="qnty_value_opt_{{ forloop.counter }}" value="{{ hr.qnty }}" class="form-control">
-                            </td>
-                            <td>
-                                <input type="text" name="unit_value_opt_{{ forloop.counter }}" value="{{ hr.unit }}" class="form-control">
-                            </td>
-                            <td>
-                                <input type="text" name="unit_rate_value_opt_{{ forloop.counter }}" value="{{ hr.unit_rate }}" class="form-control">
-                            </td>
-                            <td>
-                                <input type="text" name="price_exgst_value_opt_{{ forloop.counter }}" value="{{ hr.price_exgst }}" class="form-control">
-                            </td>
-                            <td>
-                                <input type="text" name="total_value_opt_{{ forloop.counter }}" value="{{ hr.total }}" class="form-control">
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped" id="optionalHardwareTable">
+                        <thead>
+                            <tr>
+                                <th>Select</th>
+                                <th>Sl. No</th>
+                                <th>Optional Hardware</th>
+                                <th>Qty</th>
+                                <th>Unit</th>
+                                <th>Unit Rate</th>
+                                <th>Price (Excluding GST)</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for hr in hard %}
+                            <tr id="optional_hardware_row_{{ forloop.counter }}">
+                                <td>
+                                    <input type="hidden" name="select_row_opt_{{ forloop.counter }}" value="0">
+                                    <input type="checkbox" name="select_row_opt_{{ forloop.counter }}" value="1" class="form-check-input" {% if hr.is_selected %}checked{% endif %}>
+                                </td>
+                                <td>
+                                    <input type="text" name="sl_no_value_opt_{{ forloop.counter }}" value="{{ hr.sl_no }}" class="form-control">
+                                </td>
+                                <td>
+                                    <input type="text" name="optional_hardware_value_opt_{{ forloop.counter }}" value="{{ hr.optional_hardware }}" class="form-control">
+                                </td>
+                                <td>
+                                    <input type="text" name="qnty_value_opt_{{ forloop.counter }}" value="{{ hr.qnty }}" class="form-control">
+                                </td>
+                                <td>
+                                    <input type="text" name="unit_value_opt_{{ forloop.counter }}" value="{{ hr.unit }}" class="form-control">
+                                </td>
+                                <td>
+                                    <input type="text" name="unit_rate_value_opt_{{ forloop.counter }}" value="{{ hr.unit_rate }}" class="form-control">
+                                </td>
+                                <td>
+                                    <input type="text" name="price_exgst_value_opt_{{ forloop.counter }}" value="{{ hr.price_exgst }}" class="form-control">
+                                </td>
+                                <td>
+                                    <input type="text" name="total_value_opt_{{ forloop.counter }}" value="{{ hr.total }}" class="form-control">
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
 
-            <button type="button" class="btn btn-primary mt-3" onclick="addOptionalHardwareRow()">Add Row</button>
-            <button type="button" class="btn btn-danger mt-3" onclick="removeOptionalHardwareRow()">Remove Row</button>
+                <button type="button" class="btn btn-primary mt-3" onclick="addOptionalHardwareRow()">Add Row</button>
+                <button type="button" class="btn btn-danger mt-3" onclick="removeOptionalHardwareRow()">Remove Row</button>
 
-            <h2>Terms and Conditions</h2>
-            <div class="mb-2" id="termsSection">
+
+                <h2>Terms and Conditions</h2>
+                <div class="mb-2" id="termsSection">
                 {% for line in terms_and_conds %}
                 <div class="d-flex align-items-center mb-2" id="term_{{ forloop.counter }}">
-                    <input type="hidden" name="terms_check_{{ forloop.counter }}" value="0">
-                    <input type="checkbox" name="terms_check_{{ forloop.counter }}" class="form-check-input me-2" value="1">
-                    <input type="text" name="terms_{{ forloop.counter }}" id="term_{{ forloop.counter }}" value="{{ line }}" class="form-control flex-grow-1">
+                <input type="hidden" name="terms_check_{{ forloop.counter }}" value="0">
+                <input type="checkbox" name="terms_check_{{ forloop.counter }}" class="form-check-input me-2" value="1">
+                <input type="text" name="terms_{{ forloop.counter }}" id="term_{{ forloop.counter }}" value="{{ line }}" class="form-control flex-grow-1">
                 </div>
                 {% endfor %}
-            </div>
-            <h2 class="mt-4">General Terms and Conditions</h2>
-            <ul>
-                {% for general in gterms %}
-                <h3><strong>Performance:</strong></h3>
-                <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="performance_{{ forloop.counter }}" value="1" class="form-check-input me-2">
-                    <textarea name="performance_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.performance }}</textarea>
-                </li><br>
+                </div>
+                <h2 class="mt-4">General Terms and Conditions</h2>
+                <ul id="generalTermsSection">
+                    {% for general in gterms %}
+                    <h3><strong>Performance:</strong></h3>
+                    <li class="d-flex align-items-center mb-2">
+                        <input type="checkbox" name="performance_{{ forloop.counter }}" value="1" class="form-check-input me-2" {% if general.performance_checked %}checked{% endif %}>
+                        <textarea name="performance_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.performance }}</textarea>
+                    </li>
+                    <br>
+                    <h3><strong>Flow and Characteristics:</strong></h3>
+                    <li class="d-flex align-items-center mb-2">
+                        <input type="checkbox" name="flow_characteristics_{{ forloop.counter }}" value="1" class="form-check-input me-2" {% if general.flow_characteristics_checked %}checked{% endif %}>
+                        <textarea name="flow_characteristics_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.flow_characteristics }}</textarea>
+                    </li>
+                    <br>
+                    <h3><strong>Trial run and Quality check before dispatch:</strong></h3>
+                    <li class="d-flex align-items-center mb-2">
+                        <input type="checkbox" name="trial_quality_check_{{ forloop.counter }}" value="1" class="form-check-input me-2" {% if general.trial_quality_check_checked %}checked{% endif %}>
+                        <textarea name="trial_quality_check_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.trial_quality_check }}</textarea>
+                    </li>
+                    <br>
+                    <h3><strong>Virtual Completion:</strong></h3>
+                    <li class="d-flex align-items-center mb-2">
+                        <input type="checkbox" name="virtual_completion_{{ forloop.counter }}" value="1" class="form-check-input me-2" {% if general.virtual_completion_checked %}checked{% endif %}>
+                        <textarea name="virtual_completion_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.virtual_completion }}</textarea>
+                    </li>
+                    <br>
+                    <h3><strong>Limitations of Liability:</strong></h3>
+                    <li class="d-flex align-items-center mb-2">
+                        <input type="checkbox" name="limitation_liability_{{ forloop.counter }}" value="1" class="form-check-input me-2" {% if general.limitation_liability_checked %}checked{% endif %}>
+                        <textarea name="limitation_liability_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.limitation_liability }}</textarea>
+                    </li>
+                    <br>
+                    <h3><strong>Force Majeure Clause:</strong></h3>
+                    <li class="d-flex align-items-center mb-2">
+                        <input type="checkbox" name="force_clause_{{ forloop.counter }}" value="1" class="form-check-input me-2" {% if general.force_clause_checked %}checked{% endif %}>
+                        <textarea name="force_clause_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.force_clause }}</textarea>
+                    </li>
+                    <br>
+                    <h3><strong>Additional Works:</strong></h3>
+                    <li class="d-flex align-items-center mb-2">
+                        <input type="checkbox" name="additional_works_{{ forloop.counter }}" value="1" class="form-check-input me-2" {% if general.additional_works_checked %}checked{% endif %}>
+                        <textarea name="additional_works_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.additional_works }}</textarea>
+                    </li>
+                    <br>
+                    <h3><strong>Warranty/Guaranty:</strong></h3>
+                    <li class="d-flex align-items-center mb-2">
+                        <input type="checkbox" name="warranty_guaranty_{{ forloop.counter }}" value="1" class="form-check-input me-2" {% if general.warranty_guaranty_checked %}checked{% endif %}>
+                        <textarea name="warranty_guaranty_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.warranty_guaranty }}</textarea>
+                    </li>
+                    <br>
+                    <h3><strong>Arbitration:</strong></h3>
+                    <li class="d-flex align-items-center mb-2">
+                        <input type="checkbox" name="arbitration_{{ forloop.counter }}" value="1" class="form-check-input me-2" {% if general.arbitration_checked %}checked{% endif %}>
+                        <textarea name="arbitration_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.arbitration }}</textarea>
+                    </li>
+                    <br>
+                    <h3><strong>Validity:</strong></h3>
+                    <li class="d-flex align-items-center mb-2">
+                        <input type="checkbox" name="validity_{{ forloop.counter }}" value="1" class="form-check-input me-2" {% if general.validity_checked %}checked{% endif %}>
+                        <textarea name="validity_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.validity }}</textarea>
+                    </li>
+                    <br>
+                    {% endfor %}
+                </ul>
+
                 
-                <h3><strong>Flow and Characteristics:</strong></h3>
-                <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="flow_characteristics_{{ forloop.counter }}" value="1" class="form-check-input me-2">
-                    <textarea name="flow_characteristics_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.flow_characteristics }}</textarea>
-                </li><br>
-                
-                <h3><strong>Trial run and Quality check before dispatch:</strong></h3>
-                <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="trial_quality_check_{{ forloop.counter }}" value="1" class="form-check-input me-2">
-                    <textarea name="trial_quality_check_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.trial_quality_check }}</textarea>
-                </li><br>
-                
-                <h3><strong>Virtual Completion:</strong></h3>
-                <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="virtual_completion_{{ forloop.counter }}" value="1" class="form-check-input me-2">
-                    <textarea name="virtual_completion_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.virtual_completion }}</textarea>
-                </li><br>
-                
-                <h3><strong>Limitations of Liability:</strong></h3>
-                <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="limitation_liability_{{ forloop.counter }}" value="1" class="form-check-input me-2">
-                    <textarea name="limitation_liability_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.limitation_liability }}</textarea>
-                </li><br>
-                
-                <h3><strong>Force Majeure Clause:</strong></h3>
-                <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="force_clause_{{ forloop.counter }}" value="1" class="form-check-input me-2">
-                    <textarea name="force_clause_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.force_clause }}</textarea>
-                </li><br>
-                
-                <h3><strong>Additional Works:</strong></h3>
-                <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="additional_works_{{ forloop.counter }}" value="1" class="form-check-input me-2">
-                    <textarea name="additional_works_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.additional_works }}</textarea>
-                </li><br>
-                
-                <h3><strong>Warranty/Guaranty:</strong></h3>
-                <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="warranty_guaranty_{{ forloop.counter }}" value="1" class="form-check-input me-2">
-                    <textarea name="warranty_guaranty_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.warranty_guaranty }}</textarea>
-                </li><br>
-                
-                <h3><strong>Arbitration:</strong></h3>
-                <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="arbitration_{{ forloop.counter }}" value="1" class="form-check-input me-2">
-                    <textarea name="arbitration_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.arbitration }}</textarea>
-                </li><br>
-                
-                <h3><strong>Validity:</strong></h3>
-                <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="validity_{{ forloop.counter }}" value="1" class="form-check-input me-2">
-                    <textarea name="validity_text_{{ forloop.counter }}" class="form-control" rows="3">{{ general.validity }}</textarea>
-                </li><br>
-                
-                {% endfor %}
-            </ul>
             
-            <h2 class="mt-4">Appendix A</h2>
-            <h3>Scope of Work</h3>
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped" disabled>
-                    <thead>
-                        <tr>
-                            <th>Select Row</th>
-                            <th>Product Name</th>
-                            <th>Capacity</th>
-                            <th>Total Needed Capacity</th>
-                            <th>Waste Water Type</th>
-                            <th>Total Number of Machines</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for instal in inst %}
-                        <tr>
-                            <td>
-                                <!-- Checkbox to select the entire row -->
-                                <input type="checkbox" name="select_row_{{ forloop.counter }}" value="1" class="form-check-input" onchange="toggleRowVisibility(this, '{{ forloop.counter }}')" disabled>
-                            </td>
-                            <td>
-                                <input type="text" name="product_name_{{ forloop.counter }}" id="product_name_{{ forloop.counter }}" value="{{ instal.pd_name }}" class="form-control" disabled>
-                            </td>
-                            <td>
-                                <input type="text" name="capacity_{{ forloop.counter }}" id="capacity_{{ forloop.counter }}" value="{{ instal.capacity }}" class="form-control" disabled>
-                            </td>
-                            <td>
-                                <input type="text" name="total_needed_capacity_{{ forloop.counter }}" id="total_needed_capacity_{{ forloop.counter }}" value="{{ instal.total_needed_capacity }}" class="form-control" disabled>
-                            </td>
-                            <td>
-                                <input type="text" name="waste_water_type_{{ forloop.counter }}" id="waste_water_type_{{ forloop.counter }}" value="{{ instal.waste_water_type }}" class="form-control" disabled>
-                            </td>
-                            <td>
-                                <input type="text" name="total_no_machines_{{ forloop.counter }}" id="total_no_machines_{{ forloop.counter }}" value="{{ instal.total_no_machines }}" class="form-control" disabled>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <ul>
-                {% for ape in apendix %}
-                <h3>Inclusions: Supply of Equipment</h3>
-                <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="supply_eq_{{ forloop.counter }}" value="1" class="form-check-input me-2">
-                    <textarea name="supply_eq_text_{{ forloop.counter }}" class="form-control" rows="3">{{ ape.supply_eq }}</textarea>
-                </li><br>
+                <h2 class="mt-4">Appendix A</h2>
+                <h3>Scope of Work</h3>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped" disabled>
+                        <thead>
+                            <tr>
+                                <th>Select Row</th>
+                                <th>Product Name</th>
+                                <th>Capacity</th>
+                                <th>Total Needed Capacity</th>
+                                <th>Waste Water Type</th>
+                                <th>Total Number of Machines</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for instal in inst %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox" name="select_row_{{ forloop.counter }}" value="1"
+                                        class="form-check-input"
+                                        onchange="toggleRowVisibility(this, '{{ forloop.counter }}')"
+                                        disabled>
+                                </td>
+                                <td>
+                                    <input type="text" name="product_name_{{ forloop.counter }}" id="product_name_{{ forloop.counter }}"
+                                        value="{{ instal.pd_name }}" class="form-control" disabled>
+                                </td>
+                                <td>
+                                    <input type="text" name="capacity_{{ forloop.counter }}" id="capacity_{{ forloop.counter }}"
+                                        value="{{ instal.capacity }}" class="form-control" disabled>
+                                </td>
+                                <td>
+                                    <input type="text" name="total_needed_capacity_{{ forloop.counter }}" id="total_needed_capacity_{{ forloop.counter }}"
+                                        value="{{ instal.total_needed_capacity }}" class="form-control" disabled>
+                                </td>
+                                <td>
+                                    <input type="text" name="waste_water_type_{{ forloop.counter }}" id="waste_water_type_{{ forloop.counter }}"
+                                        value="{{ instal.waste_water_type }}" class="form-control" disabled>
+                                </td>
+                                <td>
+                                    <input type="text" name="total_no_machines_{{ forloop.counter }}" id="total_no_machines_{{ forloop.counter }}"
+                                        value="{{ instal.total_no_machines }}" class="form-control" disabled>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <ul>
+                    {% for ape in apendix %}
+                        <h3>Inclusions: Supply of Equipment</h3>
+                        <li class="d-flex align-items-center mb-2">
+                            <input type="checkbox" name="supply_eq_{{ forloop.counter }}" value="1" class="form-check-input me-2" {% if ape.supply_eq_checked %}checked{% endif %}>
+                            <textarea name="supply_eq_text_{{ forloop.counter }}" class="form-control" rows="3">{{ ape.supply_eq }}</textarea>
+                        </li>
+                        <br>
                 
-                <h3><strong>Installation & Commissioning of Equipment:</strong></h3>
-                <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="instal_commissioning_{{ forloop.counter }}" value="1" class="form-check-input me-2">
-                    <textarea name="instal_commissioning_text_{{ forloop.counter }}" class="form-control" rows="3">{{ ape.instal_commissioning }}</textarea>
-                </li><br>
+                        <h3><strong>Installation & Commissioning of Equipment:</strong></h3>
+                        <li class="d-flex align-items-center mb-2">
+                            <input type="checkbox" name="instal_commissioning_{{ forloop.counter }}" value="1" class="form-check-input me-2" {% if ape.instal_commissioning_checked %}checked{% endif %}>
+                            <textarea name="instal_commissioning_text_{{ forloop.counter }}" class="form-control" rows="3">{{ ape.instal_commissioning }}</textarea>
+                        </li>
+                        <br>
                 
-                <h3><strong>Client's Scope - Installation & Commissioning of Equipment:</strong></h3>
-                <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="clients_scope_{{ forloop.counter }}" value="1" class="form-check-input me-2">
-                    <textarea name="clients_scope_text_{{ forloop.counter }}" class="form-control" rows="4">{{ ape.clients_scope }}</textarea>
-                </li><br>
+                        <h3><strong>Client's Scope - Installation & Commissioning of Equipment:</strong></h3>
+                        <li class="d-flex align-items-center mb-2">
+                            <input type="checkbox" name="clients_scope_{{ forloop.counter }}" value="1" class="form-check-input me-2" {% if ape.clients_scope_checked %}checked{% endif %}>
+                            <textarea name="clients_scope_text_{{ forloop.counter }}" class="form-control" rows="4">{{ ape.clients_scope }}</textarea>
+                        </li>
+                        <br>
                 
-                <h3><strong>Note:</strong></h3>
-                <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="note_{{ forloop.counter }}" value="1" class="form-check-input me-2">
-                    <textarea name="note_text_{{ forloop.counter }}" class="form-control" rows="3">{{ ape.note }}</textarea>
-                </li><br>
+                        <h3><strong>Note:</strong></h3>
+                        <li class="d-flex align-items-center mb-2">
+                            <input type="checkbox" name="note_{{ forloop.counter }}" value="1" class="form-check-input me-2" {% if ape.note_checked %}checked{% endif %}>
+                            <textarea name="note_text_{{ forloop.counter }}" class="form-control" rows="3">{{ ape.note }}</textarea>
+                        </li>
+                        <br>
+                    {% endfor %}
+                </ul>
                 
-                {% endfor %}
-            </ul>
 
         
-            <ul>
-                {% for pr in products %}
-                <h3>DRISTI Software Subscription and XHUB</h3>
-                <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="dristi_{{ forloop.counter }}" value="1" class="form-check-input me-2">
-                    <textarea name="dristi_subscription_{{ forloop.counter }}" class="form-control" rows="4">{{ pr.dristi_subscription }}</textarea>
-                </li>
-                <br>
+                <ul>
+                    {% for pr in products %}
+                        <h3>DRISTI Software Subscription and XHUB</h3>
+                        <li class="d-flex align-items-center mb-2">
+                            <input type="checkbox" name="dristi_{{ forloop.counter }}" value="1" class="form-check-input me-2" {% if pr.dristi_checked %}checked{% endif %}>
+                            <textarea name="dristi_subscription_{{ forloop.counter }}" class="form-control" rows="4">{{ pr.dristi_subscription }}</textarea>
+                        </li>
+                        <br>
+                        
+                        <h3>IoT Hardware</h3>
+                        <li class="d-flex align-items-center mb-2">
+                            <input type="checkbox" name="iot_{{ forloop.counter }}" value="1" class="form-check-input me-2" {% if pr.iot_checked %}checked{% endif %}>
+                            <textarea name="iot_hardware_{{ forloop.counter }}" class="form-control" rows="4">{{ pr.iot_hardware }}</textarea>
+                        </li>
+                        <br>
+                    {% endfor %}
+                </ul>
                 
-                <h3>IoT Hardware</h3>
-                <li class="d-flex align-items-center mb-2">
-                    <input type="checkbox" name="iot_{{ forloop.counter }}" value="1" class="form-check-input me-2">
-                    <textarea name="iot_hardware_{{ forloop.counter }}" class="form-control" rows="4">{{ pr.iot_hardware }}</textarea>
-                </li>
+                <button type="submit" id="ssave" class="btn btn-success">Save</button>
+                <button type="button" id="draftbutton" class="btn btn-secondary">Save as Draft</button>
                 
-                {% endfor %}
-            </ul>
-            
-            <button type="submit" id="ssave" class="btn btn-success" >Save</button>
-            <button type="button" id="draftbutton" class="btn btn-secondary">Save as Draft</button>
-
           
         </div>    
     </form>
 
-<script type="text/javascript">
-    var enquiryId = {{ enquiry_id }}
-    console.log("enq",enquiryId);
-    // CSRF token setup for AJAX requests
-    function getCSRFToken() {
-        return document.querySelector('[name=csrfmiddlewaretoken]').value;
-    }
-
-    $(document).ready(function () {
-        $('#draftbutton').on('click', function () {
-            // Create a FormData object from the form
-            const formElement = document.getElementById('proposal');
-            const formData = new FormData(formElement);
-
-            $.ajax({
-                url: "{% url 'proposal_draft_store_data' enquiry_id=enquiry_id quotation_number=quotation_number %}", 
-                type: "POST",
-                data: formData,
-                processData: false, 
-                contentType: false, 
-                headers: {
-                    "X-CSRFToken": getCSRFToken(), 
-                    "X-Requested-With": "XMLHttpRequest" 
-                },
-                success: function (response) {
-                    console.log("Response from server: ", response);
-                    if (response.status === "error") {
-                        alert("An error occurred: " + response.message);
-                    } else {
-                        alert("Draft saved successfully!");
-                        window.location.href = `/riva/manage_quotation/${enquiryId}/`;
-                        
-                    }
-                },
-                error: function (xhr, status, error) {
-                    console.error("Error saving quotation:", error);
-                    alert("An error occurred while saving the quotation.");
-                }
-                
-            });
-            console.log("formdata ajax",formData);
-        });
-    });
-
-
-
-
-
-
-
-    function ddd()
-    {
-        alert("qqq");
-    }
-     // CSRF token setup for AJAX requests
-     function getCSRFToken() {
-        return document.querySelector('[name=csrfmiddlewaretoken]').value;
-    }
-    $(document).ready(function () {
-        console.log("ujhguyhkgyk");
-        $('#ssave').on('click', function () {
-            console.log("hi,dilhnskljfhnsdhnfkochioh");
-            // Create a FormData object from the form
-            const formElement = document.getElementById('proposal');
-            const formData = new FormData(formElement);
-            console.log(formData);
-        
-            $.ajax({
-                url: "{% url 'proposal_store_data' enquiry_id=enquiry_id quotation_number=quotation_number  %}",
-                type: "POST",
-                data: formData,
-                processData: false, 
-                contentType: false, 
-                headers: {
-                    "X-CSRFToken": getCSRFToken(), 
-                    "X-Requested-With": "XMLHttpRequest" 
-                },
-                success: function (response) {
-                    // Handle success response
-                    if (response.status === "success") {
-                        alert("Data saved successfully!");          
-                        window.location.href = "{% url 'managequotationpage' enquiry_id=enquiry_id %}"
-                    } else {
-                        alert("Error: " + response.message);
-                        console.log(response);
-                    }
-                },
-                error: function (xhr, status, error) {
-                    // Handle error response
-                    alert("An error occurred: " + error);
-                    console.log(xhr.responseText);
-                }
-            });
-        });
+    <script src="{% static 'js/addextraamc.js' %}"></script>
+    <script src="{% static 'js/addextrapr.js' %}"></script>
+    <script type="text/javascript">
+        var enquiryId = {{ enquiry_id }};
+        function getCSRFToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]').value;
+        }
     
-});    
-</script>
+        $(document).ready(function () {
+            // Save as Draft logic
+            $('#draftbutton').on('click', function (e) {
+                e.preventDefault();
+                const formElement = document.getElementById('proposal');
+                const formData = new FormData(formElement);
+                $.ajax({
+                    url: "{% url 'proposal_draft_store_data' enquiry_id=enquiry_id quotation_number=quotation_number %}",
+                    type: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    headers: {
+                        "X-CSRFToken": getCSRFToken(),
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    success: function (response) {
+                        if (response.status === "error") {
+                            alert("An error occurred: " + (response.message || "Unknown error occurred"));
+                        } else {
+                            alert("Draft saved successfully!");
+                            window.location.href = `/riva/manage_quotation/${enquiryId}/`;
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        let errorMsg = "An error occurred while saving the quotation.";
+                        try {
+                            // Try JSON first
+                            const resp = JSON.parse(xhr.responseText);
+                            errorMsg = resp.message || JSON.stringify(resp) || errorMsg;
+                        } catch (e) {
+                            if (xhr.responseText) {
+                                errorMsg = xhr.responseText;
+                            }
+                        }
+                        alert(errorMsg);
+                        console.error("AJAX error details:", xhr.responseText);
+                    }
+                });
+            });
+    
+            // Save (Final) logic
+            $('#ssave').on('click', function (e) {
+                e.preventDefault();
+                const formElement = document.getElementById('proposal');
+                const formData = new FormData(formElement);
+                $.ajax({
+                    url: "{% url 'proposal_store_data' enquiry_id=enquiry_id quotation_number=quotation_number %}",
+                    type: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    headers: {
+                        "X-CSRFToken": getCSRFToken(),
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    success: function (response) {
+                        if (response.status === "success") {
+                            alert("Data saved successfully!");
+                            window.location.href = "{% url 'managequotationpage' enquiry_id=enquiry_id %}"
+                        } else {
+                            alert("Error: " + (response.message || "Unknown error occurred"));
+                            console.log(response);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        let errorMsg = "An error occurred while saving the quotation.";
+                        try {
+                            const resp = JSON.parse(xhr.responseText);
+                            errorMsg = resp.message || JSON.stringify(resp) || errorMsg;
+                        } catch (e) {
+                            if (xhr.responseText) {
+                                errorMsg = xhr.responseText;
+                            }
+                        }
+                        alert(errorMsg);
+                        console.error("AJAX error details:", xhr.responseText);
+                    }
+                });
+            });
+        });
+    </script>
+    
 
 {% endblock %}

@@ -1,0 +1,713 @@
+<!--before changes(CGST AND IGST) -->
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet">
+
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+
+<div class="container mt-5">
+    <h2>Create Commercial Quote</h2><br>
+    <p><strong>Enquiry ID:</strong> {{ enquiry_id }}</p>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <!-- Quotation Number (Generated) -->
+        <div class="mb-3">
+            <label for="quotation_no" class="form-label">Quotation Number</label>
+            <input type="text" class="form-control" id="quotation_no" name="quotation_no" value="{{ quotation_no }}"
+                readonly>
+        </div>
+
+        <!-- Bill To and Ship To (Side-by-side using Bootstrap grid) -->
+        <div class="row">
+            <!-- Bill To -->
+            <div class="col-md-6">
+                <h4>Bill To</h4>
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <th>Company Name</th>
+                            <td><input type="text" class="form-control" name="bill_to_company_name"
+                                    value="{{ form.companyname.value }}" required></td>
+                        </tr>
+                        <tr>
+                            <th>Customer Name</th>
+                            <td><input type="text" class="form-control" name="bill_to_customer_name"
+                                    value="{{ form.customername.value }}" required></td>
+                        </tr>
+                        <tr>
+                            <th>GST Number</th>
+                            <td><input type="text" class="form-control" name="bill_to_gst_number"
+                                    id="bill_to_gst_number" value="{{ form.gst_number.value }}" required
+                                    onchange="updateProductDetails(this)"></td>
+                        </tr>
+                        <tr>
+                            <th>Address</th>
+                            <td><textarea class="form-control" name="bill_to_address" rows="3"
+                                    required>{{ form.address.value }}</textarea></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <!-- Ship To -->
+            <div class="col-md-6">
+                <h4>Ship To</h4>
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <th>Company Name</th>
+                            <td><input type="text" class="form-control" name="ship_to_company_name"
+                                    value="{{ form.companyname.value }}" required></td>
+                        </tr>
+                        <tr>
+                            <th>Customer Name</th>
+                            <td><input type="text" class="form-control" name="ship_to_customer_name"
+                                    value="{{ form.customername.value }}" required></td>
+                        </tr>
+                        <tr>
+                            <th>GST Number</th>
+                            <td><input type="text" class="form-control" name="ship_to_gst_number"
+                                    value="{{ form.gst_number.value }}" required></td>
+                        </tr>
+                        <tr>
+                            <th>Address</th>
+                            <td><textarea class="form-control" name="ship_to_address" rows="3"
+                                    required>{{ form.address.value }}</textarea></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="container mt-4">
+                <!-- From and Terms & Conditions (Side-by-side) -->
+                <div class="row">
+                    <!-- From Section -->
+                    <div class="col-md-6">
+                        <h4>From</h4>
+                        <table class="table table-bordered">
+                            <tbody>
+                                <tr>
+                                    <th>Company Name</th>
+                                    <td><input type="text" class="form-control" name="from_company_name"
+                                            value="{{ xpredict.company_name }}"></td>
+                                </tr>
+                                <tr>
+                                    <th>Phone Number</th>
+                                    <td><input type="text" class="form-control" name="from_phone"
+                                            value="{{ xpredict.phone_no }}" readonly></td>
+                                </tr>
+                                <tr>
+                                    <th>Email</th>
+                                    <td><input type="text" class="form-control" name="from_email"
+                                            value="{{ xpredict.mail }}" readonly></td>
+                                </tr>
+                                <tr>
+                                    <th>GST Number</th>
+                                    <td><input type="text" class="form-control" name="from_gst" id="from_gst"
+                                            value="{{ xpredict.gst }}" readonly></td>
+                                </tr>
+                                <tr>
+                                    <th>Pan Number</th>
+                                    <td><input type="text" class="form-control" name="from_pan"
+                                            value="{{ xpredict.pan }}"></td>
+                                </tr>
+                                <tr>
+                                    <th>Address</th>
+                                    <td><textarea class="form-control" name="from_address" rows="3"
+                                            readonly>{{ xpredict.address }}</textarea></td>
+                                </tr>
+                                <tr>
+                                    <th>Bank Details
+                                        <span style="color: red;">*</span>
+                                    </th>
+                                    <td>
+                                        <label for="bank_id" class="form-label">
+
+                                        </label>
+                                        <select name="bank_id" id="bank_id" class="form-select" required>
+                                            <option value="" selected disabled>Select Bank</option>
+                                            {% for bank in banks %}
+                                            <option value="{{ bank.id }}">{{ bank.bank_name }} - {{ bank.account_number
+                                                }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Terms & Conditions Section -->
+                    <div class="col-md-6">
+                        <h4>Terms & Conditions</h4>
+                        <textarea class="form-control" name="terms_and_conditions" rows="15"
+                            required>{{ xpredict.terms_conditions }}</textarea>
+                    </div>
+                </div>
+
+                <!-- Table for Item Details -->
+                <div id="table-default" class="table-responsive">
+
+                    <h4>Item Details</h4>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Sl. No.</th>
+                                <th>Description</th>
+                                <th>HSN code</th>
+                                <th>Base Amount</th>
+                                <th>Quantity</th>
+                                <th>Margin %</th>
+                                <th>Rate</th>
+                                <th>CGST (%)</th>
+                                <th>SGST (%)</th>
+                                <th>IGST (%)</th>
+                                <th>Final Amount</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="item-table">
+                            <tr>
+                                <td>1</td>
+                                <td>
+                                    <select class="form-select product-select" name="products[]" required
+                                        onchange="updateProductDetails(this)">
+                                        <option value="" disabled selected>Select a product</option>
+                                        {% for product in products %}
+                                        <option value="{{ product.id }}" data-hsncode="{{ product.hsncode }}"
+                                            data-base_amount="{{ product.base_amount }}" data-gst="{{ product.gst }}">
+                                            {{ product.name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td><input type="text" class="form-control" name="hsncode[]" readonly></td>
+                                <td><input type="text" class="form-control" name="base_amount[]" readonly></td>
+                                <td><input type="number" class="form-control" name="quantity[]" min="1" required
+                                        onchange="updateRateAndFinalAmount(this)" style="width: 70px;"></td>
+                                <td><input type="number" class="form-control" name="margin[]" min="0" max="100"
+                                        step="0.01" required onchange="updateRateAndFinalAmount(this)"></td>
+                                <td><input type="number" class="form-control" name="rate[]" readonly
+                                        style="width: 120px;"></td>
+                                <td><input type="number" class="form-control" name="cgst[]" min="0" max="100"
+                                        step="0.01" onchange="updateFinalAmount(this)" readonly></td>
+                                <td><input type="number" class="form-control" name="sgst[]" min="0" max="100"
+                                        step="0.01" onchange="updateFinalAmount(this)" readonly></td>
+                                <td><input type="number" class="form-control" name="igst[]" min="0" max="100"
+                                        step="0.01" onchange="updateFinalAmount(this)" readonly></td>
+                                <td><input type="number" class="form-control" name="final_amount[]" readonly></td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-success add-product">Add Product</button>
+                                        <button type="button" class="btn btn-danger remove-row">Remove</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table><br>
+                    <button type="button" class="btn btn-success" id="add-row">Add Row</button>
+                </div>
+
+                <!-- Total Final Amount (Including GST) -->
+                <div class="mt-4">
+                    <h4>Total</h4>
+                    <div class="row mb-1">
+                        <div class="col-2">
+                            <p><strong>Subtotal (Rates):</strong></p>
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="subtotal" name="subtotal" value="0.00"
+                                    class="form-control text-end custcss" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-1">
+                        <div class="col-2">
+                            <p><strong>CGST:</strong></p>
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="cgst-total" name="cgst_total" value="0.00"
+                                    class="form-control text-end custcss" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-1">
+                        <div class="col-2">
+                            <p><strong>SGST:</strong></p>
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="sgst-total" name="sgst_total" value="0.00"
+                                    class="form-control text-end custcss" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-1">
+                        <div class="col-2">
+                            <p><strong>IGST:</strong></p>
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="igst-total" name="igst_total" value="0.00"
+                                    class="form-control text-end custcss" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-2">
+                        <p><strong>Grand Total:</strong></p>
+                        <div class="input-group input-group-sm">
+                            <input type="text" id="grand-total" name="grand_total" value="0.00"
+                                class="form-control text-end custcss" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+
+            <!-- Submit Button -->
+            <div class="mt-4 text-center">
+                <button type="submit" class="btn btn-primary">Save Quote</button>
+
+
+            </div>
+        </div>
+</div>
+</div>
+</form>
+
+
+
+<script>
+
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelector("#item-table").addEventListener("click", function (event) {
+            if (event.target.classList.contains("add-product")) {
+                console.log("triggering 1st ");
+                let row = event.target.closest("tr");
+                let selectBox = row.querySelector(".product-select");
+
+                if (selectBox) {
+                    // Capture the selected value before destroying Select2
+                    let selectedValue = selectBox.value;
+
+                    // Destroy Select2 only if it's initialized
+                    if ($(selectBox).data('select2')) {
+                        $(selectBox).select2('destroy');
+                    }
+
+                    // Remove only the Select2 container in the current row
+                    let select2Container = row.querySelector(".select2-container");
+                    if (select2Container) {
+                        select2Container.remove();
+                    }
+
+                    // Create a new input element
+                    let newInput = document.createElement("input");
+                    newInput.type = "text";
+                    newInput.className = "form-control";
+                    newInput.name = "products[]";
+                    newInput.placeholder = "Enter Product Name";
+                    newInput.required = true;
+
+                    // Retain the selected product value
+                    newInput.value = selectedValue;
+
+                    // Replace select box with new input
+                    selectBox.replaceWith(newInput);
+                }
+
+                // Enable related input fields in the current row only
+                row.querySelectorAll("input[name='hsncode[]'], input[name='base_amount[]'], input[name='cgst[]'], input[name='sgst[]'], input[name='igst[]']")
+                    .forEach(input => input.removeAttribute("readonly"));
+
+                // Remove add product button after click
+                event.target.remove();
+            }
+        });
+    });
+
+
+
+    // Function to check GST numbers and enable/disable columns
+    function checkGSTNumbers() {
+        console.log("entered");
+
+        // Get Bill To and From GST numbers
+        var billToGST = document.querySelector('input[name="bill_to_gst_number"]').value;
+        var fromGST = document.querySelector('input[name="from_gst"]').value;
+
+        // Ensure both GST numbers are available and valid
+        if (billToGST && fromGST) {
+            var billToPrefix = billToGST.substring(0, 2); // First two digits of Bill To GST
+            var fromPrefix = fromGST.substring(0, 2); // First two digits of From GST
+
+            // If prefixes match, disable IGST and enable CGST/SGST
+            if (billToPrefix === fromPrefix) {
+                // Enable CGST and SGST, disable IGST
+                document.querySelectorAll('input[name="cgst[]"]').forEach(function (input) {
+                    input.disabled = false;
+                    input.value = '9.0';
+                });
+                document.querySelectorAll('input[name="sgst[]"]').forEach(function (input) {
+                    input.disabled = false;
+                    input.value = '9.0';
+                });
+                document.querySelectorAll('input[name="igst[]"]').forEach(function (input) {
+                    input.disabled = true;
+                    input.value = ''; // Clear IGST values if disabled
+                });
+            } else {
+                // Enable IGST, disable CGST and SGST
+                document.querySelectorAll('input[name="cgst[]"]').forEach(function (input) {
+                    input.disabled = true;
+                    input.value = ''; // Clear CGST values if disabled
+                });
+                document.querySelectorAll('input[name="sgst[]"]').forEach(function (input) {
+                    input.disabled = true;
+                    input.value = ''; // Clear SGST values if disabled
+                });
+                document.querySelectorAll('input[name="igst[]"]').forEach(function (input) {
+                    input.disabled = false;
+                    input.value = '18.0';
+                });
+            }
+        }
+    }
+
+    // Run the GST check when the page loads and whenever the GST number fields are updated
+    document.querySelector('input[name="bill_to_gst_number"]').addEventListener('change', checkGSTNumbers);
+    document.querySelector('input[name="from_gst"]').addEventListener('change', checkGSTNumbers);
+
+    function updateTotalFinalAmount() {
+        let subtotal = 0;
+        let totalCGST = 0;
+        let totalSGST = 0;
+        let totalIGST = 0;
+
+        // Select all <tr> inside #item-table (which is a <tbody>)
+        document.querySelectorAll("#item-table tr").forEach(row => {
+            let baseAmount = parseFloat(row.querySelector("[name='base_amount[]']")?.value) || 0;
+            let quantity = parseFloat(row.querySelector("[name='quantity[]']")?.value) || 1;
+            let margin = parseFloat(row.querySelector("[name='margin[]']")?.value) || 0;
+            let cgst = parseFloat(row.querySelector("[name='cgst[]']")?.value) || 0;
+            let sgst = parseFloat(row.querySelector("[name='sgst[]']")?.value) || 0;
+            let igst = parseFloat(row.querySelector("[name='igst[]']")?.value) || 0;
+
+            let rate = baseAmount * (1 + margin / 100);
+            let finalAmount = rate * quantity;
+
+            subtotal += finalAmount;
+            totalCGST += (finalAmount * cgst) / 100;
+            totalSGST += (finalAmount * sgst) / 100;
+            totalIGST += (finalAmount * igst) / 100;
+        });
+
+        let grandTotal = subtotal + totalCGST + totalSGST + totalIGST;
+
+        // Update totals in the UI
+        document.getElementById("subtotal").value = subtotal.toFixed(2);
+        document.getElementById("cgst-total").value = totalCGST.toFixed(2);
+        document.getElementById("sgst-total").value = totalSGST.toFixed(2);
+        document.getElementById("igst-total").value = totalIGST.toFixed(2);
+        document.getElementById("grand-total").value = grandTotal.toFixed(2);
+    }
+
+    // Make sure it updates when inputs change
+    document.querySelector("#item-table").addEventListener("input", updateTotalFinalAmount);
+
+
+
+    // Function to handle updates based on changes in product selection or GST number
+    function updateProductDetails(element) {
+        console.log("Triggered by:", element.name);
+
+        // Check if the event came from the product dropdown or GST input field
+        if (element.name === "products[]") {
+            // Handle product selection logic
+            var selectedOption = element.options[element.selectedIndex];
+            var hsnCode = selectedOption.getAttribute('data-hsncode');
+            var baseAmount = selectedOption.getAttribute('data-base_amount');
+            var gst = parseFloat(selectedOption.getAttribute('data-gst')) || 0; // Get GST from product
+            var row = element.closest('tr');
+            console.log("GST from product:", gst);
+
+            // Update the corresponding HSN code and base amount input fields
+            var hsnCodeInput = row.querySelector('[name="hsncode[]"]');
+            var baseAmountInput = row.querySelector('[name="base_amount[]"]');
+            if (hsnCodeInput) hsnCodeInput.value = hsnCode;
+            if (baseAmountInput) baseAmountInput.value = baseAmount;
+
+            // Distribute GST between CGST/SGST or IGST
+            distributeGST(row, gst);
+
+            // Recalculate the rate and final amount after updating the base amount
+            updateRateAndFinalAmount(row.querySelector('[name="quantity[]"]'));
+
+        } else if (element.name === "bill_to_gst_number") {
+            // Handle changes in the GST number
+            console.log("GST Number changed:", element.value);
+
+            // Trigger GST-related column updates for all rows
+            document.querySelectorAll('select[name="products[]"]').forEach(function (productSelect) {
+                var row = productSelect.closest('tr');
+                var gst = parseFloat(productSelect.options[productSelect.selectedIndex].getAttribute('data-gst')) || 0;
+                console.log("gst :")
+                console.log("Re-distributing GST for row:", row);
+
+                // Redistribute GST based on new GST number logic
+                distributeGST(row, gst);
+            });
+        }
+    }
+
+    // Function to distribute GST between CGST/SGST or IGST
+    function distributeGST(row, gst) {
+        var billToGST = document.getElementById('bill_to_gst_number').value;
+        var fromGST = document.querySelector('input[name="from_gst"]').value;
+
+        if (billToGST && fromGST) {
+            console.log("triggered")
+            var billToPrefix = billToGST.substring(0, 2);
+            var fromPrefix = fromGST.substring(0, 2);
+
+            var cgstInput = row.querySelector('[name="cgst[]"]');
+            var sgstInput = row.querySelector('[name="sgst[]"]');
+            var igstInput = row.querySelector('[name="igst[]"]');
+
+            if (billToPrefix === fromPrefix) {
+                if (cgstInput) {
+                    cgstInput.disabled = false;
+                    cgstInput.value = (gst / 2).toFixed(2) || "0.00";
+                }
+                if (sgstInput) {
+                    sgstInput.disabled = false;
+                    sgstInput.value = (gst / 2).toFixed(2) || "0.00";
+                }
+                if (igstInput) {
+                    igstInput.disabled = true;
+                    igstInput.value = "0.00";
+                }
+            } else {
+                if (cgstInput) {
+                    cgstInput.disabled = true;
+                    cgstInput.value = "0.00";
+                }
+                if (sgstInput) {
+                    sgstInput.disabled = true;
+                    sgstInput.value = "0.00";
+                }
+                if (igstInput) {
+                    igstInput.disabled = false;
+                    igstInput.value = gst.toFixed(2) || "0.00";
+                }
+            }
+
+            updateFinalAmount(cgstInput || igstInput);
+        }
+    }
+
+    // Function to update rate and final amount based on quantity and margin
+    function updateRateAndFinalAmount(inputElement) {
+        var row = inputElement.closest('tr');
+        var baseAmount = parseFloat(row.querySelector('[name="base_amount[]"]').value) || 0;
+        var quantity = parseFloat(row.querySelector('[name="quantity[]"]').value) || 1;
+        var margin = parseFloat(row.querySelector('[name="margin[]"]').value) || 0;
+
+        // Calculate the rate based on quantity and margin
+        var rate = (baseAmount * quantity) * (1 + margin / 100);
+        row.querySelector('[name="rate[]"]').value = rate.toFixed(2);
+
+        // Recalculate the final amount (including CGST, SGST, and IGST)
+        updateFinalAmount(row.querySelector('[name="cgst[]"]'));
+    }
+
+    // Function to update final amount based on CGST, SGST, and IGST
+    function updateFinalAmount(inputElement) {
+        var row = inputElement.closest('tr');
+        var rate = parseFloat(row.querySelector('[name="rate[]"]').value) || 0;
+        var cgstPercent = parseFloat(row.querySelector('[name="cgst[]"]').value) || 0;
+        var sgstPercent = parseFloat(row.querySelector('[name="sgst[]"]').value) || 0;
+        var igstPercent = parseFloat(row.querySelector('[name="igst[]"]').value) || 0;
+
+        // Calculate CGST, SGST, IGST, and Final Amount
+        var cgstAmount = (rate * cgstPercent) / 100;
+        var sgstAmount = (rate * sgstPercent) / 100;
+        var igstAmount = (rate * igstPercent) / 100;
+        var finalAmount = rate + cgstAmount + sgstAmount + igstAmount;
+
+        row.querySelector('[name="final_amount[]"]').value = finalAmount.toFixed(2);
+
+        updateTotalFinalAmount(); // Recalculate total final amount
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const table = document.getElementById("item-table");
+
+        // Function to enable manual product entry
+        function enableManualProductEntry(event) {
+            if (event.target.classList.contains("add-product")) {
+                conosle.log("trigerring this also");
+                let row = event.target.closest("tr");
+                let selectBox = row.querySelector(".product-select");
+
+                if (selectBox) {
+                    // Capture the selected value before destroying Select2
+                    let selectedValue = selectBox.value;
+
+                    // Destroy Select2 only for this row
+                    if ($(selectBox).data("select2")) {
+                        $(selectBox).select2("destroy");
+                    }
+
+                    // Ensure Select2 elements are removed only in this row
+                    setTimeout(() => {
+                        let select2Container = row.querySelector(".select2-container");
+                        if (select2Container) {
+                            select2Container.remove();
+                        }
+
+                        // Replace the select box with a text input
+                        let newInput = document.createElement("input");
+                        newInput.type = "text";
+                        newInput.className = "form-control";
+                        newInput.name = "custom_product[]";
+                        newInput.placeholder = "Enter Product Name";
+                        newInput.required = true;
+
+                        // Retain the selected value
+                        newInput.value = selectedValue;
+
+                        // Replace the select box with input
+                        selectBox.replaceWith(newInput);
+                    }, 50); // Small delay ensures Select2 finishes cleanup properly
+                }
+
+                // Enable read-only fields for this row only
+                row.querySelectorAll("input[name='hsncode[]'], input[name='base_amount[]'], input[name='cgst[]'], input[name='sgst[]'], input[name='igst[]']")
+                    .forEach(input => input.removeAttribute("readonly"));
+
+                // Remove "Add Product" button only in this row
+                event.target.remove();
+            }
+        }
+
+
+
+
+        // Event delegation for existing and dynamically added rows
+        table.addEventListener("click", enableManualProductEntry);
+
+        // Function to add a new row
+        document.getElementById("add-row").addEventListener("click", function () {
+            const rowCount = document.querySelectorAll("#item-table tbody tr").length + 1;
+            const row = `
+        <tr>
+            <td>${rowCount}</td>
+            <td>
+                <select class="form-select product-select" name="products[]" required onchange="updateProductDetails(this)">
+                    <option value="" disabled selected>Select a product</option>
+                    {% for product in products %}
+                        <option value="{{ product.id }}" 
+                                data-hsncode="{{ product.hsncode }}" 
+                                data-base_amount="{{ product.base_amount }}"
+                                data-gst="{{ product.gst }}">
+                            {{ product.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td><input type="text" class="form-control" name="hsncode[]" readonly></td>
+            <td><input type="text" class="form-control" name="base_amount[]" readonly></td>
+            <td><input type="number" class="form-control" name="quantity[]" min="1" required onchange="updateRateAndFinalAmount(this)" style="width: 70px;"></td>
+            <td><input type="number" class="form-control" name="margin[]" min="0" max="100" step="0.01" required onchange="updateRateAndFinalAmount(this)"></td>
+            <td><input type="number" class="form-control" name="rate[]" readonly style="width: 120px;"></td>
+            <td><input type="number" class="form-control" name="cgst[]" min="0" max="100" step="0.01" oninput="updateFinalAmount(this)" readonly></td>
+            <td><input type="number" class="form-control" name="sgst[]" min="0" max="100" step="0.01" oninput="updateFinalAmount(this)" readonly></td>
+            <td><input type="number" class="form-control" name="igst[]" min="0" max="100" step="0.01" oninput="updateFinalAmount(this)" readonly></td>
+            <td><input type="number" class="form-control" name="final_amount[]" readonly></td>
+            <td>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-success add-product">Add Product</button>
+                    <button type="button" class="btn btn-danger remove-row">Remove</button>
+                </div>
+            </td>
+        </tr>
+    `;
+
+            table.insertAdjacentHTML('beforeend', row);
+
+            // Reapply Select2 to new product dropdown
+            $(".product-select").last().select2({
+                tags: true,
+                placeholder: "Search or type a product",
+                allowClear: true,
+                width: '180px' // Adjust width here (you can change it as needed)
+
+            });
+
+            // Reapply GST check logic for the new row
+            checkGSTNumbers();
+            updateRowNumbers();
+        });
+
+        // Initialize Select2 on page load
+        $(document).ready(function () {
+            $(".product-select").select2({
+                tags: true,
+                placeholder: "Search or type a product",
+                allowClear: true,
+                width: '180px' // Adjust width here (you can change it as needed)
+
+            });
+        });
+
+        // Remove row functionality
+        document.addEventListener("click", function (event) {
+            if (event.target && event.target.classList.contains("remove-row")) {
+                event.target.closest("tr").remove();
+                updateRowNumbers();
+                updateTotalFinalAmount();
+            }
+        });
+
+        // Update row numbers dynamically
+        function updateRowNumbers() {
+            const rows = document.querySelectorAll("#item-table tr");
+            let count = 1;
+            rows.forEach(function (row) {
+                const td = row.querySelector("td:first-child");
+                if (td) {
+                    td.textContent = count++;
+                }
+            });
+        }
+
+
+    });
+</script>
+
+
+
+<style>
+    .custcss {
+        border: none;
+        /* Remove the border */
+        background-color: transparent;
+        /* Make the background transparent */
+        text-align: left;
+        /* Right-align the text */
+        width: 200px;
+        /* Optional: adjust the width if needed */
+        padding: 1px;
+        /* Optional: add padding for better spacing */
+        font-size: 14px;
+        /* Optional: adjust font size */
+        color: #000;
+        /* Optional: change text color */
+    }
+</style>
+
+{% endblock %}

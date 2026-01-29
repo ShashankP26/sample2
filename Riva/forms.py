@@ -3,46 +3,57 @@ from django import forms
 from .models import Enquiry, Products, Executive,quotation
 
 
+
+
+
 class EnquiryForm(forms.ModelForm):
     class Meta:
         model = Enquiry
-        fields =['companyname', 'customername', 'email', 'contact', 'location', 'status', 'products', 'closuredate', 'executive', 'files', 'remarks'] 
-        # widgets = {
-        #     'files': forms.ClearableFileInput(attrs={'multiple': True}),
-        # }
-        
-    # Custom validation for location (if needed)
-    def clean_location(self):
-        location = self.cleaned_data.get('location')
-        if not location:
-            raise forms.ValidationError("Location is required.")
-        return location
-    
-    # Custom validation for closuredate (if needed)
-    def clean_closuredate(self):
-        closuredate = self.cleaned_data.get('closuredate')
-    # Remove the restriction on past dates
-        return closuredate
+        fields = [
+            'companyname',
+            'customername',
+            'email',
+            'contact',
+            'location',
+            'status',
+            'products',
+            'closuredate',
+            'executive',
+            'files',
+            'remarks',
+            'refrence',   
+            'subproduct',     
+        ]
 
-    # Custom validation for contact number (only numeric)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # 🔥 NOTHING IS REQUIRED
+        for field in self.fields.values():
+            field.required = False
+            field.widget.attrs['class'] = 'form-control'
+
+    # ✅ OPTIONAL contact validation
     def clean_contact(self):
         contact = self.cleaned_data.get('contact')
         if contact and not str(contact).isdigit():
-            raise forms.ValidationError("Contact number must be a valid integer.")
+            raise forms.ValidationError("Contact number must be numeric.")
         return contact
-    
-    # Custom validation for email
+
+    # ✅ OPTIONAL email validation
     def clean_email(self):
         email = self.cleaned_data.get('email')
-        if '@' not in email:
+        if email and '@' not in email:
             raise forms.ValidationError("Please enter a valid email address.")
         return email
-    
-    def __init__(self, *args, **kwargs):
-        super(EnquiryForm, self).__init__(*args, **kwargs)
-        # Add classes to all fields
-        for field in self.fields.values():
-            field.widget.attrs['class'] = 'form-control'
+
+    # ✅ OPTIONAL location (NO required check)
+    def clean_location(self):
+        return self.cleaned_data.get('location')
+
+    # ✅ OPTIONAL closure date
+    def clean_closuredate(self):
+        return self.cleaned_data.get('closuredate')
 
 
 class QuotationForm(forms.ModelForm):

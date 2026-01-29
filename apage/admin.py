@@ -1,7 +1,8 @@
 from django.contrib import admin
-from .models import GeneralReport
+from .models import GeneralReport , GeneratorReport,SiteVisitSchedule
 
 admin.site.register(GeneralReport)
+admin.site.register(SiteVisitSchedule)
 
 
 
@@ -36,8 +37,8 @@ from .models import Site
 # Register the Site model with the admin interface
 @admin.register(Site)
 class SiteAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name')  # Display 'id' and 'name' columns in the list view
-    search_fields = ('name',)  # Allow searching by 'name'
+    list_display = ('name', 'zone')
+    search_fields = ('name', 'zone__name')
 
 # -------------------------------MOM------------------------
 from django.contrib import admin
@@ -72,8 +73,8 @@ class ElectronicItemAdmin(admin.ModelAdmin):
 # Register ServiceReport
 @admin.register(ServiceReport)
 class ServiceReportAdmin(admin.ModelAdmin):
-    list_display = ('service_name', 'customer_name', 'date_of_visit', 'zone')
-    list_filter = ('zone', 'date_of_visit', 'status_of_call')
+    list_display = ('service_name', 'customer_name', 'date_of_visit')
+    list_filter = ( 'date_of_visit', 'status_of_call')
     search_fields = ('service_name', 'customer_name', 'phone_no', 'location')
 
 # Register ElectronicItemStatus
@@ -173,3 +174,39 @@ class ServiceReportEditLogAdmin(admin.ModelAdmin):
     list_filter = ('edit_timestamp', 'field_changed', 'edited_by')
     search_fields = ('report__id', 'field_changed', 'old_value', 'new_value')
     ordering = ('-edit_timestamp',)
+
+# ---------------------GeneratorReport----------------------
+
+
+
+from datetime import datetime, timedelta
+@admin.register(GeneratorReport)
+class GeneratorReportAdmin(admin.ModelAdmin):
+    list_display = ('created_by', 'date', 'start_time', 'end_time', 'get_total_time')
+    search_fields = ('created_by__username', 'date')
+    list_filter = ('date',)
+
+    def get_total_time(self, obj):
+        if obj.start_time and obj.end_time:
+            start_time = datetime.combine(obj.date, obj.start_time)
+            end_time = datetime.combine(obj.date, obj.end_time)
+
+            # If end_time is before start_time but within a reasonable time window (e.g., next-day case)
+            if end_time < start_time:
+                # Only allow a next-day adjustment if the difference is within a reasonable range
+                if (start_time - end_time).seconds <= 12 * 3600:  # Max 12-hour shift assumption
+                    end_time += timedelta(days=1)
+                else:
+                    return "Invalid Time"  # Block cases like 8 PM → 7 PM
+
+            total_time = end_time - start_time
+            hours, remainder = divmod(total_time.total_seconds(), 3600)
+            minutes = remainder // 60
+
+            return f"{int(hours)}h {int(minutes)}m"
+
+        return "N/A"
+
+    get_total_time.short_description = "Total Time"
+
+

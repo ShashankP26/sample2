@@ -1,11 +1,21 @@
 from django.contrib import admin
-from .models import Conveyance, Expense, CashVoucher, Notification, Payment, BorrowedAmount,AdvancePayment,ProofPhoto
+from .models import  FCMToken,MobileSession,DirectPay,Conveyance,AdvanceGroupUpdateLog,AdvanceGroup,AdvanceAssignment, Expense, CashVoucher, Notification, Payment, BorrowedAmount,AdvancePayment, PaymentRequest, PaymentRequestMessage,ProofPhoto
 
 # Register the Expense model
+admin.site.register(FCMToken)
 admin.site.register(Expense)
+
 admin.site.register(Notification)
+admin.site.register(MobileSession)
 admin.site.register(AdvancePayment)
 admin.site.register(ProofPhoto)
+admin.site.register(AdvanceGroupUpdateLog)
+admin.site.register(AdvanceGroup)
+admin.site.register(AdvanceAssignment)
+admin.site.register(PaymentRequest)
+admin.site.register(PaymentRequestMessage)
+admin.site.register(DirectPay)
+
 from django.contrib import admin
 from .models import Conveyance
 

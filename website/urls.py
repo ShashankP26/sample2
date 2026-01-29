@@ -86,11 +86,61 @@ urlpatterns = [
     # path('process-bill-photo/', process_bill_photo, name='process-bill-photo'),
     # path('process-gst-photo/', process_gst_photo, name='process-gst-photo'),
     # path('process-uploaded-image/', views.process_uploaded_image, name='process_uploaded_image'),
-    path('process-photo/', views.process_photo, name='process_photo'),  # Add this line
+    # path('process-photo/', views.process_photo, name='process_photo'),  # Add this line
     path('upload-temporary/', views.upload_temporary, name='upload_temporary'),
     path('get_price_per_km/', views.get_price_per_km, name='get_price_per_km'),
-    path('test/', views.test, name='test'),
-    path('erp-software/', views.erp_software, name='erp_software'), 
+    path('approve-voucher/', views.approve_voucher_ajax, name='approve_voucher_ajax'),
+
+    path('ajax/reject-cash-voucher/', views.reject_cash_voucher_ajax, name='reject_cash_voucher_ajax'),
+    path("assign/group-advance/", views.assign_advances, name="assign_advances"),
+    path("assigned-groups/", views.view_assigned_groups, name="view_assigned_groups"),
+    path("update/balance/<int:group_id>/", views.update_group_balance, name="update_group_balance"),
+    path("delete-group/<int:group_id>/", views.delete_group, name="delete_group"),
+    path("update-group-members/<int:group_id>/", views.update_group_members, name="update_group_members"),
+    path('expenses/approve/<int:expense_id>/', views.approve_expense, name='approve_expense'),
+    path('expenses/reject/', views.reject_expense, name='reject_expense'),
+    path('approve-tip-voucher/', views.approve_tip_voucher, name='approve_tip_voucher'),
+    path('submit-request/', views.submit_request, name='submit_request'),
+     path('view-requests/', views.view_requests, name='view_requests'),
+    path('chat/<int:req_id>/', views.chat_request, name='chat_request'),
+    path('ajax-reply/', views.ajax_reply_request, name='ajax_reply_request'),
+    path("ajax/fetch-messages/<int:req_id>/", views.fetch_messages, name="fetch_messages"),
+    path('advances/export/excel/', views.export_advances_excel, name='export_advances'),
+    path('advances/export/pdf/', views.export_advances_pdf, name='export_advances_pdf'),
+
+
+    path('expenses/request-delete/<int:expense_id>/', views.request_expense_deletion, name='request_expense_deletion'),
+    path('expenses/delete/<int:expense_id>/', views.delete_expense, name='delete_expense'),
+    path('delete-request/', views.delete_request, name='delete_request'),
+    path("advance-group/<int:group_id>/balance/", views.get_group_balance, name="get_group_balance"),
+    path('close_group/<int:group_id>/', views.close_group, name='close_group'),
+    
+    path("directpay/", views.directpay_form, name="directpay_form"),
+    path("directpay/preview/", views.directpay_preview, name="directpay_preview"),
+    path("directpay/<int:dp_id>/edit/", views.edit_directpay_form, name="directpay_form_edit"),
+
+    path("payments/update/<int:id>/", views.update_payment, name="update_payment"),
+    path("delete-advance-log/<int:log_id>/", views.delete_advance_log, name="delete_advance_log"),
+
+    path("fix-advance-balances/", views.fix_advance_balances, name="fix_advance_balances"),
+    path("fix-advance-balances/confirm/", views.confirm_fix_advance_balances, name="confirm_fix_advance_balances"),
+
+
+    path("api/mobile-session/", views.mobile_session),
+    path("mobile-login/", views.mobile_token_login),
+    path("api/save-fcm-token/", views.save_fcm_token),
+
+
+    
+    
+
+
+
+
+
+
+
+
 
     
 ]

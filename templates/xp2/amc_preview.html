@@ -2,281 +2,304 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quotation Preview - {{ quotation_number }}</title>
-    <style>
-        /* A4 Page Layout */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0 auto;
-            padding: 20px;
-            width: 21cm;
-            min-height: 29.7cm;
-            box-sizing: border-box;
-            background-color: #fff;
-            max-height: 99vh;
-        }
-    
-        header {
-            text-align: center;
-            margin-bottom: 10px;
-            margin-top: 0px;
-            padding-bottom: 10px;
-        }
-    
-        header h1 {
-            font-size: 28px;
-            font-weight: bold;
-            margin: 0;
-        }
+<meta charset="UTF-8">
+<title>Quotation Preview - {{ quotation_number }}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f8f9fb;
+    color: #19202A;
+    margin: 0;
+}
+header {
+    text-align: center;
+    padding: 32px 0 0 0;
+    background: #fff;
+    border-bottom: 1.5px solid #e5e5e5;
+}
+.logo {
+    height: 38px;
+}
+.container {
+    max-width: 900px;
+    margin: 32px auto 0 auto;
+    background: #fff;
+    border-radius: 7px;
+    box-shadow: 0 2px 12px 0 rgba(0,0,0,0.04);
+    padding: 36px 36px 30px 36px;
+    min-height: 80vh;
+}
+h1 {
+    text-align: left;
+    font-size: 2rem;
+    font-weight: 600;
 
-        .details-section {
-            margin-bottom: 20px;
-        }
+    margin: 0 0 28px 0;
+}
+.company-block {
+    margin-bottom: 18px;
+}
+.company-block .cname {
+    font-weight: 600;
+    font-size: 1.13rem;
+}
+.company-block .cmail {
+    font-size: 1rem;
+    color: #355;
+}
+.info-table {
+    width: 100%;
+    max-width: 480px;
+    margin: 15px 0 28px 0;
+    border: 1px solid #e2e6ef;
+    border-radius: 4px;
+    border-collapse: collapse;
+    font-size: 15px;
+}
+.info-table td {
+    border-bottom: 1px solid #eaeaea;
+    padding: 7px 13px;
+}
+.info-table td:first-child {
+    background: #f7f8fa;
+    font-weight: 500;
+    width: 36%;
+}
+.info-table tr:last-child td { border-bottom: none; }
 
-        .details-section h3 {
-            font-size: 18px;
-            font-weight: bold;
-        }
+.section-title {
+    font-size: 1.13rem;
+    font-weight: 600;
 
-        .details-section p {
-            margin: 5px 0;
-        }
+    background: #f5f7fa;
+    border-radius: 5px 5px 0 0;
+    border-bottom: 1.5px solid #e4e7ea;
+    padding: 9px 0 7px 15px;
+    margin: 2.2em 0 1em 0;
+    letter-spacing: 0.04em;
+}
+.details-section {
+    margin-bottom: 18px;
+    padding-left: 2px; padding-right:2px;
+}
+ul, ol { margin: 2px 0 0 18px; font-size: 1em; }
+li { margin-bottom: 3.5px; font-size: 1em; }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
+.styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 14px;
+    font-size: 15px;
+}
+.styled-table th, .styled-table td {
+    border: 1px solid #dde2e7;
+    padding: 9px 7px;
+}
+.styled-table th {
+    background: #f5f7fa;
 
-        table th, table td {
-            border: 1px solid #ddd;
-            padding: 6px;
-            text-align: center;
-        }
+    font-weight: 600;
+}
+.styled-table td { font-weight: 400; }
+.styled-table tbody tr:nth-child(even) { background: #fafbfc; }
 
-        table th {
-            background-color: #f4f4f4;
-            font-weight: bold;
-        }
+.totals-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 32px;
+    margin: 36px 0 13px 0;
+    font-size: 1.07rem;
+    max-width: 600px;
+    margin-left:0; margin-right:0;
+}
+.totals-container span {
+    font-weight: 500;
 
-        /* Adjust column widths */
-        table th:nth-child(1), table td:nth-child(1) {
-            width: 10%;
-        }
-        table th:nth-child(2), table td:nth-child(2) {
-            width: 30%;
-        }
-        table th:nth-child(3), table td:nth-child(3),
-        table th:nth-child(4), table td:nth-child(4) {
-            width: 15%;
-        }
-        table th:nth-child(5), table td:nth-child(5) {
-            width: 20%;
-        }
+}
+.totals-container strong {
 
-        .totals-container {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-        }
+    font-weight: 600;
+}
+.amount-in-words {
+    background: #f8f9fc;
+    border-left: 4px solid #2234c9;
+    margin: 16px 0 26px 0;
+    padding: 10px 18px;
+    font-size: 1em;
+    font-weight: 500;
+    border-radius: 3px;
+}
+.print-button {
+    padding: 9px 23px;
+    margin-top: 14px;
+    background: #2234c9;
 
-        .totals-container .section {
-            width: 48%;
-        }
+    border: none;
+    border-radius: 20px;
+    font-size: 1.01rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.18s;
+}
+.print-button:hover { background: #1a247d; }
+footer {
+    text-align: center;
+    font-size: 12px;
+    margin: 38px 0 0 0;
+}
+hr {
+    border: none;
+    height: 1.5px;
+    background: #e5e8ee;
+    margin: 31px 0 25px 0;
+}
+@media print {
+    body, .container, .details-section, .company-block, .amount-in-words {
+        background: #fff !important;
+        color: #222 !important;
+    }
+    .container {
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    header { border: none; }
+    .styled-table th {
+        background: #f5f7fa !important;
+        color: #242F3A !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    .section-title {
+        background: #f5f7fa !important;
+        color: #111 !important;
+        border-radius: 5px 5px 0 0 !important;
+        border-bottom: 1.5px solid #e4e7ea !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    .print-button { display: none !important; }
+    .totals-container, .amount-in-words {
+        background: none !important;
+        border: none !important;
+    }
+}
 
-        footer {
-            text-align: center;
-            margin-top: 30px;
-            font-size: 12px;
-            page-break-inside: avoid;
-           
-        }
-
-        .line-border {
-            border-top: 1px solid #ddd;
-            margin-top: 20px;
-        }
-
-        @media print {
-            /* Print specific styles */
-            body {
-                width: 100%;
-                min-height: auto;
-                margin: 0;
-                padding: 20mm;
-            }
-
-            .details-section h3, .totals-container h3 {
-                font-size: 16px;
-                font-weight: normal;
-            }
-
-            .totals-container {
-                flex-direction: column;
-            }
-
-            table th, table td {
-                padding: 4px;
-            }
-
-            footer {
-                
-                font-size: 10px;
-            }
-
-            .print-button {
-                display: none;
-            }
-        }
-    </style>
+</style>
 </head>
 <body>
-    <header>
-        <img src="{% static 'xpredictlogo.jpg' %}" width="110" height="32" alt="Xpredict" class="navbar-brand-image">
-    </header>
+<header>
+    <img src="{% static 'xlogo.png' %}" width="130" height="40" alt="Xpredict" class="logo">
+</header>
+<div class="container">
+    <h2>AMC PROPOSAL</h2>
+    {% for comp in company %}
+    <div class="company-block">
+        <div class="cname">{{ comp.c_name }}</div>
+        <div class="cmail">{{ comp.mail }} / {{ comp.phone }}</div>
+    </div>
+    <table class="info-table">
+        <tbody>
+            <tr><td>Date</td><td>{{ current_date }}</td></tr>
+            <tr><td>Quotation No</td><td>{{ quotation_no }}</td></tr>
+            <tr><td>Validity</td><td>15 days</td></tr>
+            <tr><td>Prepared by</td><td>Kirti</td></tr>
+        </tbody>
+    </table>
+    {% endfor %}
 
-
-
-        <hr>
-        <h1>AMC Proposal</h1>
-        {% for comp in company  %}
-        <p><strong>{{ comp.c_name }} </strong></p>
-        <p><strong>{{ comp.mail }} / {{ comp.phone }} </strong></p>
-        
-        <table class="table table-bordered">
-            <tbody>
-                <tr>
-                    <td><strong>Date</strong></td>
-                    <td>{{ current_date }}</td>
-                </tr>
-                <tr>
-                    <td><strong>Quotation No</strong></td>
-                    <td>{{ quotation_no }}</td>
-                </tr>
-                <tr>
-                    <td><strong>Validity</strong></td>
-                    <td>15 days</td>
-                </tr>
-                <tr>
-                    <td><strong>Prepared by</strong></td>
-                    <td>Kirti</td>
-                </tr>
-            </tbody>
-        </table>
-        
-        {% endfor %}
-
-
-    <!-- Contents Section -->
+    {% if show_contents %}
     <div class="details-section">
-        <h3>Contents:</h3>
+        <div class="section-title">Contents</div>
         <ul>
-            {% for item in data.contents %}
-                {% if item.is_checked %}
-                    <li>{{ item.value }}</li>
-                {% endif %}
+            {% for point in contents_points %}
+                <li>{{ point }}</li>
             {% endfor %}
         </ul>
     </div>
+    {% endif %}
 
-   
-
-    <!-- AMC Proposal Section -->
     {% with data.Amc_Proposal|length as proposal_count %}
-        {% if proposal_count > 0 and data.Amc_Proposal|yesno:"yes,no" == "yes" %}
-            <div class="details-section">
-                <h3>AMC Proposal:</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Product</th>
-                            <th>Capacity</th>
-                            <th>Total Capacity Needed</th>
-                            <th>Waste Water Type</th>
-                            <th>No. of Machines</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in data.Amc_Proposal %}
-                            {% if item.is_checked %}
-                                <tr>
-                                    <td>{{ item.pd_name }}</td>
-                                    <td>{{ item.capacity }}</td>
-                                    <td>{{ item.total_needed_capacity }}</td>
-                                    <td>{{ item.waste_water_type }}</td>
-                                    <td>{{ item.total_no_machines }}</td>
-                                </tr>
-                            {% endif %}
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% endif %}
-    {% endwith %}
-
-
-    <!-- Maintenance Support Section -->
+    {% if proposal_count > 0 and data.Amc_Proposal|yesno:"yes,no" == "yes" %}
     <div class="details-section">
-        <h3>Maintenance Support:</h3>
-        <ul>
-            {% for item in data.maintenance_support %}
-                {% if item.is_checked %}
-                    <li>{{ item.value }}</li>
-                {% endif %}
-            {% endfor %}
-        </ul>
-    </div>
-
-    <!-- Yearly Maintenance Section -->
-    <div class="details-section">
-        <h3>Yearly Maintenance:</h3>
-        <ul>
-            {% for item in data.yearly_maintenance %}
-                {% if item.is_checked %}
-                    <li>{{ item.value }}</li>
-                {% endif %}
-            {% endfor %}
-        </ul>
-    </div>
-
-    <!-- Running Consumables Section -->
-    <div class="details-section">
-        <h3>Running Consumables:</h3>
-        <ul>
-            {% for item in data.running_consumables %}
-                {% if item.is_checked %}
-                    <li>{{ item.value }}</li>
-                {% endif %}
-            {% endfor %}
-        </ul>
-    </div>
-
-    <!-- Exclusions Section -->
-    <div class="details-section">
-        <h3>Exclusions:</h3>
-        <ul>
-            {% for item in data.exclusions %}
-                {% if item.is_checked %}
-                    <li>{{ item.value }}</li>
-                {% endif %}
-            {% endfor %}
-        </ul>
-    </div>
-
-<!-- Pricing: AMC For One Year Section -->
-{% if data.amc_pricing|length > 0 and data.amc_pricing|yesno:"yes,no" == "yes" %}
-    <div class="details-section">
-        <h2>Pricing: AMC For One Year</h2>
-        <table>
+        <div class="section-title">AMC Proposal</div>
+        <table class="styled-table">
             <thead>
                 <tr>
-                    <th>Product</th>
-                    <th>Capacity</th>
-                    <th>Total Capacity Needed</th>
-                    <th>Waste Water Type</th>
-                    <th>No. of Machines</th>
+                    <th>Product</th><th>Capacity</th><th>Total Capacity Needed</th><th>Waste Water Type</th><th>No. of Machines</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in data.Amc_Proposal %}
+                    {% if item.is_checked %}
+                        <tr>
+                            <td>{{ item.pd_name }}</td>
+                            <td>{{ item.capacity }}</td>
+                            <td>{{ item.total_needed_capacity }}</td>
+                            <td>{{ item.waste_water_type }}</td>
+                            <td>{{ item.total_no_machines }}</td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    {% if show_maintenance_support %}
+    <div class="details-section">
+        <div class="section-title">Maintenance Support</div>
+        <ul>
+            {% for point in maintenance_support_points %}
+                <li>{{ point }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if show_yearly_maintenance %}
+    <div class="details-section">
+        <div class="section-title">Yearly Maintenance</div>
+        <ul>
+            {% for point in yearly_maintenance_points %}
+                <li>{{ point }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if show_running_consumables %}
+    <div class="details-section">
+        <div class="section-title">Running Consumables</div>
+        <ul>
+            {% for point in running_consumables_points %}
+                <li>{{ point }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if show_exclusions %}
+    <div class="details-section">
+        <div class="section-title">Exclusions</div>
+        <ul>
+            {% for point in exclusions_points %}
+                <li>{{ point }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if data.amc_pricing|length > 0 and data.amc_pricing|yesno:"yes,no" == "yes" %}
+    <div class="details-section">
+        <div class="section-title">Pricing: AMC For One Year</div>
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th>Product</th><th>Capacity</th><th>Total Capacity Needed</th><th>Waste Water Type</th><th>No. of Machines</th>
                 </tr>
             </thead>
             <tbody>
@@ -294,13 +317,12 @@
             </tbody>
         </table>
     </div>
-{% endif %}
+    {% endif %}
 
-<!-- Particulars Section -->
-{% if data.Particulars|length > 0 and data.Particulars|yesno:"yes,no" == "yes" %}
+    {% if show_particulars %}
     <div class="details-section">
-        <h3>Particulars:</h3>
-        <table>
+        <div class="section-title">Particulars</div>
+        <table class="styled-table">
             <thead>
                 <tr>
                     <th>Particular</th>
@@ -319,41 +341,34 @@
             </tbody>
         </table>
     </div>
-{% endif %}
-
+    {% endif %}
 
     <div class="totals-container">
-        <!-- First Line -->
-        <div style="display: flex; justify-content: space-between; gap: 40px;">
-            <span><strong>Subtotal : {{ data.Subtotal_list.0.value }}</strong></span>
-                <span><strong>GST :{{ data.GST.0.value }}</strong> </span>
-            <span><strong>Total : {{ data.Grand_Total.0.value }}</strong></span>
-        </div>
+        <span>Subtotal: <strong>{{ data.Subtotal_list.0.value|default:"N/A" }}</strong></span>
+        <span>GST: <strong>{{ data.GST.0.value|default:"N/A" }}</strong></span>
+        <span>Total: <strong>{{ data.Grand_Total.0.value|default:"N/A" }}</strong></span>
     </div>
-    <br>
-    <!-- Total Amount in Words -->
-    <div style="margin-top: 10px;">
-        <strong>Total Amount in Words:</strong>
-        <br>
-        <strong>{{ g_total_in_words }}</strong>
+    <div class="amount-in-words">
+        <div><strong>Total Amount in Words:</strong></div>
+        <div>{{ g_total_in_words }}</div>
     </div>
-     
-     <div class="details-section">
-        <h3>Terms and Conditions:</h3>
+
+    {% if show_terms %}
+    <div class="details-section">
+        <div class="section-title">Terms and Conditions</div>
         <ul>
-            {% for item in data.terms %}
-                {% if item.is_checked %}
-                    <li>{{ item.value }}</li>
-                {% endif %}
+            {% for point in terms_points %}
+                <li>{{ point }}</li>
             {% endfor %}
         </ul>
     </div>
+    {% endif %}
+
     <hr>
-    <!-- Footer Section -->
     <footer>
         <p>© Xpredict Labs. All rights reserved.</p>
-         <button class="print-button" onclick="window.print()">Print this quotation</button>
+        <button class="print-button" onclick="window.print()">Print this quotation</button>
     </footer>
-
+</div>
 </body>
 </html>

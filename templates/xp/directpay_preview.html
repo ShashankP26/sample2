@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<!-- SweetAlert -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<div class="container-fluid mt-4">
+
+
+  <!-- 🔹 Top Control Bar -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+
+    <!-- 🔸 Left Side: Actions -->
+    <div class="d-flex flex-wrap align-items-center gap-2">
+
+      <!-- Generate -->
+      {% if request.user.is_staff or request.user.is_superuser %}
+      <!-- Generate (only for admin/staff) -->
+      <button type="button" id="bulkGenerateBtn" class="btn btn-success btn-md">
+        Generate Voucher for Selected
+      </button>
+      {% endif %}
+
+      <!-- Filter by Date -->
+      <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+          Filter by Date
+        </button>
+        <div class="dropdown-menu p-3 shadow-lg" style="min-width: 280px;">
+          <form method="get">
+            <div class="mb-2">
+              <label class="form-label mb-1">From:</label>
+              <input type="date" name="start_date" value="{{ start_date }}" class="form-control">
+            </div>
+            <div class="mb-2">
+              <label class="form-label mb-1">To:</label>
+              <input type="date" name="end_date" value="{{ end_date }}" class="form-control">
+            </div>
+            <div class="mb-3">
+              <label class="form-label mb-1">Sort:</label>
+              <select name="sort_order" class="form-select">
+                <option value="desc" {% if sort_order == "desc" %}selected{% endif %}>Newest First</option>
+                <option value="asc" {% if sort_order == "asc" %}selected{% endif %}>Oldest First</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Apply</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Filter by User -->
+      {% if request.user.is_staff or request.user.is_superuser %}
+      <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+          {% if selected_user_id %}
+            {% for u in all_users %}
+              {% if u.id == selected_user_id %}
+                {{ u.first_name|default:u.username }}
+              {% endif %}
+            {% endfor %}
+          {% else %}
+            Filter by User
+          {% endif %}
+        </button>
+        <ul class="dropdown-menu">
+          <li><a class="dropdown-item" href="?">All Users</a></li>
+          {% for u in all_users %}
+            <li><a class="dropdown-item" href="?user_id={{ u.id }}">{{ u.first_name|default:u.username }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+    </div>
+
+    <!-- 🔸 Right Side: Search + Clear -->
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <form method="get" class="d-flex align-items-center flex-grow-1" style="gap: 8px; min-width: 280px; max-width: 450px;">
+          <input type="text" name="q" value="{{ search_query }}" class="form-control flex-grow-1" placeholder="Search...">
+          <button type="submit" class="btn btn-secondary">Search</button>
+        </form>
+      
+        <a href="{% url 'directpay_preview' %}" class="btn btn-danger">Clear</a>
+      </div>
+  </div>
+  {% if request.user.is_staff or request.user.is_superuser %}
+<div class="mb-3" style="max-width:300px;">
+  <label class="form-label"><strong>Create Voucher For</strong></label>
+  <select id="createForUser" class="form-select">
+    {% for u in all_users %}
+      <option value="{{ u.id }}">
+        {{ u.first_name|default:u.username }}
+      </option>
+    {% endfor %}
+  </select>
+</div>
+{% endif %}
+
+  <!-- 🧾 Table -->
+  <form method="post" id="voucherForm">
+    {% csrf_token %}
+    <div id="directPayTableContainer" class="table-responsive shadow-sm rounded">
+        <table class="table table-striped table-hover align-middle" style="border-collapse: collapse; width: 100%;">
+          <thead class="table-dark text-center">
+            <tr>
+              {% if request.user.is_staff or request.user.is_superuser %}
+                <th style="width: 3%; border: 1px solid #ddd; padding: 8px;">
+                  <input type="checkbox" id="select-all">
+                </th>
+              {% endif %}
+              <th style="width: 12%; border: 1px solid #ddd; padding: 8px;">Created By</th>
+              <th style="width: 12%; border: 1px solid #ddd; padding: 8px;">Item Type</th>
+              <th style="width: 15%; border: 1px solid #ddd; padding: 8px;">Item Name / Remarks</th>
+              <th style="width: 15%; border: 1px solid #ddd; padding: 8px;">Payment Category</th>
+              <th style="width: 10%; border: 1px solid #ddd; padding: 8px;">Transaction Category</th>
+              <th style="width: 10%; border: 1px solid #ddd; padding: 8px;">External Name</th>
+              <th style="width: 10%; border: 1px solid #ddd; padding: 8px;">Amount</th>
+              <th style="width: 10%; border: 1px solid #ddd; padding: 8px;">Payment Mode</th>
+              <th style="width: 10%; border: 1px solid #ddd; padding: 8px;">Transaction Date</th>
+              <th style="width: 10%; border: 1px solid #ddd; padding: 8px;">Proof</th>
+              <th style="width: 10%; border: 1px solid #ddd; padding: 8px;">Edit</th>
+              {% if request.user.is_staff or request.user.is_superuser %}
+                <th style="width: 10%; border: 1px solid #ddd; padding: 8px;">Action</th>
+              {% endif %}
+            </tr>
+          </thead>
+      
+          <tbody>
+            {% for dp in directpays %}
+            <tr>
+              {% if request.user.is_staff or request.user.is_superuser %}
+                <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">
+                  <input type="checkbox" name="selected_ids" value="{{ dp.id }}">
+                </td>
+              {% endif %}
+              <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">{{ dp.created_by.first_name|default:dp.created_by.username }}</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">{{ dp.item_type|title }}</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">{{ dp.item_name }}</td>
+      
+              <!-- Payment Category -->
+              <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">
+                {% if dp.bill_file %}
+                  <p><strong>Bill</strong></p>
+                  <a href="{{ dp.bill_file.url }}" target="_blank" class="btn btn-info btn-sm">View Bill</a>
+                {% elif dp.gst_file %}
+                  <p><strong>GST</strong></p>
+                  <a href="{{ dp.gst_file.url }}" target="_blank" class="btn btn-warning btn-sm">View GST</a>
+                {% else %}
+                  <p><strong>Voucher</strong></p>
+                {% endif %}
+              </td>
+      
+              <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">{{ dp.transaction_category|title }}</td>
+              <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">{{ dp.external_name }}</td>
+              <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">₹{{ dp.total_amount }}</td>
+              <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">{{ dp.payment_mode|title }}</td>
+              <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">{{ dp.transaction_date }}</td>
+      
+              <!-- Proof -->
+              <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">
+                {% if dp.proof_photo %}
+                  <a href="{{ dp.proof_photo.url }}" target="_blank" class="btn btn-primary btn-sm">View Proof</a>
+                {% else %}
+                  <span class="text-muted">No Proof</span>
+                {% endif %}
+              </td>
+              <td class="text-center" style="border: 1px solid #ddd;">
+                <a href="{% url 'directpay_form_edit' dp.id %}" class="btn btn-secondary btn-sm">Edit</a>
+              </td>
+    
+      
+              {% if request.user.is_staff or request.user.is_superuser %}
+                <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">
+                  <button type="button"
+                          class="btn btn-success btn-sm single-create-btn"
+                          data-id="{{ dp.id }}">
+                      Create Voucher
+                  </button>
+                </td>
+              {% endif %}
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="12" class="text-center text-muted" style="border: 1px solid #ddd; padding: 8px;">
+                No Direct Pay records found.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+  </form>
+</div>
+
+<!-- ✅ JS -->
+<script>
+document.getElementById("select-all").addEventListener("change", function() {
+  const checked = this.checked;
+  document.querySelectorAll('input[name="selected_ids"]').forEach(cb => cb.checked = checked);
+});
+
+
+
+{% if messages %}
+  {% for message in messages %}
+    Swal.fire({
+      title: "{{ message.tags|title }}",
+      text: "{{ message }}",
+      icon: "{% if 'success' in message.tags %}success{% elif 'warning' in message.tags %}warning{% else %}info{% endif %}",
+      timer: 1500,
+      showConfirmButton: false
+    });
+  {% endfor %}
+{% endif %}
+</script>
+<script>
+
+  function getCSRF() {
+      return document.cookie.split('; ')
+          .find(row => row.startsWith('csrftoken'))
+          ?.split('=')[1];
+  }
+  
+  // Bulk Generate
+  document.getElementById("bulkGenerateBtn").addEventListener("click", function () {
+
+    let selected = [...document.querySelectorAll('input[name="selected_ids"]:checked')]
+                    .map(cb => cb.value);
+
+    if (selected.length === 0) {
+        Swal.fire("No Selection!", "Please select at least one record.", "warning");
+        return;
+    }
+
+    let formData = new FormData();
+
+    // ✅ ADD THIS
+    let targetUser = document.getElementById("createForUser")?.value;
+    if (targetUser) {
+        formData.append("create_for_user", targetUser);
+    }
+
+    selected.forEach(id => formData.append("selected_ids[]", id));
+
+    fetch("", {
+        method: "POST",
+        headers: { 
+            "X-CSRFToken": getCSRF(),
+            "X-Requested-With": "XMLHttpRequest",
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire("Success!", `${data.created} voucher(s) created.`, "success");
+
+            let dom = new DOMParser().parseFromString(data.html, "text/html");
+            let newTable = dom.querySelector("#directPayTableContainer").innerHTML;
+            document.querySelector("#directPayTableContainer").innerHTML = newTable;
+        }
+    });
+});
+  
+  
+  // Single Create
+  document.addEventListener("click", function(e) {
+    if (!e.target.matches(".single-create-btn")) return;
+
+    let id = e.target.dataset.id;
+    let formData = new FormData();
+
+    // ✅ ADD THIS
+    let targetUser = document.getElementById("createForUser")?.value;
+    if (targetUser) {
+        formData.append("create_for_user", targetUser);
+    }
+
+    formData.append("single_dp_id", id);
+
+    fetch("", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": getCSRF(),
+            "X-Requested-With": "XMLHttpRequest",
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire("Success!", "Voucher created.", "success");
+
+            let dom = new DOMParser().parseFromString(data.html, "text/html");
+            let newTable = dom.querySelector("#directPayTableContainer").innerHTML;
+            document.querySelector("#directPayTableContainer").innerHTML = newTable;
+        }
+    });
+});
+  </script>
+
+
+
+{% endblock %}

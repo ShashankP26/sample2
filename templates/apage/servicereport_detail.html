@@ -52,9 +52,10 @@
                 <h4>Service Information</h4>
             </div>
             <div class="card-body">
-                <p><strong>Name:</strong> {{ service_report.service_name }}</p>
+                <p><strong>Name :</strong> {{ service_report.service_name }}</p>
                 <p><strong>Date of Visit:</strong> {{ service_report.date_of_visit|date:"Y-m-d" }}</p>
-                <p><strong>Zone:</strong> {{ service_report.zone }}</p>
+                <p><strong>Zone:</strong> {{ service_report.zone.name }} ({{ service_report.zone.code }})</p>
+                <p><strong>Site:</strong> {{ service_report.site.name }}</p>
                 <p><strong>Phone No:</strong> {{ service_report.phone_no }}</p>
                 <p><strong>Reason of Visit:</strong> {{ service_report.reason_of_visit }}</p>
                 <p><strong>In Time:</strong> {{ service_report.in_time }}</p>
@@ -73,6 +74,7 @@
                 <p><strong>State:</strong> {{ service_report.state }}</p>
                 <p><strong>Date of Complaint:</strong> {{ service_report.date_of_complaint|date:"Y-m-d" }}</p>
                 <p><strong>Status of Call:</strong> {{ service_report.status_of_call }}</p>
+                <p><strong>Client's Remarks:</strong>{{ service_report.client_remark|default:"No remarks given." }}</p>
             </div>
         </div>
         {% comment %} <div class="col-sm-12 col-lg-12"> {% endcomment %}
@@ -337,7 +339,39 @@
             
                     <p><strong>Spares Details:</strong></p>
                     <p>{{ service_report.spares_details }}</p>
-            
+                    <!-- Attachments Section -->
+                    <div class="mt-4">
+                        <h5>Attachments</h5>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th style="width: 10%;">#</th>
+                                    <th style="width: 70%;">File Name</th>
+                                    <th style="width: 20%;">Download</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if existing_attachments %}
+                                    {% for attachment in existing_attachments %}
+                                    <tr>
+                                        <td>{{ forloop.counter }}</td>
+                                        <td>{{ attachment.file.name }}</td>
+                                        <td>
+                                            <a href="{{ attachment.file.url }}" target="_blank" class="btn btn-sm btn-primary">
+                                                Download
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted">No files attached</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
                 <div class="row">
                     <div class="col-md-6">
                         <p><strong>Service Person Name:</strong></p>
@@ -360,14 +394,95 @@
             <div class="card-footer text-center mt-4">
                 <a href="{% url 'service_report_edit' service_report.id %}" class=" custb btn btn-primary">Edit</a>
                 <a href="{% url 'servicereport' %}" class=" custb btn btn-secondary">Back to List</a>
-                <a href="{% url 'service_report_pdf' service_report.id %}" class=" custb btn btn-success">Download PDF</a>
+                <a href="{% url 'service_report_pdf' service_report.id %}" class="btn btn-success">Download PDF</a>
                 {% if user_role == 'Admin' %}
                 <a href="{% url 'servireport_edithistory' service_report.id %}" class=" custb btn btn-success">Edit History</a>
                 {% endif %}
-            </div>
+              <!-- Button to trigger modal -->
+              {% if service_report.client_signed %}
+                <button class="btn btn-secondary" disabled title="Already signed by client">
+                    Already Signed
+                </button>
+                {% else %}
+                <button
+                    class="btn btn-warning"
+                    data-bs-toggle="modal"
+                    data-bs-target="#linkModal"
+                    data-link="{% url 'client_sign' service_report.pk %}">
+                    Get Client Signature Link
+                </button>
+                {% endif %}
+                            </div>
             
         </div>
     </div>
+
+<!-- Bootstrap Modal -->
+<div class="modal fade" id="linkModal" tabindex="-1" aria-labelledby="linkModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content text-center">
+        <div class="modal-header">
+          <h5 class="modal-title">Copy Signature Link</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="text" id="copyLinkInput" class="form-control" readonly>
+          <button id="copyBtn" class="btn btn-success mt-3" onclick="copyLink()">Copy Link</button>
+          {% comment %} <div id="copyStatus" class="text-success mt-2" style="display: none;">Copied! </div> {% endcomment %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const linkModal = document.getElementById('linkModal');
+    linkModal.addEventListener('show.bs.modal', function (event) {
+      const button = event.relatedTarget;
+      const link = button.getAttribute('data-link');
+      const fullUrl = window.location.origin + link;
+      document.getElementById('copyLinkInput').value = fullUrl;
+      document.getElementById('copyStatus').style.display = 'none';
+    });
+  
+    function copyLink() {
+  const input = document.getElementById("copyLinkInput");
+  const copyBtn = document.getElementById("copyBtn");
+  const text = input.value;
+
+  if (navigator.clipboard && window.isSecureContext) {
+    // Works in HTTPS or localhost
+    navigator.clipboard.writeText(text).then(() => {
+      showCopied(copyBtn);
+    }).catch(err => {
+      alert("Copy failed: " + err);
+    });
+  } else {
+    // Fallback for HTTP
+    input.select();
+    input.setSelectionRange(0, 99999); // for mobile
+    try {
+      const success = document.execCommand("copy");
+      if (success) {
+        showCopied(copyBtn);
+      } else {
+        alert("Copy failed: execCommand returned false");
+      }
+    } catch (err) {
+      alert("Copy failed: " + err);
+    }
+  }
+}
+
+function showCopied(button) {
+  button.textContent = "Copied";
+  button.classList.remove("btn-success");
+  button.classList.add("btn-secondary");
+  setTimeout(() => {
+    button.textContent = "Copy Link";
+    button.classList.remove("btn-secondary");
+    button.classList.add("btn-success");
+  }, 2000);
+}
+  </script>
 
 <script>
     $('#updateChangesButton').on('click', function() { 
@@ -405,5 +520,19 @@
     });
     
 </script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll("td").forEach(function (cell) {
+            let text = cell.innerText.trim().toLowerCase();
+    
+            if (text === "yes") {
+                cell.innerHTML = '<span class="text-success fw-bold">YES</span>';
+            } 
+            else if (text === "no") {
+                cell.innerHTML = '<span class="text-danger fw-bold">NO</span>';
+            }
+        });
+    });
+    </script>
 {% endblock content %}
 

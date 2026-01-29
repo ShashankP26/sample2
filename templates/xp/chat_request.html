@@ -1,0 +1,434 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+
+    .reply-form {
+      background-color: #f0f0f0;
+      border-radius: 25px;
+      padding: 10px 15px;
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+    }
+  
+    .reply-form .input-row {
+      display: flex;
+      align-items: center;
+    }
+  
+    .reply-form textarea {
+      flex: 1;
+      border: none;
+      border-radius: 20px;
+      padding: 10px 15px;
+      resize: none;
+      background: #fff;
+      height: 45px;
+      margin: 0 10px;
+      font-size: 14px;
+    }
+  
+    .reply-form textarea:focus {
+      outline: none;
+    }
+  
+    .reply-form .send-btn
+     {
+      background: #008069;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .reply-form .attach-btn {
+      background: #ffffff;               /* White background */
+      color: #333;                       /* Dark icon for contrast */
+      border: 1px solid #ccc;            /* Soft border */
+      border-radius: 50%;
+      width: 42px;
+      height: 42px;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      transition: background 0.2s;
+    }
+    
+    .reply-form .attach-btn:hover {
+      background: #008069;
+    }
+  
+    .reply-form .send-btn[disabled] {
+      background: gray;
+      cursor: not-allowed;
+    }
+  
+    .reply-form .resolve-checkbox {
+      margin-top: 8px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+    }
+  
+    .reply-form .resolve-checkbox input {
+      margin-right: 8px;
+    }
+  
+    #selected-file-{{ req.id }} {
+      font-size: 13px;
+      margin-top: 6px;
+      color: gray;
+    }
+  
+    @media (max-width: 576px) {
+      .reply-form textarea {
+        height: 40px;
+      }
+  
+      .reply-form .send-btn,
+      .reply-form .attach-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+      }
+    }
+
+  .attachment-preview {
+    display: flex;
+    flex-direction: row;
+    background: #fff;
+    padding: 10px;
+    border-radius: 10px;
+    margin-top: 6px;
+    border: 1px solid #ddd;
+    flex-wrap: wrap;
+  }
+
+  .file-icon {
+    font-size: 32px;
+    margin-right: 10px;
+    align-self: center;
+  }
+
+  .file-info .file-name {
+    font-weight: 600;
+  }
+
+  .file-info .file-meta {
+    font-size: 12px;
+    color: #666;
+  }
+
+  .chat-container {
+    background-color: #ece5dd;
+    padding: 15px;
+    border-radius: 10px;
+    max-width: 100%;
+  }
+
+  .chat-bubble {
+    max-width: 100%;
+    padding: 10px 15px;
+    border-radius: 15px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    line-height: 1.4;
+    word-wrap: break-word;
+  }
+
+  .chat-left {
+    background-color: #ffffff;
+    color: #000;
+    border-top-left-radius: 0;
+    align-self: flex-start;
+  }
+
+  .chat-right {
+    background-color: #dcf8c6;
+    color: #000;
+    border-top-right-radius: 0;
+    align-self: flex-end;
+    margin-left: auto;
+  }
+
+  .sender {
+    font-weight: bold;
+    font-size: 13px;
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  .chat-meta {
+    font-size: 11px;
+    text-align: right;
+    margin-top: 4px;
+    color: gray;
+  }
+
+  .card {
+    background: #f0f0f0;
+  }
+
+  @media (max-width: 576px) {
+    .chat-bubble {
+      max-width: 100%;
+    }
+
+    .attachment-preview {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .file-icon {
+      margin-bottom: 6px;
+      margin-right: 0;
+    }
+
+    .reply-form .row > div {
+      padding-left: 5px !important;
+      padding-right: 5px !important;
+    }
+  }
+  
+</style>
+
+<div class="container-fluid mt-4">
+  <div class="chat-container">
+    <div class="card mb-4">
+      <div class="card-header bg-light d-flex justify-content-between align-items-start flex-wrap">
+        <div>
+          <strong class="d-block mb-1">{{ req.user.username }}</strong>
+          <small class="text-muted">{{ req.created_at|date:"d M Y, H:i" }}</small>
+        </div>
+        
+        {% if req.is_resolved %}
+          <span class="badge bg-success text-white ms-auto mt-1">Resolved</span>
+        {% endif %}
+      </div>
+      <div class="card-body d-flex flex-column">
+        <div class="messages-container d-flex flex-column" id="messages-{{ req.id }}">
+          {% for msg in req.messages.all %}
+            <div class="chat-bubble {% if msg.sender == request.user %}chat-right{% else %}chat-left{% endif %}">
+              <span class="sender">{{ msg.sender.username }}</span>
+              {{ msg.message }}
+              {% if msg.attachment %}
+              <div class="attachment-preview">
+                  <a href="{{ msg.attachment.url }}" target="_blank" class="d-block text-decoration-none text-dark">
+                    <div class="file-icon">📄</div>
+                    <div class="file-info">
+                      <div class="file-name">{{ msg.attachment.name|cut:"attachments/" }}</div>
+                      <div class="file-meta">{{ msg.attachment.size|filesizeformat }} • {{ msg.attachment.name|slice:"-4:"|upper }}</div>
+                    </div>
+                  </a>
+                </div>
+              {% endif %}
+              <div class="chat-meta">{{ msg.sent_at|timesince }} ago</div>
+            </div>
+          {% empty %}
+            <p>No messages yet.</p>
+          {% endfor %}
+        </div>
+
+        <form class="reply-form" data-request-id="{{ req.id }}" enctype="multipart/form-data">
+          {% csrf_token %}
+          <input type="hidden" name="request_id" value="{{ req.id }}">
+          <div class="input-row">
+            <button type="button" class="attach-btn" onclick="document.getElementById('file-input-{{ req.id }}').click();">➕</button>
+            <input type="file" name="attachment" id="file-input-{{ req.id }}" class="d-none" onchange="showFileName(event, {{ req.id }})">
+            <textarea name="message" rows="1" placeholder="Type a message"></textarea>
+            <button type="submit" class="send-btn" {% if req.is_resolved %}disabled{% endif %}>➤</button>
+          </div>
+        
+          <div id="selected-file-{{ req.id }}"></div>
+        
+          {% if not req.is_resolved and request.user.is_staff %}
+            <div class="resolve-checkbox">
+              <input class="form-check-input" type="checkbox" name="resolve" id="resolve{{ req.id }}">
+              <label class="form-check-label" for="resolve{{ req.id }}">Mark as resolved</label>
+            </div>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+
+    <div class="text-center">
+      <a href="{% url 'view_requests' %}" class="btn btn-dark mt-2">← Back to All Requests</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.reply-form').forEach(form => {
+    const checkbox = form.querySelector('input[name="resolve"]');
+    const requestId = form.getAttribute('data-request-id');
+    const csrfToken = form.querySelector('input[name="csrfmiddlewaretoken"]').value;
+    const container = document.getElementById(`messages-${requestId}`);
+  
+    // ✅ Handle form submission (Send message / attachment / resolve)
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const formData = new FormData(form);
+      formData.append('request_id', requestId);
+  
+      fetch("{% url 'ajax_reply_request' %}", {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
+        body: formData,
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          if (data.message || data.attachment_url) {
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble chat-right';
+            bubble.innerHTML = `
+              <span class="sender">${data.sender}</span>
+              ${data.message || ''}
+              ${data.attachment_url ? `<div><a href="${data.attachment_url}" target="_blank">📎 ${data.attachment_name}</a></div>` : ''}
+              <div class="chat-meta">just now</div>
+            `;
+            container.appendChild(bubble);
+          }
+  
+          if (data.resolved) {
+            const header = form.closest('.card').querySelector('.card-header');
+            if (!header.querySelector('.badge')) {
+              const badge = document.createElement('span');
+              badge.className = 'badge bg-success text-white ms-auto mt-1';
+              badge.textContent = 'Resolved';
+              header.appendChild(badge);
+            }
+  
+            // Disable form if resolved
+            form.querySelectorAll('textarea, button, input[type="file"]').forEach(el => el.disabled = true);
+            if (checkbox) checkbox.disabled = true;
+          }
+  
+          form.reset();
+          document.getElementById(`selected-file-${requestId}`).textContent = '';
+        } else {
+          alert(data.error || "Something went wrong.");
+        }
+      });
+    });
+  
+    // ✅ Handle "Mark as resolved" checkbox directly
+    if (checkbox) {
+      checkbox.addEventListener('change', function () {
+        if (!checkbox.checked) return;
+  
+        const confirmed = confirm("Are you sure you want to mark this request as resolved?");
+        if (!confirmed) {
+          checkbox.checked = false;
+          return;
+        }
+  
+        const formData = new FormData();
+        formData.append('request_id', requestId);
+        formData.append('resolve', 'on');
+  
+        fetch("{% url 'ajax_reply_request' %}", {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': csrfToken,
+          },
+          body: formData,
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.resolved) {
+            const header = form.closest('.card').querySelector('.card-header');
+            if (!header.querySelector('.badge')) {
+              const badge = document.createElement('span');
+              badge.className = 'badge bg-success text-white ms-auto mt-1';
+              badge.textContent = 'Resolved';
+              header.appendChild(badge);
+            }
+  
+            // Disable all inputs
+            form.querySelectorAll('textarea, button, input[type="file"]').forEach(el => el.disabled = true);
+            checkbox.disabled = true;
+          }
+        });
+      });
+    }
+  });
+  </script>
+    <script>
+        function showFileName(event, requestId) {
+          const input = event.target;
+          const fileName = input.files[0] ? input.files[0].name : '';
+          const display = document.getElementById(`selected-file-${requestId}`);
+          display.textContent = fileName ? `📎 ${fileName}` : '';
+        }
+        </script>
+
+<script>
+function renderMessages(messages, container) {
+  container.innerHTML = "";
+  messages.forEach(msg => {
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble ' + (msg.is_me ? 'chat-right' : 'chat-left');
+    bubble.innerHTML = `
+      <span class="sender">${msg.sender}</span>
+      ${msg.message}
+      ${msg.attachment ? `
+        <div class="attachment-preview">
+            <a href="${msg.attachment}" target="_blank" class="d-block text-decoration-none text-dark">
+            <div class="file-icon">📄</div>
+            <div class="file-info">
+                <div class="file-name">${msg.attachment_name}</div>
+                <div class="file-meta">${msg.attachment_size} • ${msg.attachment_ext}</div>
+            </div>
+            </a>
+        </div>
+        ` : ''}
+      <div class="chat-meta">${msg.timestamp}</div>
+    `;
+    container.appendChild(bubble);
+  });
+  container.scrollTop = container.scrollHeight;
+}
+
+function startPolling(requestId) {
+  const container = document.getElementById(`messages-${requestId}`);
+
+  function fetchAndRender() {
+    console.log("Polling... for request", requestId);
+    fetch(`/website/ajax/fetch-messages/${requestId}/`)
+      .then(res => {
+        console.log("Status:", res.status);
+        return res.json();
+      })
+      .then(data => {
+        console.log("Received:", data);
+        if (data.success) {
+          renderMessages(data.messages, container);
+        }
+      })
+      .catch(err => console.error("Polling error:", err));
+  }
+
+  fetchAndRender(); // Load immediately
+  setInterval(fetchAndRender, 3000); // Poll every 3s
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const container = document.querySelector('.messages-container');
+    if (container) {
+      const requestId = container.id.split('-')[1];  // from messages-<id>
+      if (requestId) startPolling(requestId);  // ✅ ONLY if valid
+    }
+  });
+</script>
+{% endblock %}

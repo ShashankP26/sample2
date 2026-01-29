@@ -26,7 +26,7 @@
                         <option value="">--Select User--</option>
                         {% for user in filtered_users %}
                             <option value="{{ user.id }}" {% if selected_user and selected_user.id == user.id %}selected{% endif %}>
-                                {{ user.username }}
+                                {{ user.first_name }}
                             </option>
                         {% endfor %}
                     </select>
@@ -50,25 +50,67 @@
             </form>
         </div>
     </div>
+    
 
-    {% if expenses %}
+    {% if expenses or leader_group_balances %}
         <div class="card mt-4">
             <div class="card-body">
                 <h3 class="card-title">Vouchers for {{ selected_user.username }} in Zone {{ selected_zone.name }}</h3>
-                <div class="alert alert-info d-flex justify-content-between">
-                    <div>
-                    <strong>Total Payable Amount:</strong> ₹{{ total_amount_to_be_paid }}
-                    </div>
+                <div class="alert alert-info">
+
+                    <p><strong>Total Payable Amount:</strong> ₹{{ total_amount_to_be_paid }}</p>
+
+                    {% if leader_overdue_total > 0 %}
+                        <p><strong>Overdue Amount (Leader):</strong> 
+                            <span class="text-danger">+₹{{ leader_overdue_total }}</span>
+                        </p>
+                    {% endif %}
+
+
+                
+                    {% if leader_group_balances %}
+                        <p><strong>Less Advance Balance (Leader):</strong> -₹{{ leader_sub_balance }}</p>
+                
+                        {% if leader_group_balances %}
+                            <div class="mt-2">
+                                <p><strong>Advance Balance Breakdown:</strong></p>
+                                <table class="table table-sm table-bordered">
+                                    <thead>
+                                    <tr>
+                                        <th>Group</th>
+                                        <th>Remaining Balance</th>
+                                        <th>Overdue</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for g in leader_group_balances %}
+                                    <tr>
+                                        <td>{{ g.group_name }}</td>
+                                        <td>₹{{ g.remaining }}</td>
+                                        <td>
+                                            {% if g.overdue > 0 %}
+                                                <span class="text-danger">₹{{ g.overdue }}</span>
+                                            {% else %}
+                                                ₹0.00
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                    </table>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                
+                    <p><strong>Final Amount to Pay:</strong> ₹{{ final_amount_to_pay }}</p>
+                
                     {% if selected_user %}
-                    <div>
-                        <a href="{% url 'pay_now' selected_user.id %}?from_date={{ from_date }}&to_date={{ to_date }}&selected_filter={{ selected_filter }}&total_amount_to_be_paid={{ total_amount_to_be_paid }}" 
-                           class="btn btn-success" 
-                           onclick="return confirmPayNow('{{ total_amount_to_be_paid }}');">
-                            Pay Now
-                        </a>
-                    </div>
-                    </div>
-                {% endif %}
+                    <a href="{% url 'pay_now' selected_user.id %}?from_date={{ from_date }}&to_date={{ to_date }}&amount={{ final_amount_to_pay }}&total_amount_to_be_paid={{ total_amount_to_be_paid }}"
+                    class="btn btn-success" 
+                    onclick="return confirmPayNow('{{ final_amount_to_pay }}');">
+                    Pay Now
+                 </a>
+                    {% endif %}
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover table-bordered">
@@ -89,46 +131,113 @@
                         </thead>
                         <tbody>
                             {% for exp in expenses %}
-                                <tr>
-                                    <td>{{ exp.date }}</td>
-                                    <td>{{ exp.evoucher_number }}</td>
-                                    <td>{{ exp.item_type }}</td>
-                                    <td>{{ exp.item_name }}</td>
-                                    <td>
-                                        <div>
-                                            {% if exp.gst_photo %}
-                                                <p><strong>GST</strong></p>
-                                                <a href="{{ exp.gst_photo.url }}" class="btn btn-info btn-sm" target="_blank">Download GST</a>
-                                            {% elif exp.bill_photo %}
-                                                <p><strong>Bill</strong></p>
-                                                <a href="{{ exp.bill_photo.url }}" class="btn btn-info btn-sm" target="_blank">Download Bill</a>
-                                            {% elif exp.voucher_number %}
-                                                <p><strong>Voucher</strong></p>
-                                                <p>{{ exp.voucher_number }}</p>
-                                            {% else %}
-                                                <span class="text-muted">No File or Voucher</span>
+                                {% if exp.item_type != "advances" %}
+                                    <!-- Show all non-advance expenses -->
+                                    <tr>
+                                        <td>{{ exp.date }}</td>
+                                        <td>{{ exp.evoucher_number }}</td>
+                                        <td>{{ exp.item_type }}</td>
+                                        <td>{{ exp.item_name }}</td>
+                                        <td>
+                                            <div>
+                                                {% if exp.gst_photo %}
+                                                    <p><strong>GST</strong></p>
+                                                    <a href="{{ exp.gst_photo.url }}" class="btn btn-info btn-sm" target="_blank">Download GST</a>
+                                                {% elif exp.bill_photo %}
+                                                    <p><strong>Bill</strong></p>
+                                                    <a href="{{ exp.bill_photo.url }}" class="btn btn-info btn-sm" target="_blank">Download Bill</a>
+                                                {% elif exp.voucher_number %}
+                                                    <p><strong>Voucher</strong></p>
+                                                    <p>{{ exp.voucher_number }}</p>
+                                                {% else %}
+                                                    <span class="text-muted">No File or Voucher</span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>{{ exp.transaction_category }}</td>
+                                        <td>
+                                            {% if exp.transaction_category == 'internal' %}
+                                                {{ exp.internal_option }}
+                                            {% elif exp.transaction_category == 'external' %}
+                                                {{ exp.external_type }}
                                             {% endif %}
-                                        </div>
-                                    </td>
-                                    <td>{{ exp.transaction_category }}</td>
-                                    <td>
-                                        {% if exp.transaction_category == 'internal' %}
-                                            {{ exp.internal_option }}
-                                        {% elif exp.transaction_category == 'external' %}
-                                            {{ exp.external_type }}
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ exp.amount }}</td>
-                                    <td>{{ exp.transaction_date }}</td>
-                                    <td>
-                                        {% if exp.proof_photo %}
-                                            <a href="{{ exp.proof_photo.url }}" class="btn btn-info btn-sm" target="_blank">Download Proof</a>
-                                        {% else %}
-                                            <span class="text-muted">No Proof</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ exp.payment_mode }}</td>
-                                </tr>
+                                        </td>
+                                        <td>
+                                            {% if exp.overdue_amount > 0 %}
+                                                <span class="text-danger">₹{{ exp.overdue_amount }}</span>
+                                            {% else %}
+                                                ₹{{ exp.amount }}
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ exp.transaction_date }}</td>
+                                        <td>
+                                            {% if exp.proof_photo %}
+                                                <a href="{{ exp.proof_photo.url }}" class="btn btn-info btn-sm" target="_blank">Download Proof</a>
+                                            {% endif %}
+                        
+                                            {% for proof in exp.proof_photos.all %}
+                                                <a href="{{ proof.file.url }}" class="btn btn-info btn-sm" target="_blank">Download Proof</a>
+                                            {% empty %}
+                                                {% if not exp.proof_photo %}
+                                                    <span class="text-muted">No Proof</span>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </td>
+                                        <td>{{ exp.payment_mode }}</td>
+                                    </tr>
+                                {% else %}
+                                    {% if exp.overdue_amount > 0 %}
+                                        <!-- Show only advance expense that caused due -->
+                                        <tr>
+                                            <td>{{ exp.date }}</td>
+                                            <td>{{ exp.evoucher_number }}</td>
+                                            <td>{{ exp.item_type }}</td>
+                                            <td>{{ exp.item_name }}</td>
+                                            <td>
+                                                <div>
+                                                    {% if exp.gst_photo %}
+                                                        <p><strong>GST</strong></p>
+                                                        <a href="{{ exp.gst_photo.url }}" class="btn btn-info btn-sm" target="_blank">Download GST</a>
+                                                    {% elif exp.bill_photo %}
+                                                        <p><strong>Bill</strong></p>
+                                                        <a href="{{ exp.bill_photo.url }}" class="btn btn-info btn-sm" target="_blank">Download Bill</a>
+                                                    {% elif exp.voucher_number %}
+                                                        <p><strong>Voucher</strong></p>
+                                                        <p>{{ exp.voucher_number }}</p>
+                                                    {% else %}
+                                                        <span class="text-muted">No File or Voucher</span>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                            <td>{{ exp.transaction_category }}</td>
+                                            <td>
+                                                {% if exp.transaction_category == 'internal' %}
+                                                    {{ exp.internal_option }}
+                                                {% elif exp.transaction_category == 'external' %}
+                                                    {{ exp.external_type }}
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="text-danger">₹{{ exp.overdue_amount }}</span>
+                                            </td>
+                                            <td>{{ exp.transaction_date }}</td>
+                                            <td>
+                                                {% if exp.proof_photo %}
+                                                    <a href="{{ exp.proof_photo.url }}" class="btn btn-info btn-sm" target="_blank">Download Proof</a>
+                                                {% endif %}
+                        
+                                                {% for proof in exp.proof_photos.all %}
+                                                    <a href="{{ proof.file.url }}" class="btn btn-info btn-sm" target="_blank">Download Proof</a>
+                                                {% empty %}
+                                                    {% if not exp.proof_photo %}
+                                                        <span class="text-muted">No Proof</span>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </td>
+                                            <td>{{ exp.payment_mode }}</td>
+                                        </tr>
+                                    {% endif %}
+                                {% endif %}
                             {% empty %}
                                 <tr>
                                     <td colspan="11" class="text-center text-muted">No records found.</td>
@@ -140,7 +249,7 @@
             </div>
         </div>
      
-    {% elif selected_user %}
+    {% elif selected_user and not leader_group_balances %}
         <div class="alert alert-warning mt-4">
             No vouchers found for {{ selected_user.username }} in the selected zone.
         </div>
@@ -172,7 +281,7 @@
                     data.users.forEach(user => {
                         const option = document.createElement('option');
                         option.value = user.id;
-                        option.textContent = user.username;
+                        option.textContent = user.first_name ? user.first_name : user.username;
                         userSelect.appendChild(option);
                     });
                 });

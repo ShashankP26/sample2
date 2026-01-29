@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h3 class="mb-3">Assigned Advance Groups</h3>
+
+  <!-- Filter Row -->
+ <!-- Filter Row -->
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+
+  <!-- Left side: Export + Date Filter -->
+  <div class="d-flex gap-2">
+    
+
+    <!-- Export Dropdown -->
+    <div class="dropdown">
+      <button class="btn btn-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        Export Advances
+      </button>
+      <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+        <li>
+          <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#customExportModal">
+            Custom Date Range
+          </button>
+        </li>
+        <li class="dropdown-header">Other Formats</li>
+        <li><a class="dropdown-item" href="{% url 'export_advances' %}?format=pdf">PDF (All)</a></li>
+        <li><a class="dropdown-item" href="{% url 'export_advances' %}?format=csv">CSV (All)</a></li>
+
+      </ul>
+    </div>
+    <!-- User Filter Dropdown (button style) -->
+<div class="dropdown d-inline-block">
+  <button class="btn btn-primary dropdown-toggle" type="button" id="userFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+    {% if selected_user_name %}{{ selected_user_name }}{% else %}Filter by User{% endif %}
+  </button>
+  <ul class="dropdown-menu" aria-labelledby="userFilterDropdown">
+    {% for user in all_users %}
+      <li>
+        <a class="dropdown-item" href="{% url 'view_assigned_groups' %}?user_id={{ user.id }}{% if selected_group %}&group_name={{ selected_group }}{% endif %}">
+          {{ user.get_full_name|default:user.username }}
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+    
+
+    <!-- Date Filter (independent) -->
+    <form method="get">
+      <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle" type="button" id="dateFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+          Filter by Date
+        </button>
+        <div class="dropdown-menu p-3" style="min-width: 300px;">
+          <label class="form-label">From Date</label>
+          <input type="date" name="start_date" value="" class="form-control mb-2">
+
+          <label class="form-label">To Date</label>
+          <input type="date" name="end_date" value="" class="form-control mb-2">
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary flex-fill">Filter</button>
+            <a href="{% url 'view_assigned_groups' %}" class="btn btn-secondary flex-fill">Clear</a>
+          </div>
+        </div>
+      </div>
+    </form>
+
+  </div>
+
+  <!-- Right side: Group Filter (independent) -->
+  {% if request.user.is_staff or request.user.is_superuser %}
+    <form method="get" class="d-flex gap-2">
+      <select name="group_name" id="groupSelect" class="form-select">
+        <option value="">-- All Groups --</option>
+        {% for group in dropdown_groups %}
+          <option value="{{ group.name }}" {% if group.name == selected_group %}selected{% endif %}>
+            {{ group.name }}
+          </option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary">Filter</button>
+      <a href="{% url 'view_assigned_groups' %}" class="btn btn-secondary">Clear</a>
+    </form>
+  {% endif %}
+
+</div>
+  <!-- Custom Export Modal -->
+  <div class="modal fade" id="customExportModal" tabindex="-1" aria-labelledby="customExportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <form method="get" action="{% url 'export_advances' %}" class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="customExportModalLabel">Export by Date Range</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+  
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="exportFormat" class="form-label">Select Format</label>
+            <select name="format" class="form-select" id="exportFormat" required>
+              <option value="xlsx" {% if request.GET.format == "xlsx" %}selected{% endif %}>Excel (XLSX)</option>
+              <option value="csv" {% if request.GET.format == "csv" %}selected{% endif %}>CSV</option>
+              <option value="pdf" {% if request.GET.format == "pdf" %}selected{% endif %}>PDF</option>
+            </select>
+          </div>
+  
+          <div class="mb-3">
+            <label class="form-label">From Date</label>
+            <input type="date" 
+                   name="start_date" 
+                   class="form-control" 
+                   value="{{ request.GET.start_date|default:'' }}" 
+                   required>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">To Date</label>
+            <input type="date" 
+                   name="end_date" 
+                   class="form-control" 
+                   value="{{ request.GET.end_date|default:'' }}" 
+                   required>
+          </div>
+  
+          <div class="mb-3">
+            <label class="form-label">Group</label>
+            <select name="group_id" class="form-control">
+              <option value="">-- All Groups --</option>
+              {% for group in dropdown_groups %}
+                <option value="{{ group.id }}" {% if request.GET.group_id == group.id|stringformat:"s" %}selected{% endif %}>
+                  {{ group.name }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+  
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Export</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Groups Table -->
+  <!-- Groups Table -->
+{% for group in group_data %}
+<div class="card mb-3">
+  <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+    <div>
+      Group: {{ group.group.name }}<br>
+      <strong>Created at:</strong> {{ group.group.created_at|date:"F d, Y" }} |
+      <strong>Total Advance:</strong> ₹{{ group.group.total_advance|floatformat:2 }} |
+      <strong>Used:</strong> ₹{{ group.used_advance|floatformat:2 }} |
+      {% comment %} <strong>Remaining (DB):</strong> 
+          ₹{{ group.remaining_balance|floatformat:2 }}
+
+      <br> {% endcomment %}
+
+      <strong>Calculated Remaining:</strong>
+          ₹{{ group.calculated_remaining|floatformat:2 }}
+          {% if group.overdue_balance > 0 %}
+              <span class="badge bg-danger">Overdue Before Clearing: ₹{{ group.overdue_balance }}</span>
+          {% endif %}
+
+          {% if group.overdue_balance > 0 %}
+            <span class="badge bg-success">Cleared: ₹{{ group.overdue_balance }} (on last payment)</span>
+          {% endif %}
+
+      {% if group.overdue_amount > 0 %}
+          <br>
+          <span class="badge bg-danger text-white">
+              Overdue: ₹{{ group.overdue_amount|floatformat:2 }}
+          </span>
+      {% endif %}
+
+      {% if group.cleared_amount > 0 %}
+          <br>
+          <span class="badge bg-success text-white">
+              Cleared: ₹{{ group.cleared_amount|floatformat:2 }} (on last payment)
+          </span>
+      {% endif %}
+    </div>
+    
+    <div class="d-flex flex-column align-items-end">
+      <div class="d-flex flex-column align-items-end">
+        {% if group.initial_proof %}
+          <a href="{{ group.initial_proof }}" target="_blank" class="btn btn-info btn-sm mb-1">
+            Initial Proof
+          </a>
+        {% endif %}
+      
+        {% if group.update_proofs %}
+          {% for proof_url in group.update_proofs %}
+            <a href="{{ proof_url }}" target="_blank" class="btn btn-secondary btn-sm mb-1">
+              Update Proof {{ forloop.counter }}
+            </a>
+          {% endfor %}
+        {% endif %}
+      </div>
+      {% if request.user.is_staff %}
+        <div class="d-flex flex-column align-items-end">
+          {% if not group.group.is_closed %}
+            <form method="POST" action="{% url 'close_group' group.group.id %}" class="mb-1">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-warning btn-sm">Close Group</button>
+            </form>
+          {% else %}
+            <span class="badge bg-secondary text-white">Closed</span>
+          {% endif %}
+
+          <form method="POST" action="{% url 'delete_group' group.group.id %}" onsubmit="return confirm('Are you sure you want to delete this group?');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-sm">Delete Group</button>
+          </form>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-bordered table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>User</th>
+            <th>Item</th>
+            <th>Credit</th>
+            <th>Debit</th>
+            <th>User Remaining</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in group.users %}
+            {% for row in user.rows %}
+              <tr>
+                <td>{{ user.user.get_full_name|default:user.user.username }}</td>
+                <td>{{ row.item }}</td>
+                <td>₹{{ row.credit|floatformat:2 }}</td>
+                <td>₹{{ row.debit|floatformat:2 }}</td>
+                <td>
+                  ₹{{ row.remaining|floatformat:2 }}
+                  {% if row.overdue and not group.group.is_closed %}
+                    <span class="badge bg-danger ms-2 text-white">
+                      Overdue ₹{{ row.overdue_amount|floatformat:2 }}
+                    </span>
+                  {% endif %}
+                </td>
+                <td>{{ row.date|date:"F d, Y" }}</td>
+              </tr>
+            {% endfor %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+{% endfor %}
+</div>
+
+{% if messages %}
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      {% for message in messages %}
+        Swal.fire({
+          icon: "{% if message.tags == 'error' %}error{% else %}success{% endif %}",
+          title: "{{ message|escapejs }}",
+          timer: 2500,
+          showConfirmButton: false,
+        });
+      {% endfor %}
+    });
+
+    document.getElementById("groupSelect").addEventListener("change", function () {
+      document.getElementById("groupFilterForm").submit();
+    });
+  </script>
+{% endif %}
+{% endblock %}

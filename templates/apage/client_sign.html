@@ -1,0 +1,354 @@
+
+{% extends "base.html" %}
+{% block content %}
+<style>
+    table, th, td {
+      border: 1px solid black;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 6px;
+      text-align: left;
+    }
+  </style>
+<div class="container">
+  <h2 class="text-center mb-4">Client Service Report</h2>
+
+  <h4>Service Information</h4>
+  <p><strong>Name:</strong> {{ service_report.service_name }}</p>
+  <p><strong>Date of Visit:</strong> {{ service_report.date_of_visit|date:"Y-m-d" }}</p>
+  <p><strong>Zone:</strong> {{ service_report.zone }}</p>
+  <p><strong>Phone No:</strong> {{ service_report.phone_no }}</p>
+  <p><strong>Reason of Visit:</strong> {{ service_report.reason_of_visit }}</p>
+  <p><strong>In Time:</strong> {{ service_report.in_time }}</p>
+  <p><strong>Out Time:</strong> {{ service_report.out_time }}</p>
+
+  <h4>Customer Information</h4>
+  <p><strong>Customer Name:</strong> {{ service_report.customer_name }}</p>
+  <p><strong>Contact Number:</strong> {{ service_report.contact_number }}</p>
+  <p><strong>Location:</strong> {{ service_report.location }}</p>
+  <p><strong>State:</strong> {{ service_report.state }}</p>
+  <p><strong>Date of Complaint:</strong> {{ service_report.date_of_complaint|date:"Y-m-d" }}</p>
+  <p><strong>Status of Call:</strong> {{ service_report.status_of_call }}</p>
+
+  {% comment %} SECTION: Electronic Items {% endcomment %}
+  <h4>Electronic Items</h4>
+  <table border="1" width="100%" cellspacing="0" cellpadding="4">
+    <thead><tr><th>Item</th><th>Checked</th><th>Repair</th><th>Replacement</th><th>Remark</th></tr></thead>
+    <tbody>
+      {% for status in electronic_item_statuses %}
+      <tr>
+        <td>{{ status.item.name }}</td>
+        <td>{% if status.checked %}Yes{% else %}No{% endif %}</td>
+        <td>{% if status.repair %}Yes{% else %}No{% endif %}</td>
+        <td>{% if status.replacement %}Yes{% else %}No{% endif %}</td>
+        <td>{{ status.remark }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h4>Electronic Panel Status</h4>
+  <table border="1" width="100%" cellspacing="0" cellpadding="4">
+    <thead><tr><th>Panel</th><th>Checked</th><th>Repair</th><th>Replacement</th><th>Remark</th></tr></thead>
+    <tbody>
+      {% for status in panel_statuses %}
+      <tr>
+        <td>{{ status.panel.name }}</td>
+        <td>{% if status.checked %}Yes{% else %}No{% endif %}</td>
+        <td>{% if status.repair %}Yes{% else %}No{% endif %}</td>
+        <td>{% if status.replacement %}Yes{% else %}No{% endif %}</td>
+        <td>{{ status.remark }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h4>Chemical Item Status</h4>
+  <table border="1" width="100%" cellspacing="0" cellpadding="4">
+    <thead><tr><th>Item</th><th>Checked</th><th>Repair</th><th>Replacement</th><th>Remark</th></tr></thead>
+    <tbody>
+      {% for status in chemical_item_statuses %}
+      <tr>
+        <td>{{ status.item.name }}</td>
+        <td>{% if status.checked %}Yes{% else %}No{% endif %}</td>
+        <td>{% if status.repair %}Yes{% else %}No{% endif %}</td>
+        <td>{% if status.replacement %}Yes{% else %}No{% endif %}</td>
+        <td>{{ status.remark }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h4>Pump Status</h4>
+  <table border="1" width="100%" cellspacing="0" cellpadding="4">
+    <thead><tr><th>Pump</th><th>Checked</th><th>Repair</th><th>Replacement</th><th>Remark</th></tr></thead>
+    <tbody>
+      {% for status in pump_statuses %}
+      <tr>
+        <td>{{ status.pump.name }}</td>
+        <td>{% if status.checked %}Yes{% else %}No{% endif %}</td>
+        <td>{% if status.repair %}Yes{% else %}No{% endif %}</td>
+        <td>{% if status.replacement %}Yes{% else %}No{% endif %}</td>
+        <td>{{ status.remark }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h4>Miscellaneous Item Status</h4>
+  <table border="1" width="100%" cellspacing="0" cellpadding="4">
+    <thead><tr><th>Item</th><th>Checked</th><th>Repair</th><th>Replacement</th><th>Remark</th></tr></thead>
+    <tbody>
+      {% for status in miscellaneous_item_statuses %}
+      <tr>
+        <td>{{ status.item.name }}</td>
+        <td>{% if status.checked %}Yes{% else %}No{% endif %}</td>
+        <td>{% if status.repair %}Yes{% else %}No{% endif %}</td>
+        <td>{% if status.replacement %}Yes{% else %}No{% endif %}</td>
+        <td>{{ status.remark }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h4>Wastewater Parameter Status</h4>
+  <table border="1" width="100%" cellspacing="0" cellpadding="4">
+    <thead><tr><th>Parameter</th><th>Checked</th><th>Repair</th><th>Replacement</th><th>Remark</th></tr></thead>
+    <tbody>
+      {% for status in wastewater_parameter_statuses %}
+      <tr>
+        <td>{{ status.parameter.name }}</td>
+        <td>{% if status.checked %}Yes{% else %}No{% endif %}</td>
+        <td>{% if status.repair %}Yes{% else %}No{% endif %}</td>
+        <td>{% if status.replacement %}Yes{% else %}No{% endif %}</td>
+        <td>{{ status.remark }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h4>Machine Run Times</h4>
+  <table border="1" width="100%" cellspacing="0" cellpadding="4">
+    <thead><tr><th>Run Type</th><th>Run Time</th><th>End Time</th><th>Checked</th><th>Pass</th><th>Fail</th><th>Remark</th></tr></thead>
+    <tbody>
+      {% for run in machine_run_times %}
+      <tr>
+        <td>{{ run.run_type }}</td>
+        <td>{{ run.run_time }}</td>
+        <td>{{ run.end_time }}</td>
+        <td>{% if run.checked %}Yes{% else %}No{% endif %}</td>
+        <td>{% if run.pass_status %}Yes{% else %}No{% endif %}</td>
+        <td>{% if run.fail_status %}Yes{% else %}No{% endif %}</td>
+        <td>{{ run.remark }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h4>Tool Status</h4>
+  <table border="1" width="100%" cellspacing="0" cellpadding="4">
+    <thead><tr><th>Tool</th><th>Quantity</th><th>Taken</th><th>Remark</th></tr></thead>
+    <tbody>
+      {% for tool in tool_statuses %}
+      <tr>
+        <td>{{ tool.tool.name }}</td>
+        <td>{{ tool.quantity }}</td>
+        <td>{% if tool.taken_status %}Yes{% else %}No{% endif %}</td>
+        <td>{{ tool.remark }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h4>Other Remarks</h4>
+  <p>{{ service_report.other_remarks }}</p>
+
+  <h4>Spares Details</h4>
+  <p>{{ service_report.spares_details }}</p>
+
+
+{% if attachments %}
+  <h4>Attachments</h4>
+  <div class="row">
+    {% for file in attachments %}
+      <div class="col-md-3 mb-3">
+        <div class="card shadow-sm p-2 text-center">
+          <img src="{{ file.file.url }}" alt="Attachment {{ forloop.counter }}" class="img-thumbnail" style="max-width: 120px; height: auto;">
+          <small class="text-muted d-block mt-2">{{ file.file.name|slice:"-30:" }}</small>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+  <h4>Service Person</h4>
+  <p><strong>Name:</strong> {{ service_report.service_person_name }}</p>
+  <img src="{{ service_report.service_person_signature }}" style="max-width:300px;"><br>
+
+  <h4>Client Signature</h4>
+  <form method="POST" onsubmit="return captureSignature()">
+    {% csrf_token %}
+    <label>Name:</label>
+    <input type="text" name="client_name" required value="{{ service_report.client_name|default_if_none:'' }}"><br><br>
+    <label>Client Remark:</label>
+    <textarea name="client_remark" class="form-control" rows="3" placeholder="e.g., Technician was professional and helpful.">{{ service_report.client_remark|default_if_none:'' }}</textarea><br><br>
+  
+    <label>Signature:</label><br>
+    <canvas id="clientSignature" width="400" height="150" style="border:1px solid #000;"></canvas><br>
+  
+    <input type="hidden" name="client_signature" id="clientSignatureData">
+    <button type="submit" class="btn btn-success">Submit</button>
+    <button type="button" class="btn btn-secondary" onclick="clearSignature()">Clear</button>
+  </form>
+</div>
+{% comment %} <script>
+    const canvas = document.getElementById("clientSignature");
+    const ctx = canvas.getContext("2d");
+    let drawing = false;
+  
+    // Drawing logic
+    canvas.addEventListener("mousedown", () => drawing = true);
+    canvas.addEventListener("mouseup", () => {
+      drawing = false;
+      ctx.beginPath();
+    });
+    canvas.addEventListener("mousemove", draw);
+  
+    function draw(e) {
+      if (!drawing) return;
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "#000";
+      ctx.lineTo(e.offsetX, e.offsetY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(e.offsetX, e.offsetY);
+    }
+  
+    function clearSignature() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  
+    function captureSignature() {
+      const signatureData = canvas.toDataURL();
+      document.getElementById("clientSignatureData").value = signatureData;
+      return true;  // Allow form submission
+    }
+  </script>
+
+<script>
+    const canvas = document.getElementById("clientSignature");
+    const ctx = canvas.getContext("2d");
+    let drawing = false;
+    
+    canvas.addEventListener("mousedown", () => drawing = true);
+    canvas.addEventListener("mouseup", () => {
+      drawing = false;
+      ctx.beginPath();
+    });
+    canvas.addEventListener("mousemove", e => {
+      if (!drawing) return;
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "#000";
+      ctx.lineTo(e.offsetX, e.offsetY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(e.offsetX, e.offsetY);
+    });
+    
+    // This is the critical function
+    function captureSignature() {
+      const dataURL = canvas.toDataURL();
+      if (!dataURL || dataURL.length < 100) {
+        alert("Please draw your signature before submitting.");
+        return false;
+      }
+      document.getElementById("clientSignatureData").value = dataURL;
+      return true;
+    }
+    </script> {% endcomment %}
+
+    <script>
+      const canvas = document.getElementById("clientSignature");
+      const ctx = canvas.getContext("2d");
+      let drawing = false;
+    
+      // Set canvas size responsive (optional)
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    
+      // Mouse events
+      canvas.addEventListener("mousedown", (e) => {
+        drawing = true;
+        draw(e);
+      });
+    
+      canvas.addEventListener("mouseup", () => {
+        drawing = false;
+        ctx.beginPath();
+      });
+    
+      canvas.addEventListener("mousemove", draw);
+    
+      // Touch events
+      canvas.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        drawing = true;
+        drawTouch(e);
+      });
+    
+      canvas.addEventListener("touchmove", (e) => {
+        e.preventDefault();
+        drawTouch(e);
+      });
+    
+      canvas.addEventListener("touchend", (e) => {
+        e.preventDefault();
+        drawing = false;
+        ctx.beginPath();
+      });
+    
+      function draw(e) {
+        if (!drawing) return;
+        ctx.lineWidth = 2;
+        ctx.lineCap = "round";
+        ctx.strokeStyle = "#000";
+        ctx.lineTo(e.offsetX, e.offsetY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(e.offsetX, e.offsetY);
+      }
+    
+      function drawTouch(e) {
+        if (!drawing) return;
+        const rect = canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+    
+        ctx.lineWidth = 2;
+        ctx.lineCap = "round";
+        ctx.strokeStyle = "#000";
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+      }
+    
+      function clearSignature() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    
+      function captureSignature() {
+        const signatureData = canvas.toDataURL();
+        if (!signatureData || signatureData.length < 100) {
+          alert("Please draw your signature before submitting.");
+          return false;
+        }
+        document.getElementById("clientSignatureData").value = signatureData;
+        return true;
+      }
+    </script>
+{% endblock %}

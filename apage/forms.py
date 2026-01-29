@@ -8,3 +8,9 @@ class GeneralReportForm(forms.ModelForm):
         widgets = {
             'date_of_visit': forms.DateInput(attrs={'type': 'date'}),
         }
+
+from django import forms
+
+class ClientSignatureForm(forms.Form):
+    client_name = forms.CharField(max_length=255, label='Client Name')
+    client_signature = forms.CharField(widget=forms.HiddenInput())  # base64 string

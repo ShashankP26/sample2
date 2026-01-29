@@ -3,389 +3,292 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quotation Preview</title>
-    <style>
-        /* A4 Page Layout */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0 auto;
-            padding: 20px;
-            width: 21cm;
-            min-height: 29.7cm;
-            box-sizing: border-box;
-            background-color: #fff;
-            max-height:99vh;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=800"/>
+  <title>Quotation Preview</title>
+  <link href="https://unpkg.com/@tabler/core@latest/dist/css/tabler.min.css" rel="stylesheet"/>
+  <style>
+    @page { size: A4; margin: 18mm 0; }
+    html, body {
+      background: #f6f8fb; box-sizing: border-box; margin: 0; padding: 0;
+    }
+    .quote-box {
+      width: 185mm;
+      min-height: 251mm;
+      margin: 32px auto;
+      background: #fff;
+      border-radius: 0.45rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.07);
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+    .quote-header {
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 20px;
+      margin-bottom: 15px; border-bottom: 1px solid #e0e6ed; padding-bottom: 9px;
+    }
+    .quote-section h3 { font-weight: 600; font-size: 15px; margin-bottom: 6px;}
+    .address-row { margin-bottom: 10px; }
+    .address-p { margin-bottom: 0; line-height: 1.6; }
+
+    .quote-table {
+      table-layout: fixed;
+      width: 100%;
+      font-size: 12.5px;
+      border-collapse: collapse;
+      margin-top: 25px;
+      margin-bottom: 10px;
+    }
+    .quote-table thead th { background: #eff3fb; font-weight: 700; color: #222; }
+    .quote-table th, .quote-table td {
+      border: 1px solid #b6bcc6; text-align: center; vertical-align: middle;
+      padding: 7px 4px; word-break: break-word;
+    }
+    .quote-table td.product { text-align: left; }
+
+    .totals-block { display: flex; justify-content: flex-end; gap: 20px; margin-top: 20px; flex-wrap: wrap;}
+    .totals table { width: 100%; }
+    .totals td { padding: 2px 0; font-size: 14px; }
+    .totals td:first-child { text-align: left; }
+    .totals td:last-child { text-align: right; }
     
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-            margin-top: 0px;
-            border-bottom: 2px solid #ddd;
-            padding-bottom: 10px;
-        }
+    .styled-box { 
+      margin-top: 30px; 
+      font-size: 13px;
+    }
+    .styled-box h3 {
+      background-color: #eff3fb;
+      padding: 10px 15px;
+      margin-bottom: 0;
+      border: 1px solid #e0e6ed;
+      border-bottom: none;
+      border-radius: 4px 4px 0 0;
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .styled-box ul {
+      margin: 0;
+      padding: 15px 15px 15px 40px;
+      border: 1px solid #e0e6ed;
+      border-radius: 0 0 4px 4px;
+      background-color: #f6f8fb;
+      list-style-position: outside;
+    }
+    .styled-box li {
+      padding-bottom: 5px;
+    }
+    .styled-box li:last-child {
+      padding-bottom: 0;
+    }
+
+    /* NEW: Style for the plain bank details section */
+    .bank-details {
+      margin-top: 30px;
+    }
     
-        header h1 {
-            font-size: 28px;
-            font-weight: bold;
-            margin: 0;
-        }
+    /* MODIFIED: Increased margin-top to move signature down */
+    .signature { 
+      text-align: right; 
+      margin-top: 80px; 
+      font-size: 15px; 
+      min-height: 45px; 
+      border: none; 
+    }
     
-        /* Flex Layout for sections */
-        .details-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-    
-        #rows {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-    
-        .details-row .section {
-            width: 40%;
-        }
-    
-        .section {
-            margin-bottom: 20px;
-        }
-    
-        /* Table Layout */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-    
-        table th, table td {
-            border: 1px solid #ddd;
-            padding: 6px; /* Reduced padding for more compact table */
-            text-align: center;
-        }
-    
-        table th {
-            background-color: #f4f4f4;
-            font-weight: bold;
-        }
-    
-        /* Adjust column widths */
-        table th:nth-child(1), table td:nth-child(1) { /* First column (e.g., Serial Number) */
-            width: 10%;
-        }
-        table th:nth-child(2), table td:nth-child(2) { /* Second column (e.g., Item Name) */
-            width: 25%;
-            white-space: normal; /* Allow text wrapping for long item names */
-        }
-        table th:nth-child(3), table td:nth-child(3), 
-        table th:nth-child(4), table td:nth-child(4) { /* Quantity and Price columns */
-            width: 15%;
-        }
-        table th:nth-child(5), table td:nth-child(5) { /* Total column */
-            width: 20%;
-        }
-    
-        .totals p {
-            margin: 0;
-            font-weight: bold;
-        }
-    
-        footer {
-            text-align: center;
-            margin-top: 30px;
-            font-size: 12px;
-            page-break-inside: avoid; /* Prevent page break inside footer */
-        }
-    
-        .content-section h3 {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-    
-        .content-section p {
-            margin: 5px 0;
-        }
-    
-        /* Totals Section: Right */
-        .totals-right {
-            text-align: right;
-            padding: 10px;
-            margin-top: 20px;
-        }
-    
-        .totals-right p {
-            margin: 5px 0;
-            font-weight: normal;
-            color: #333;
-        }
-    
-        .totals-right .total-title {
-            font-weight: bold;
-            color: #333;
-        }
-    
-        /* Line Border */
-        .line-border {
-            border-top: 1px solid #ddd;
-            margin-top: 20px;
-        }
-    
-        /* Flexbox Layout for the totals container */
-        .totals-container {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-            flex-wrap: wrap; /* Allows sections to wrap on smaller screens */
-        }
-    
-        .totals-left, .totals-right {
-            width: 48%; /* Each section will take up 48% of the width */
-        }
-    
-        .totals-left p, .totals-right p {
-            margin: 5px 0;
-        }
-    
-        .totals-left h3, .totals-right h3 {
-            font-size: 16px;
-            font-weight: bold;
-        }
-    
-        /* Signature Section */
-        .signature-container {
-            width: 15%;
-            height: 40%;
-            text-align: right;
-        }
-    
-        .signature-container p {
-            margin: 20px 0;
-        }
-    
-        .signature-space {
-            height: 10px;
-            margin-bottom: 10px;
-        }
-    
-        .date {
-            text-align: right;
-        }
-    
-        /* Print Specific Styles */
-        @media print {
-            /* Hide print button on print */
-            .print-button {
-                display: none;
-            }
-    
-            /* Ensure body takes up the full page size for A4 */
-            body {
-                width: 100%;
-                min-height: auto;
-                margin: 0;
-                padding: 20mm;
-            }
-    
-            /* Adjust layout for printing */
-            .totals-container {
-                flex-direction: column;
-                justify-content: flex-start;
-            }
-    
-            /* Make sure signature container is full width in print */
-            .signature-container {
-                width: 100%;
-                text-align: center;
-            }
-    
-            /* Flex sections will be stacked for print */
-            .totals-left, .totals-right {
-                width: 100%;
-                text-align: left;
-            }
-    
-            .line-border {
-                border-top: 1px solid #ddd;
-                margin-top: 20px;
-            }
-    
-            /* Page Break Handling */
-            .page-break {
-                page-break-before: always;
-            }
-    
-            /* Ensures that the layout is consistent on both screen and print */
-            .details-row .section {
-                width: 100%;
-                margin-bottom: 20px;
-            }
-    
-            /* This ensures that the totals container sections take up the full width */
-            .totals-container {
-                flex-direction: column;
-                justify-content: flex-start;
-            }
-    
-            /* Adjust spacing between totals */
-            .totals-left, .totals-right {
-                width: 100%;
-            }
-        }
-    </style>
-    
-    
-    
-    
+    footer { text-align: center; font-size: 12px; margin-top: 32px; }
+
+    @media print {
+      html, body { background: none !important; min-height: 0; height: auto; margin: 0 !important; padding: 0 !important; }
+      body, .quote-box { box-shadow: none !important; }
+      .quote-box {
+        width: 185mm !important; min-height: 251mm !important;
+        margin: 0 auto !important; border-radius: 0; padding: 0 !important;
+      }
+      .print-button { display: none !important; }
+      .totals-block, .styled-box, .bank-details, .signature, footer { page-break-inside: avoid; }
+      .quote-table { page-break-inside: auto; }
+      .quote-table thead { display: table-header-group; }
+    }
+</style>
 </head>
 <body>
-    <!-- Header Section -->
-    <header>
-        <img src="{% static 'xpredictlogo.jpg' %}" width="110" height="32" alt="Xpredict" class="navbar-brand-image">
-    </header>
+<div class="quote-box">
 
-    <!-- Quotation Information -->
-    <div class="section">
-        <div class="date"><p><strong>Date: {{ current_date }}</strong></p></div>
-        <p><strong>Quotation No:</strong> {{ quotation.quotation_no }}</p>
+  <!-- Header -->
+  <div class="quote-header">
+    <img src="{% static 'xlogo.png' %}" width="120" alt="Xpredict Logo" />
+    <div style="text-align:right; font-size:16px;">
+      <strong>Date:</strong> {{ current_date }}<br>
+      <strong>Quotation No:</strong> {{ quotation.quotation_no }}
     </div>
+  </div>
 
-    <!-- From and Bank Details -->
-    <div class="details-row">
-        <div class="section">
-            <h3>From:</h3>
-            <p>
-                {{ quotation.from_company_name }}<br>
-                Phone: {{ quotation.from_phone }}<br>
-                Email: {{ quotation.from_email }}<br>
-                GST: {{ quotation.from_gst }}<br>
-                PAN: {{ quotation.from_pan }}<br>
-                Address: {{ quotation.from_address }}
-            </p>
-        </div>
+  <!-- From Block -->
+  <div class="quote-section address-row">
+    <h3>From:</h3>
+    <p class="address-p">
+      {{ quotation.from_company_name }}<br>
+      {{ quotation.from_address }}<br>
+      Phone: {{ quotation.from_phone }}<br>
+      Email: {{ quotation.from_email }}<br>
+      GST: {{ quotation.from_gst }}<br>
+      PAN: {{ quotation.from_pan }}
+    </p>
+  </div>
+
+  <!-- Bill To / Ship To Row (side by side) - FIXED -->
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">
+      <tr>
+          <td style="width: 50%; vertical-align: top; padding-right: 16px;">
+              <div class="quote-section">
+                <h3>Bill To:</h3>
+                <p class="address-p">
+                  {{ quotation.bill_to_company_name }}<br>
+                  Customer Name: {{ quotation.bill_to_customer_name }}<br>
+                  GST: {{ quotation.bill_to_gst_number }}<br>
+                  Address: {{ quotation.bill_to_address }}
+                </p>
+              </div>
+          </td>
+          <td style="width: 50%; vertical-align: top; padding-left: 16px;">
+              <div class="quote-section">
+                <h3>Ship To:</h3>
+                <p class="address-p">
+                  {{ quotation.ship_to_company_name }}<br>
+                  Customer Name: {{ quotation.ship_to_customer_name }}<br>
+                  GST: {{ quotation.ship_to_gst_number }}<br>
+                  Address: {{ quotation.ship_to_address }}
+                </p>
+              </div>
+          </td>
+      </tr>
+  </table>
+
+  <!-- Items Table with commented columns and adjusted widths -->
+  <table class="quote-table">
+    <colgroup>
+      <col style="width: 5%;">   <!-- SL -->
+      <col style="width: 50%;">  <!-- Product -->
+      <col style="width: 10%;">  <!-- HSN -->
+      <col style="width: 12%;">  <!-- Unit Price -->
+      <col style="width: 8%;">   <!-- Qty -->
+      <col style="width: 15%;">  <!-- Taxable Amt -->
+      <!--
+      <col style="width: 6%;">
+      <col style="width: 6%;">
+      <col style="width: 6%;">
+      <col style="width: 12%;">
+      -->
+    </colgroup>
+    <thead>
+      <tr>
+        <th>SL</th>
+        <th class="product">Product</th>
+        <th>HSN</th>
+        <th>Unit Price</th>
+        <th>Qty</th>
+        <th>Taxable Amt</th>
+        <!--
+        <th>CGST</th>
+        <th>SGST</th>
+        <th>IGST</th>
+        <th>Total</th>
+        -->
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in quotation_items %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td class="product">{{ item.product.name }}</td>
+        <td>{{ item.hsncode }}</td>
+        <td>{{ item.unit_price|floatformat:2 }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>{{ item.rate|intcomma }}</td>
+        <!--
+        <td>{{ item.cgst }}%</td>
+        <td>{{ item.sgst }}%</td>
+        <td>{{ item.igst }}%</td>
+        <td>{{ item.final_amount|intcomma }}</td>
+        -->
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Totals Block -->
+  <div class="totals-block">
+    <div class="totals" style="width: 40%;">
+      <table>
+          <tr>
+              <td><strong>Subtotal:</strong></td>
+              <td>₹{{ quotation.subtotal|intcomma }}</td>
+          </tr>
+
+          <tr>
+              <td><strong>CGST Total:</strong></td>
+              <td>₹{{ quotation.cgst_total|intcomma }}</td>
+          </tr>
+          <tr>
+              <td><strong>SGST Total:</strong></td>
+              <td>₹{{ quotation.sgst_total|intcomma }}</td>
+          </tr>
+          <tr>
+              <td><strong>IGST Total:</strong></td>
+              <td>₹{{ quotation.igst_total|intcomma }}</td>
+          </tr>
+
+          <tr>
+              <td><strong>Grand Total:</strong></td>
+              <td>₹{{ quotation.grand_total|intcomma }}</td>
+          </tr>
+      </table>
     </div>
+  </div>
 
-    <!-- Bill To and Ship To Details -->
-    <div class="details-row" id="rows">
-        <div class="section">
-            <h3>Bill To:</h3>
-            <p>
-                {{ quotation.bill_to_company_name }}<br>
-                Customer Name: {{ quotation.bill_to_customer_name }}<br>
-                GST: {{ quotation.bill_to_gst_number }}<br>
-                Address: {{ quotation.bill_to_address }}
-            </p>
-        </div>
+  <div style="margin-top: 14px; font-size:14px;">
+    <strong>Total in Words:</strong> {{ grand_total_in_words }}
+  </div>
 
-        <div class="section">
-            <h3>Ship To:</h3>
-            <p>
-                {{ quotation.ship_to_company_name }}<br>
-                Customer Name: {{ quotation.ship_to_customer_name }}<br>
-                GST: {{ quotation.ship_to_gst_number }}<br>
-                Address: {{ quotation.ship_to_address }}
-            </p>
-        </div>
-    </div>
+  <!-- Terms & Conditions Section -->
+  <div class="styled-box">
+    <h3>Terms & Conditions</h3>
+    <ul>
+      {% for term in quotation.terms_and_conditions.splitlines %}
+      <li>{{ term }}</li>
+      {% endfor %}
+    </ul>
+  </div>
 
-    <!-- Quotation Items Table -->
-    <div class="section">
-        <h3>Item Details:</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>SL</th>
-                    <th>Product</th>
-                    <th>HSN</th>
-                    <th>Unit Price</th>
-                    <th>Qnty</th>
-                    <th>Taxable Amount</th>
-                    <th>CGST</th>
-                    <th>SGST</th>
-                    <th>IGST</th>
-                    <th> Amount After Tax</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in quotation_items %}
-                <tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td>{{ item.product.name }}</td>
-                    <td>{{ item.hsncode }}</td>
-                    <td>{{ item.unit_price|floatformat:2 }}</td>
-                    <td>{{ item.quantity }}</td>
-                    <td>{{ item.rate|intcomma }}</td>
-                    <td>{{ item.cgst }}</td>
-                    <td>{{ item.sgst }}</td>
-                    <td>{{ item.igst }}</td>
-                    <td>{{ item.final_amount|intcomma }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+  <!-- MODIFIED: Bank Details now have a plain style -->
+  <div class="quote-section bank-details">
+    <h3>Bank Details</h3>
+    <p class="address-p">
+      Bank Name: {{ quotation.bank.bank_name }}<br>
+      A/C Holder: {{ quotation.bank.account_holder_name }}<br>
+      A/C Number: {{ quotation.bank.account_number }}<br>
+      IFSC: {{ quotation.bank.ifsc_code }}<br>
+      Branch: {{ quotation.bank.branch_name }}
+    </p>
+  </div>
 
-    <div class="details-row" id="rows">
-        <div class="section">
-            <h3>Bank Details:</h3>
-            <p>
-                Bank Name: {{ quotation.bank.bank_name }}<br>
-                Account Holder Name: {{ quotation.bank.account_holder_name }}<br>
-                Account Number: {{ quotation.bank.account_number }}<br>
-                IFSC Code: {{ quotation.bank.ifsc_code }}<br>
-                Branch Name: {{ quotation.bank.branch_name }}<br>
-            </p>
-            
-        </div>
+  <!-- MODIFIED: Signature block pushed down -->
+  <div class="signature">
+    <strong>Authorized Signature</strong>
+  </div>
 
-        <div class="section">
-            <p><strong>Taxable Amount: {{ quotation.subtotal }}</strong></p>
-            <p><strong>CGST Total: {{quotation.cgst_total}}</strong></p>
-            <p><strong>SGST Total: {{quotation.sgst_total }}</strong></p>
-            <p><strong>IGST Total: {{ quotation.igst_total }}</strong></p>
-            <p><strong>Total Amount After Tax: {{ quotation.grand_total }}</strong></p>
-        </div>
-    </div>
-    <!-- Total in Words, Bank Details, and Signature -->
-    <div class="details-row" id="rows">
-        <div class="section">
-            <!-- Total Amount in Words -->
-            <div class="totals-in-words">
-                <p><strong>Total Amount in Words: </strong><br><br>
-                    <strong>{{ grand_total_in_words }}</strong></p>
-            </div>
+  <footer>
+    © Xpredict Labs. All rights reserved.
+  </footer>
+</div>
 
-            <!-- Bank Details -->
-            
-        </div>
-
-        <!-- Signature -->
-        <div class="section">
-            <strong><p>Authorized Signature:</p></strong>
-            <div class="signature-space"></div>
-        </div>
-    </div>
-
-    <!-- Terms and Conditions -->
-    <div class="section">
-        <h3>Terms and Conditions:</h3>
-        <ul>
-            {% for term in quotation.terms_and_conditions.splitlines %}
-                <li>{{ term }}</li>
-            {% endfor %}
-        </ul>
-    </div>
-
-    <!-- Line border after Terms and Conditions -->
-    <div class="line-border"></div>
-
-    <!-- Footer Section -->
-    <footer>
-        <p>© Xpredict Labs. All rights reserved.</p>
-    </footer>
-    <button class="print-button" onclick="window.print()">Print this quotation</button>
+<!-- Print Button -->
+<div class="text-center mt-4 print-button">
+  <button class="btn btn-primary" onclick="window.print()">
+    <i class="ti ti-printer"></i> Print Quotation
+  </button>
+</div>
+<script src="https://unpkg.com/@tabler/core@latest/dist/js/tabler.min.js"></script>
 </body>
 </html>

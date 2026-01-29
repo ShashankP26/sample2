@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User
@@ -32,20 +33,20 @@ class Enquiry(models.Model):
         ('3', 'COLD'),
     ]
   
-    companyname = models.CharField(max_length=30, default='')
-    customername = models.CharField(max_length=20, default='')
+    companyname = models.CharField(max_length=30, default='', blank=True, null=True)
+    customername = models.CharField(max_length=20, default='', blank=True, null=True)
     
     refrence = models.CharField(max_length=20, default='',blank=True)
-    email = models.EmailField()
-    contact = models.IntegerField()
+    email = models.EmailField( null=True, blank=True)
+    contact = models.IntegerField( blank=True, null=True)
     location = models.CharField(max_length=100, default='')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='')
     products = models.ForeignKey(Products, on_delete=models.CASCADE, default=1)  # Make sure product with id=1 exists
     subproduct = models.CharField(max_length=20, default='',blank=True)
     closuredate = models.DateField(null=True, blank=True)
-    executive = models.ForeignKey(Executive, on_delete=models.CASCADE, null=False, blank=False)
+    executive = models.ForeignKey(Executive, on_delete=models.CASCADE,  blank=True, null=True)
     files = models.ManyToManyField(FileUploadModel, blank=True)
-    remarks = models.TextField(max_length=100, default='', blank=True)
+    remarks = models.TextField(max_length=255, default='', blank=True)
     flag = models.TextField(max_length=200, default='', blank=True)
     enqtype = models.CharField(max_length=20, default='',blank=True)
     is_confirmed = models.BooleanField(default=False) 
@@ -122,9 +123,18 @@ class ConfirmedOrderForm(forms.ModelForm):
         super(ConfirmedOrderForm, self).__init__(*args, **kwargs)
         self.fields['quotation'].queryset = quotation.objects.all() 
 
+
+class confirmed_enquiry(models.Model):
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE,null=True, blank=True) 
+    enquiry = models.ForeignKey(Enquiry, on_delete=models.CASCADE, null=True, blank=True)
+    quotation=models.CharField(max_length=40 )
+    revert = models.BooleanField(default=False)
+    relegate=models.BooleanField(default=False)
+
 class ConfirmedOrderFollowUp(models.Model):
     confirmed_order = models.ForeignKey(
-        'confirmed_enquiry',
+        confirmed_enquiry,
+        
         on_delete=models.CASCADE,
         related_name='followups',
         help_text="The confirmed order associated with this follow-up"
@@ -423,12 +433,6 @@ class companydetails(models.Model):
     phone=models.CharField(max_length=20)
 
 
-class confirmed_enquiry(models.Model):
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE,null=True, blank=True) 
-    enquiry = models.ForeignKey(Enquiry, on_delete=models.CASCADE, null=True, blank=True)
-    quotation=models.CharField(max_length=40 )
-    revert = models.BooleanField(default=False)
-    relegate=models.BooleanField(default=False)
 
 
 class Hidrec_wash(models.Model):
@@ -455,3 +459,7 @@ class ConfirmedHidrecWash(models.Model):
     terms_conditions = models.TextField()
     general_maintenance = models.TextField()
     total_price = models.CharField(max_length=100, blank=True, null=True)
+
+
+
+

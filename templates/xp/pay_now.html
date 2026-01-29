@@ -19,6 +19,7 @@
                                 <th class="col-12 col-md-2">Total Amount</th>
                                 <th class="col-12 col-md-2">From</th>
                                 <th class="col-12 col-md-2">To</th>
+                                <th class="col-12 col-md-2">Remark</th>
                                 <th class="col-12 col-md-2">Screenshot (Upload Proof)</th>
                             </tr>
                         </thead>
@@ -36,7 +37,7 @@
                             
                                 <!-- Amount -->
                                 <td class="col-12 col-md-2">
-                                    <input type="number" name="amount" class="form-control" value="{{ total_amount_to_be_paid }}" required readonly>
+                                    <input type="number" name="amount" class="form-control" value="{{ final_amount_to_pay }}" required readonly>
                                 </td>
                             
                                 <!-- From Date -->
@@ -48,6 +49,15 @@
                                 <td class="col-12 col-md-2">
                                     <input type="date" name="to_date" class="form-control" value="{{ to_date }}" readonly>
                                 </td>
+                                <td class="col-12 col-md-2">
+                                    <input type="text"
+                                           name="remarks"
+                                           class="form-control"
+                                           placeholder="Optional remarks"
+                                           required>
+                                </td>
+
+
                             
                                 <!-- Screenshot -->
                                 <td class="col-12 col-md-3">

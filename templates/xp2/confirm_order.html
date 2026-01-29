@@ -87,6 +87,28 @@
         {% endif %}
       {% endfor %}
     {% endfor %}
+    <h4>Hydric Wash Quotations</h4>
+{% if hidrec_quotations %}
+  {% for wash in hidrec_quotations %}
+    <div class="form-check">
+      <input class="form-check-input" 
+             type="radio" 
+             name="quotation_selection" 
+             value="{{ wash.quotation_no }}" 
+             id="hidrec_wash_{{ wash.id }}"
+             {% if wash.quotation_no in confirmed_quotations %}disabled{% endif %}>
+      <label class="form-check-label" for="hidrec_wash_{{ wash.id }}">
+        Quotation Number: {{ wash.quotation_no }} - {{ wash.contents|truncatechars:100 }}
+        {% if wash.quotation_no in confirmed_quotations %}
+          <span class="text-danger">(Already Confirmed)</span>
+        {% endif %}
+      </label>
+    </div>
+  {% endfor %}
+{% else %}
+  <p>No Hydric Wash Quotations Available.</p>
+{% endif %}
+
 
     <!-- Render form fields dynamically -->
     <div class="row">

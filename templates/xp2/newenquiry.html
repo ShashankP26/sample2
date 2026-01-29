@@ -29,11 +29,11 @@
               <label class="form-label"><span class="red-asterisk">*</span> Company Name</label><style>.red-asterisk {
                 color: red;
             }</style>
-              <input type="text" class="form-control" name="companyname" placeholder="Company name"required>
+              <input type="text" class="form-control" name="companyname" placeholder="Company name">
             </div>
             <div class="mb-3">
               <label class="form-label"><span class="red-asterisk">*</span> Client Contact Name</label>
-              <input type="text" class="form-control" name="customername" placeholder="enter name"required>
+              <input type="text" class="form-control" name="customername" placeholder="enter name">
             </div>
             <div class="mb-3">
                 <label class="form-label">Refrence</label>
@@ -44,8 +44,8 @@
               <input type="email" class="form-control" name="email" placeholder="example@gmail.com">
             </div>
             <div class="mb-3">
-              <label class="form-label"><span class="red-asterisk">*</span> Client Contact Number</label>
-              <input type="text" class="form-control" name="contact" placeholder="Contact number"required>
+              <label class="form-label"> Client Contact Number</label>
+              <input type="text" class="form-control" name="contact" placeholder="Contact number">
             </div>
             <div class="mb-3">
               <label class="form-label">Location</label>
@@ -87,11 +87,13 @@
             </div>
             <div class="mb-3">
                 <label class="form-label" for="executive-name">Executive</label>
-                <select class="form-select" id=" executive-name" name=" executive_name" >
-                  {% for  exe in executive %}
-                  <option value="{{  exe.id }}">{{  exe.name }}</option>
+                <select class="form-select" id="executive-name" name="executive_name">
+                  <option value="" selected disabled>Select Executive</option>
+                  {% for exe in executive %}
+                    <option value="{{ exe.id }}">{{ exe.name }}</option>
                   {% endfor %}
                 </select>
+                
             </div>
            
               {% csrf_token %}

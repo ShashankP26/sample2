@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Edit Generator Report</h3>
+                </div>
+                <div class="card-body">
+                    <form id="editGeneratorReportForm">
+                        {% csrf_token %}
+                        <input type="hidden" id="report_id" value="{{ report.id }}">
+
+                        <div class="mb-3">
+                            <p>Start Time: {{ report.start_time|time:'H:i' }}</p>
+                            <label for="end_time" class="form-label">End Time:</label>
+                            <input type="time" id="end_time" name="end_time" class="form-control" required>
+                        </div>
+
+                        <div class="card-footer">
+                            <a href="{% url 'generator_report' %}" class="btn btn-success">Back</a>
+                            <button type="submit" id="submitBtn" class="btn btn-primary float-end">Submit</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        let rawStartTime = "{{ report.start_time|time:'H:i' }}"; // Start time in 24-hour format
+        console.log("Start Time (raw):", rawStartTime);
+
+        let submitButton = $("#submitBtn");
+
+        function convertToMinutes(timeStr) {
+            if (!timeStr) return null;
+            let [hours, minutes] = timeStr.split(":").map(Number);
+            return hours * 60 + minutes;
+        }
+
+        let startMinutes = convertToMinutes(rawStartTime);
+        console.log("Start Time in Minutes:", startMinutes);
+
+        function validateEndTime() {
+            let endTime = $("#end_time").val(); // End time in 24-hour format
+            console.log("Selected End Time:", endTime);
+
+            if (!endTime) {
+                submitButton.prop("disabled", true);
+                return;
+            }
+
+            let endMinutes = convertToMinutes(endTime);
+            console.log("End Time in Minutes:", endMinutes);
+
+            let totalDuration;
+
+            // Case 1: End time is before start time but within a valid next-day window
+            if (endMinutes < startMinutes) {
+                let forwardDuration = (endMinutes + 1440) - startMinutes; // Adjusted for next day
+                console.log("End Time Adjusted for Next Day:", endMinutes + 1440);
+                
+                if (forwardDuration <= 12 * 60) { 
+                    totalDuration = forwardDuration; 
+                } else {
+                    alert("⚠️ Invalid End Time: Cannot be before Start Time!");
+                    submitButton.prop("disabled", true);
+                    return;
+                }
+            } 
+            // Case 2: End time is after start time on the same day
+            else {
+                totalDuration = endMinutes - startMinutes;
+            }
+
+            console.log("Total Duration (Minutes):", totalDuration);
+
+            // Ensure valid duration within 24 hours
+            if (totalDuration <= 0 || totalDuration > 1440) {
+                alert("⚠️ Invalid End Time: Must be after Start Time and within 24 hours!");
+                submitButton.prop("disabled", true);
+            } else {
+                submitButton.prop("disabled", false);
+            }
+        }
+
+        $("#end_time").on("change", function () {
+            clearTimeout($.data(this, "timer"));
+            let timer = setTimeout(validateEndTime, 300); // Debounce for performance
+            $(this).data("timer", timer);
+        });
+
+        // **AJAX POST Request to Save Data**
+        $("#editGeneratorReportForm").on("submit", function (e) {
+            e.preventDefault(); // Prevent default form submission
+
+            let endTime = $("#end_time").val();
+            let reportId = $("#report_id").val();
+
+            $.ajax({
+                url: window.location.href,  // Send request to the same page (edit view)
+                type: "POST",
+                data: {
+                    end_time: endTime,
+                    csrfmiddlewaretoken: $("input[name='csrfmiddlewaretoken']").val()
+                },
+                success: function (response) {
+                    alert("✅ Timings updated successfully!");
+                    window.location.href = "{% url 'generator_report' %}"; // Redirect after success
+                },
+                error: function (xhr) {
+                    let errorMessage = xhr.responseJSON?.error || "❌ An error occurred!";
+                    alert(errorMessage);
+                }
+            });
+        });
+
+    });
+</script>
+
+
+
+
+{% endblock %}

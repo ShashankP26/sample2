@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 
+
 {% block content %}
 <div class="container-fluid mt-5">
     <div class="row mb-4">
@@ -7,7 +8,7 @@
         <div class="col-12 col-md-8 d-flex justify-content-start align-items-center flex-wrap gap-3 mb-3 mb-md-0">
             <!-- E-Vouchers Dropdown -->
             <div class="dropdown">
-                <button class="btn btn-primary btn-sm dropdown-toggle" type="button" id="voucherDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="padding: 7px 12px;">
+                <button class="btn btn-primary btn dropdown-toggle" type="button" id="voucherDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="padding: 8px 17px;">
                     E-Vouchers
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="voucherDropdown">
@@ -16,37 +17,157 @@
                 </ul>
             </div>
 
-            <!-- Export Dropdown -->
+            <!-- EXPORT BUTTON DROPDOWN -->
             <div class="dropdown">
-                <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="padding: 7px 12px;">
-                    Export
+                <button class="btn btn-primary dropdown-toggle " type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="padding: 7px 12px;">
+                Export Vouchers
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="exportDropdown">
-                    <li><a href="{% url 'export_vouchers' %}?format=xlsx" class="dropdown-item">Export as XLSX</a></li>
-                    <li><a href="{% url 'export_vouchers' %}?format=csv" class="dropdown-item">Export as CSV</a></li>
-                    <li><a href="{% url 'export_vouchers' %}?format=pdf" class="dropdown-item">Export as PDF</a></li>
+                <li class="dropdown-header">Quick Export (XLSX)</li>
+                {% for day in day_ranges %}
+                <li>
+                    <a class="dropdown-item" href="{% url 'export_vouchers' %}?format=xlsx&days={{ day }}">Last {{ day }} Days</a>
+                </li>
+                {% endfor %}
+                <li><hr class="dropdown-divider"></li>
+                <li class="dropdown-header">Other Formats</li>
+                <li><a class="dropdown-item" href="{% url 'export_vouchers' %}?format=pdf">PDF (All)</a></li>
+                <li><a class="dropdown-item" href="{% url 'export_vouchers' %}?format=csv">CSV (All)</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <button class="dropdown-item text-primary" data-bs-toggle="modal" data-bs-target="#customExportModal">📅 Custom Date Range</button>
+                </li>
                 </ul>
             </div>
+              <!-- Custom Export Modal -->
+<!-- CUSTOM EXPORT MODAL -->
+<!-- CUSTOM EXPORT MODAL -->
+<div class="modal fade" id="customExportModal" tabindex="-1" aria-labelledby="customExportModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="get" action="{% url 'export_vouchers' %}" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="customExportModalLabel">Export by User & Date Range</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
 
+      <div class="modal-body">
+        <!-- Format -->
+        <div class="mb-3">
+          <label for="exportFormat" class="form-label">Select Format</label>
+          <select name="format" class="form-select" id="exportFormat" required>
+            <option value="xlsx">Excel (XLSX)</option>
+            <option value="csv">CSV</option>
+            <option value="pdf">PDF</option>
+          </select>
+        </div>
+
+        <!-- User -->
+        <div class="mb-3">
+          <label for="createdBy" class="form-label">Select User</label>
+          <select name="created_by" class="form-select" id="createdBy">
+  
+            {% if request.user.is_staff or request.user.is_superuser %}
+              <!-- Admin: All users -->
+              <option value="">All Users</option>
+              {% for user in all_users %}
+                <option value="{{ user.id }}">
+                  {{ user.get_full_name|default:user.username }}
+                </option>
+              {% endfor %}
+            
+            {% else %}
+              <!-- Normal user: only self -->
+              <option value="{{ request.user.id }}">
+                {{ request.user.get_full_name|default:request.user.username }}
+              </option>
+            {% endif %}
+          
+          </select>
+        </div>
+
+        <!-- Dates -->
+        <div class="mb-3">
+          <label class="form-label">From Date</label>
+          <input type="date" name="transaction_date_from" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">To Date</label>
+          <input type="date" name="transaction_date_to" class="form-control" required>
+        </div>
+
+        <!-- Item Type -->
+        <div class="mb-3">
+          <label for="itemType" class="form-label">Item Type</label>
+          <select name="item_type" class="form-select" id="itemType">
+            <option value="">All Item Types</option>
+            {% for type in item_types %}
+              <option value="{{ type }}">{{ type }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-success">Export</button>
+      </div>
+    </form>
+  </div>
+</div>
             <!-- Filter by Item Type -->
             {% if user.is_staff or user.is_superuser %}
             <div class="dropdown">
-                <button class="btn btn-primary btn-sm dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="padding: 7px 12px;">
-                    {% if request.GET.item_type %}
-                        {{ request.GET.item_type }}
-                    {% else %}
-                        Filter by Item Type
-                    {% endif %}
-                </button>
-                <ul class="dropdown-menu" aria-labelledby="filterDropdown">
-                    <li><a class="dropdown-item" href="{% url 'item_form' %}?item_type=">All Item Types</a></li>
-                    {% for item_type in item_types %}
-                    <li><a class="dropdown-item" href="{% url 'item_form' %}?item_type={{ item_type }}">{{ item_type }}</a></li>
-                    {% endfor %}
-                </ul>
-            </div>
+              <button class="btn btn-primary btn-md dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false" >
+                  {% if request.GET.item_type %}
+                      {{ request.GET.item_type }}
+                  {% else %}
+                      Filter by Item Type
+                  {% endif %}
+              </button>
+              <ul class="dropdown-menu" aria-labelledby="filterDropdown">
+                  <li>
+                      <a class="dropdown-item" href="?{% if request.GET.user_id %}user_id={{ request.GET.user_id }}&{% endif %}{% if request.GET.transaction_date_from %}transaction_date_from={{ request.GET.transaction_date_from }}&{% endif %}{% if request.GET.transaction_date_to %}transaction_date_to={{ request.GET.transaction_date_to }}&{% endif %}item_type=">
+                          All Item Types
+                      </a>
+                  </li>
+                  {% for item_type in item_types %}
+                      <li>
+                          <a class="dropdown-item" href="?{% if request.GET.user_id %}user_id={{ request.GET.user_id }}&{% endif %}{% if request.GET.transaction_date_from %}transaction_date_from={{ request.GET.transaction_date_from }}&{% endif %}{% if request.GET.transaction_date_to %}transaction_date_to={{ request.GET.transaction_date_to }}&{% endif %}item_type={{ item_type }}">
+                              {{ item_type }}
+                          </a>
+                      </li>
+                  {% endfor %}
+              </ul>
+          </div>
+            {% endif %}
+            <!-- Filter by User -->
+            {% if request.user.is_staff or request.user.is_superuser %}
+            <div class="dropdown">
+              <button class="btn btn-primary btn-md dropdown-toggle" type="button" id="userFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                  {% if selected_user %}
+                      {{ selected_user.first_name }}
+                  {% else %}
+                      Filter by User
+                  {% endif %}
+              </button>
+              <ul class="dropdown-menu" aria-labelledby="userFilterDropdown">
+                  <li>
+                      <a class="dropdown-item" href="?{% if request.GET.item_type %}item_type={{ request.GET.item_type }}&{% endif %}{% if request.GET.transaction_date_from %}transaction_date_from={{ request.GET.transaction_date_from }}&{% endif %}{% if request.GET.transaction_date_to %}transaction_date_to={{ request.GET.transaction_date_to }}&{% endif %}">
+                          All Users
+                      </a>
+                  </li>
+                  {% for u in all_users %}
+                      <li>
+                          <a class="dropdown-item" href="?{% if request.GET.item_type %}item_type={{ request.GET.item_type }}&{% endif %}{% if request.GET.transaction_date_from %}transaction_date_from={{ request.GET.transaction_date_from }}&{% endif %}{% if request.GET.transaction_date_to %}transaction_date_to={{ request.GET.transaction_date_to }}&{% endif %}user_id={{ u.id }}">
+                              {{ u.first_name }}
+                          </a>  
+                      </li>
+                  {% endfor %}
+              </ul>
+          </div>
             {% endif %}
         </div>
+        
 
         <!-- Add a gap for smaller screens -->
         <div class="w-100 d-block d-md-none"></div> <!-- Creates a gap for small screens -->
@@ -54,20 +175,25 @@
         <!-- Right-aligned Buttons Section (Filter by Date, Search, and Clear) -->
         <div class="col-12 col-md-4 d-flex justify-content-end align-items-center gap-3">
             <!-- Filter by Date -->
-            <div class="dropdown">
-                <button class="btn btn-primary btn-sm" type="button" id="filterDateButton" data-bs-toggle="dropdown" aria-expanded="false" style="padding: 7px 12px;">
-                    Filter by Date
-                </button>
-                <div id="dateFields" class="dropdown-menu dropdown-menu-end p-3" style="width: auto; display: none;  ">
-                    <div class="d-flex flex-column gap-2">
-                        <label for="fromDateField" class="form-label mb-0">From:</label>
-                        <input type="date" name="transaction_date_from" class="form-control form-control-sm" id="fromDateField">
-                        <label for="toDateField" class="form-label mb-0">To:</label>
-                        <input type="date" name="transaction_date_to" class="form-control form-control-sm" id="toDateField">
-                        <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="applyFilterButton">Apply Filter</button>
-                    </div>
-                </div>
+                    <div class="dropdown">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="filterDateButton" data-bs-toggle="dropdown" aria-expanded="false">
+            Filter by Date
+            </button>
+            <div class="dropdown-menu p-3 shadow-lg" style="min-width: 280px;">
+            <div class="mb-2">
+                <label for="fromDateField" class="form-label mb-1">From Date:</label>
+                <input type="date" name="transaction_date_from" class="form-control form-control-md" id="fromDateField">
             </div>
+            <div class="mb-2">
+                <label for="toDateField" class="form-label mb-1">To Date:</label>
+                <input type="date" name="transaction_date_to" class="form-control form-control-md" id="toDateField">
+            </div>
+            <div class="d-grid gap-2">
+                <button type="button" class="btn btn-outline-primary btn-md" id="applyFilterButton">Apply Filter</button>
+                <a href="?" class="btn btn-outline-secondary btn-md" id="clearButton">Clear</a>
+            </div>
+            </div>
+        </div>
 
             <!-- Search Bar Section -->
             <form method="get" action="{% url 'item_form' %}" autocomplete="off" class="d-flex align-items-center gap-2">
@@ -84,19 +210,19 @@
             </form>
 
             <!-- Clear Button -->
-            <button type="button" class="btn btn-outline-danger btn-sm" id="clearButton" style="padding: 7px 12px;">Clear</button>
+            <a href="?" class="btn btn-outline-secondary btn-md" id="clearButton">Clear</a>
         </div>
     </div>
 </div>
     <!-- Expenses Table -->
-    <div class="table-responsive shadow-sm rounded">
+    <div id="expenseTableContainer" class="table-responsive shadow-sm rounded">
         <table class="table table-striped table-hover align-middle" style="border-collapse: collapse;">
             <thead class="table-dark">
                 <tr>
                     <th style="width: 12%; border: 1px solid #ddd; padding: 8px;">Applied Date</th>
                     <th style="width: 30%; border: 1px solid #ddd; padding: 8px;">User</th>
                     <th style="width: 22%; border: 1px solid #ddd; padding: 8px;">EV num</th>
-                    <th style="width: 30%; border: 1px solid #ddd; padding: 8px;">Item Type</th>
+                    <th style="width: 22%; border: 1px solid #ddd; padding: 25px;">Item Type</th>
                     <th style="width: 15%; border: 1px solid #ddd; padding: 8px;">Item Name / Remarks</th>
                     <th style="width: 15%; border: 1px solid #ddd; padding: 8px;">Payment Category</th>
                     <th style="width: 10%; border: 1px solid #ddd; padding: 8px;">T Category</th>
@@ -106,9 +232,78 @@
                     <th style="width: 15%; border: 1px solid #ddd; padding: 8px;">Uploaded File</th>
                     <th style="width: 10%; border: 1px solid #ddd; padding: 8px;">Payment Mode</th>
                     <th style="width: 10%; border: 1px solid #ddd; padding: 8px;">Actions</th>
-                    <th style="width: 10%; border: 1px solid #ddd; padding: 8px;">Payment Status</th>
-                    
 
+                                      <!-- Approval Status -->
+                    <!-- Approval Status -->
+                    {% comment %} <th>
+                      {% if sort_approval_status == '1' %}
+                        <a href="?{{ request.GET.urlencode|urlencode }}&sort_approval_status=0">Approval Status 🔽</a>
+                      {% else %}
+                        <a href="?{{ request.GET.urlencode|urlencode }}&sort_approval_status=1">Approval Status</a>
+                      {% endif %}
+                    </th>
+
+                    <!-- Delete Request -->
+                    <th>
+                      {% if sort_delete_requested == '1' %}
+                        <a href="?{{ request.GET.urlencode|urlencode }}&sort_delete_requested=0">Delete Request 🔽</a>
+                      {% else %}
+                        <a href="?{{ request.GET.urlencode|urlencode }}&sort_delete_requested=1">Delete Request</a>
+                      {% endif %}
+                    </th>
+
+                    <!-- Payment Status -->
+                    <th>
+                      {% if sort_payment_status == '1' %}
+                        <a href="?{{ request.GET.urlencode|urlencode }}&sort_payment_status=0">Payment Status 🔽</a>
+                      {% else %}
+                        <a href="?{{ request.GET.urlencode|urlencode }}&sort_payment_status=1">Payment Status</a>
+                      {% endif %}
+                    </th> {% endcomment %}
+
+                    <th>
+                      {% if sort_approval_status == '1' %}
+                        <a href="?{% for key, value in request.GET.items %}{% if key != 'sort_approval_status' and key != 'page' %}{{ key|urlencode }}={{ value|urlencode }}&{% endif %}{% endfor %}sort_approval_status=0"
+                           class="sort-link-ajax text-warning fw-bold">
+                          Approval Status 
+                        </a>
+                      {% else %}
+                        <a href="?{% for key, value in request.GET.items %}{% if key != 'sort_approval_status' and key != 'page' %}{{ key|urlencode }}={{ value|urlencode }}&{% endif %}{% endfor %}sort_approval_status=1"
+                           class="sort-link-ajax">
+                          Approval Status 
+                        </a>
+                      {% endif %}
+                    </th>
+
+                    <!-- Delete Request -->
+                    <th>
+                      {% if sort_delete_requested == '1' %}
+                        <a href="?{% for key, value in request.GET.items %}{% if key != 'sort_delete_requested' and key != 'page' %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}sort_delete_requested=0"
+                          class="sort-link-ajax text-warning fw-bold">
+                          Delete Request 🔽
+                        </a>
+                      {% else %}
+                        <a href="?{% for key, value in request.GET.items %}{% if key != 'sort_delete_requested' and key != 'page' %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}sort_delete_requested=1"
+                          class="sort-link-ajax">
+                          Delete Request
+                        </a>
+                      {% endif %}
+                    </th>
+
+                    <!-- Payment Status -->
+                    <th>
+                      {% if sort_payment_status == '1' %}
+                        <a href="?{% for key, value in request.GET.items %}{% if key != 'sort_payment_status' and key != 'page' %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}sort_payment_status=0"
+                          class="sort-link-ajax text-warning fw-bold">
+                          Payment Status 🔽
+                        </a>
+                      {% else %}
+                        <a href="?{% for key, value in request.GET.items %}{% if key != 'sort_payment_status' and key != 'page' %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}sort_payment_status=1"
+                          class="sort-link-ajax">
+                          Payment Status
+                        </a>
+                      {% endif %}
+                    </th>
                 </tr>
             </thead>
             <tbody>
@@ -117,60 +312,317 @@
                     <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">{{ exp.date }}</td>
                     <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">{{ exp.created_by }}</td>
                     <td style="border: 1px solid #ddd; padding: 8px;">{{ exp.evoucher_number }}</td>
-                    <td style="border: 1px solid #ddd; padding: 8px;">{{ exp.item_type }}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">
+                      {{ exp.item_type }}
+                      {% if exp.item_type == 'advances' %}
+                        ({{ exp.advance_group.name }})
+                      {% endif %}
+                    </td>
                     <td style="border: 1px solid #ddd; padding: 8px;">{{ exp.item_name }}</td>
                     <td style="border: 1px solid #ddd; padding: 8px;">
                         <div>
-                            {% if exp.transaction_option == 'gst' and exp.gst_photo %}
-                                <p><strong>GST</strong></p>
-                                <a href="{{ exp.gst_photo.url }}" class="btn btn-info btn-sm" target="_blank">Download GST</a>
-                            
-                            {% elif exp.transaction_option == 'bill' and exp.bill_photo %}
-                                <p><strong>Bill</strong></p>
-                                <a href="{{ exp.bill_photo.url }}" class="btn btn-info btn-sm" target="_blank">Download Bill</a>
-                            
+                          {% if exp.transaction_option == 'gst' and exp.gst_photo %}
+                            <p><strong>GST</strong></p>
+                            <a href="#" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#gstModal{{ exp.id }}">View GST</a>
+                      
+                            <!-- GST Modal -->
+                            <div class="modal fade" id="gstModal{{ exp.id }}" tabindex="-1" aria-labelledby="gstModalLabel{{ exp.id }}" aria-hidden="true">
+                              <div class="modal-dialog modal-dialog-centered modal-lg">
+                                <div class="modal-content">
+                                  <div class="modal-header">
+                                    <h5 class="modal-title" id="gstModalLabel{{ exp.id }}">GST Photo</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                  </div>
+                                  <div class="modal-body text-center">
+                                    <img src="{{ exp.gst_photo.url }}" alt="GST Photo" class="img-fluid rounded shadow mb-3" style="max-height: 500px;">
+                                    <div>
+                                      <a href="{{ exp.gst_photo.url }}" download class="btn btn-success">Download GST</a>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                      
+                          {% elif exp.transaction_option == 'bill' and exp.bill_photo %}
+                            <p><strong>Bill</strong></p>
+                            <a href="#" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#billModal{{ exp.id }}">View Bill</a>
+                      
+                            <!-- Bill Modal -->
+                            <div class="modal fade" id="billModal{{ exp.id }}" tabindex="-1" aria-labelledby="billModalLabel{{ exp.id }}" aria-hidden="true">
+                              <div class="modal-dialog modal-dialog-centered modal-lg">
+                                <div class="modal-content">
+                                  <div class="modal-header">
+                                    <h5 class="modal-title" id="billModalLabel{{ exp.id }}">Bill Photo</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                  </div>
+                                  <div class="modal-body text-center">
+                                    <img src="{{ exp.bill_photo.url }}" alt="Bill Photo" class="img-fluid rounded shadow mb-3" style="max-height: 500px;">
+                                    <div>
+                                      <a href="{{ exp.bill_photo.url }}" download class="btn btn-success">Download Bill</a>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                      
                             {% elif exp.transaction_option == 'voucher' %}
-                                <p><strong>Voucher</strong></p>
-                                {% if exp.voucher_number %}
-                                    <p>{{ exp.voucher_number }}</p>
-                                {% else %}
-                                    <p class="text-danger">Voucher selected but number not provided</p>
-                                {% endif %}
-                            
-                            {% elif exp.transaction_option %}
-                                <p>{{ exp.transaction_option|title }} selected</p>
-                            
-                            {% else %}
-                                <span class="text-muted">No File, Voucher, or Conveyance</span>
-                            {% endif %}
+                            <p><strong>Voucher</strong></p>
+                          
+                            {% elif exp.transaction_option == '2_wheeler' or exp.transaction_option == '4_wheeler' %}
+                              <p>
+                                <strong>
+                                  Conveyance ({{ exp.transaction_option|title}}
+                                  {% if exp.derived_km %}
+                                    – {{ exp.derived_km|floatformat:2 }} km
+                                  {% endif %})
+                                </strong>
+                              </p>
+
+                             
+                          {% elif exp.transaction_option %}
+                            <p>{{ exp.transaction_option|title }} selected</p>
+                          
+                          {% else %}
+                            <span class="text-muted">No File, Voucher, or Conveyance</span>
+                          {% endif %}
                         </div>
-                    </td>
+                      </td>
                     <td style="border: 1px solid #ddd; padding: 8px;">{{ exp.transaction_category }}</td>
                     <td style="border: 1px solid #ddd; padding: 8px;">
-                        {% if exp.transaction_category == 'internal' %}
-                            {{ exp.internal_option }}
-                        {% elif exp.transaction_category == 'external' %}
-                            {{ exp.external_type }}
-                        {% endif %}
-                    </td>
+                      {% if exp.transaction_category == 'internal' %}
+                      {{ exp.internal_option }}
+                      {% if exp.advance_group.leader and exp.internal_option != exp.advance_group.leader.get_full_name %}
+                          ({{ exp.advance_group.leader.get_full_name|default:exp.advance_group.leader.username }})
+                      {% endif %}
+                  {% elif exp.transaction_category == 'external' %}
+                      {{ exp.external_type }}
+                  {% endif %}
+                  
+                  </td>
                     <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">{{ exp.amount }}</td>
                     
                     <td style="border: 1px solid #ddd; padding: 8px;">{{ exp.transaction_date }}</td>
                     <td style="border: 1px solid #ddd; padding: 8px;">
                         {% if exp.proof_photo %}
-                            <a href="{{ exp.proof_photo.url }}" class="btn btn-info btn-sm" target="_blank">Download Proof</a>
-                        {% else %}
-                            <button id="no-proof-button" class="btn btn-danger btn-sm" disabled>No Proof</button>
+                          <!-- Old single proof -->
+                          <a href="#" class="btn btn-info btn-sm mb-1" data-bs-toggle="modal" data-bs-target="#proofModalSingle{{ exp.id }}">
+                            View Proof
+                          </a>
+                      
+                          <!-- Modal for old proof_photo -->
+                          <div class="modal fade" id="proofModalSingle{{ exp.id }}" tabindex="-1" aria-labelledby="proofModalLabelSingle{{ exp.id }}" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered modal-lg">
+                              <div class="modal-content">
+                                <div class="modal-header">
+                                  <h5 class="modal-title" id="proofModalLabelSingle{{ exp.id }}">Proof Photo</h5>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body text-center">
+                                  <img src="{{ exp.proof_photo.url }}" alt="Proof Photo" class="img-fluid rounded shadow mb-3" style="max-height: 500px;">
+                                  <div>
+                                    <a href="{{ exp.proof_photo.url }}" download class="btn btn-success">Download</a>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         {% endif %}
-                    </td>
+                      
+                        {% if exp.proof_photos.exists %}
+                        {% for proof in exp.proof_photos.all %}
+                            <a href="#" class="btn btn-info btn-sm mb-1"
+                              data-bs-toggle="modal"
+                              data-bs-target="#proofModal{{ proof.id }}">
+                                View Proof {{ forloop.counter }}
+                            </a>
+
+                            <div class="modal fade" id="proofModal{{ proof.id }}" tabindex="-1"
+                                aria-labelledby="proofModalLabel{{ proof.id }}" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Proof Photo {{ forloop.counter }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body text-center">
+                                            <img src="{{ proof.file.url }}"
+                                                class="img-fluid rounded shadow mb-3"
+                                                style="max-height: 500px;">
+                                            <div>
+                                                <a href="{{ proof.file.url }}" download class="btn btn-success">Download</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                      
+                        {% if not exp.proof_photo and not exp.proof_photos.all %}
+                          <button class="btn btn-danger btn-sm" disabled>No Proof</button>
+                        {% endif %}
+                      </td>
                     <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">{{ exp.payment_mode }}</td>
+
                     <td style="border: 1px solid #ddd; padding: 8px;">
-                        {% if exp.status == 'paid' %}
+                        {% if exp.status == 'paid' or exp.is_approved %}
                             <button class="btn btn-primary btn-sm" style="padding: 5px 20px;" disabled>Edit</button>
                         {% else %}
                             <a href="{% url 'edit_item' exp.id %}" class="btn btn-primary btn-sm" style="padding: 5px 20px;">Edit</a>
                         {% endif %}
                     </td>
+                    <td id="action-cell-{{ exp.id }}">
+                        <!-- TIP BUTTONS IF ANY -->
+                        <div class="mb-2">
+                          {% for tip in exp.cash_vouchers.all %}
+                            {% if tip.voucher_number|slice:":4" == "XPCV" %}
+                              <!-- ✅ Always show View Tip -->
+                              <button class="btn btn-info btn-sm mb-1" data-bs-toggle="modal" data-bs-target="#tipModal{{ tip.id }}">
+                                View Tip
+                              </button>
+                      
+                              <!-- Tip Modal -->
+                              <div class="modal fade" id="tipModal{{ tip.id }}" tabindex="-1" aria-labelledby="tipModalLabel{{ tip.id }}" aria-hidden="true">
+                                <div class="modal-dialog modal-lg">
+                                  <div class="modal-content">
+                                    <div class="modal-header bg-light">
+                                      <h5 class="modal-title" id="tipModalLabel{{ tip.id }}">Tip Voucher - {{ tip.voucher_number }}</h5>
+                                      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                      <p><strong>Paid To:</strong> {{ tip.paid_to }}</p>
+                                      <p><strong>Item:</strong> {{ tip.item_name }}</p>
+                                      <p><strong>Amount:</strong> ₹{{ tip.amount }}</p>
+                                      <p><strong>Status:</strong> {{ tip.status|title }}</p>
+                      
+                                      {% if tip.status == "rejected" %}
+                                        <div class="alert alert-danger mt-2">
+                                          <strong>Rejection Reason:</strong> {{ tip.rejection_reason|default:"No reason provided." }}
+                                        </div>
+                                      {% endif %}
+                      
+                                      {% if tip.proof_photo %}
+                                        <p><strong>Proof:</strong> <a href="{{ tip.proof_photo.url }}" target="_blank">View File</a></p>
+                                      {% endif %}
+                                    </div>
+                                    <div class="modal-footer">
+                                      {% if tip.status == "approved" %}
+                                        <a href="#" class="btn btn-primary btn-sm disabled" aria-disabled="true" title="Edit disabled for approved">Edit</a>
+                                        <button class="btn btn-secondary btn-sm" disabled>Approved</button>
+                                      {% elif tip.status == "rejected" %}
+                                        <a href="{% url 'edit_cash_voucher_form' tip.id %}" class="btn btn-primary btn-sm">Edit</a>
+                                        <button class="btn btn-secondary btn-sm" disabled>Rejected</button>
+                                      {% elif tip.status == "pending" %}
+                                        {% if request.user.is_staff or request.user.is_superuser %}
+                                          <a href="{% url 'edit_cash_voucher_form' tip.id %}" class="btn btn-primary btn-sm">Edit</a>
+                                          <button class="btn btn-success btn-sm approve-tip-btn"
+                                                  data-voucher-id="{{ tip.id }}"
+                                                  data-expense-id="{{ exp.id }}"
+                                                  data-amount="{{ tip.amount }}">Approve Tip</button>
+                                          <button class="btn btn-danger btn-sm reject-tip-btn"
+                                                  data-voucher-id="{{ tip.id }}"
+                                                  data-bs-toggle="modal"
+                                                  data-bs-target="#tipRejectionModal">Reject Tip</button>
+                                        {% else %}
+                                          <a href="{% url 'edit_cash_voucher_form' tip.id %}" class="btn btn-primary btn-sm">Edit</a>
+                                          <button class="btn btn-secondary btn-sm" disabled>Pending Approval</button>
+                                        {% endif %}
+                                      {% endif %}
+                                      <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            {% endif %}
+                          {% endfor %}
+                        </div>
+                      
+                        <!-- EXPENSE APPROVAL CONTROLS -->
+                        <div class="mt-2">
+                            {% if exp.is_rejected %}
+                              <button class="btn btn-danger btn-sm mt-1" data-bs-toggle="modal" data-bs-target="#rejectionModal{{ exp.id }}">
+                                Rejected - View Reason
+                              </button>
+                          
+                            {% elif exp.is_approved %}
+                              <span class="badge bg-success">Approved</span>
+                          
+                            {% elif exp.has_pending_tip %}
+                              {% if request.user.is_staff or request.user.is_superuser %}
+                                <div class="text-danger fw-bold">Please approve/reject Tip first</div>
+                              {% endif %}
+                          
+                            {% elif not exp.is_approved and not exp.is_rejected %}
+                              {% if not exp.proof_photo and exp.proof_count|default:0 == 0 %}
+                                {% if request.user.is_staff or request.user.is_superuser %}
+                                  <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-success btn-sm" onclick="approveExpense({{ exp.id }})">Approve</button>
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="showRejectModal({{ exp.id }})">Reject</button>
+                                  </div>
+                                {% endif %}
+                              {% elif not exp.bill_photo and not exp.gst_photo %}
+                                {% if request.user.is_staff or request.user.is_superuser %}
+                                  <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-success btn-sm" onclick="approveExpense({{ exp.id }})">Approve</button>
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="showRejectModal({{ exp.id }})">Reject</button>
+                                  </div>
+                                {% endif %}
+                              {% else %}
+                                <span class="text-muted">No need of Approval</span>
+                              {% endif %}
+                          
+                            {% else %}
+                              <span class="text-muted">No need of Approval</span>
+                            {% endif %}
+                          </div>
+                      </td>
+                      {% comment %} <td>
+                        {% if user.is_staff or user.is_superuser %}
+                          {% if exp.delete_requested %}
+                            <form method="post" action="{% url 'delete_expense' exp.id %}">
+                              {% csrf_token %}
+                              <button class="btn btn-danger btn-sm" type="submit" onclick="return confirm('Are you sure you want to delete this expense?')">Delete</button>
+                            </form>
+                          {% else %}
+                            <span class="text-muted">No delete request</span>
+                          {% endif %}
+                        {% else %}
+                          {% if not exp.delete_requested %}
+                            <form method="post" action="{% url 'request_expense_deletion' exp.id %}">
+                              {% csrf_token %}
+                              <button class="btn btn-warning btn-sm" type="submit" onclick="return confirm('Are you sure you want to request to delete this expense?')">Request Delete</button>
+                            </form>
+                          {% else %}
+                            <span class="text-muted">Delete Requested</span>
+                          {% endif %}
+                        {% endif %}
+                      </td> {% endcomment %}
+                      <td>
+                        {% if request.user.is_staff or request.user.is_superuser %}
+                          {% if exp.delete_requested %}
+                            <!-- Admin Delete (with AJAX) -->
+                            <button class="btn btn-danger btn-sm delete-expense-btn"
+                                    data-expense-id="{{ exp.id }}">
+                              Delete
+                            </button>
+                          {% else %}
+                            <!-- Admin request delete -->
+                            <button class="btn btn-warning btn-sm request-delete-btn"
+                                    data-expense-id="{{ exp.id }}">
+                              Request Delete
+                            </button>
+                          {% endif %}
+                        {% else %}
+                          {% if not exp.delete_requested %}
+                            <button class="btn btn-warning btn-sm request-delete-btn"
+                                    data-expense-id="{{ exp.id }}">
+                              Request Delete
+                            </button>
+                          {% else %}
+                            <span class="text-muted">Delete Requested</span>
+                          {% endif %}
+                        {% endif %}
+                      </td>
                     <td class="text-center" style="border: 1px solid #ddd; padding: 8px;">
                         {% if exp.status == 'paid' %}
                             <span class="stamp bg-success text-white">
@@ -192,8 +644,6 @@
                             </span>
                         {% endif %}
                     </td>
-                    
-                    
                 </tr>
                 {% empty %}
                 <tr>
@@ -202,127 +652,615 @@
                 {% endfor %}
             </tbody>
         </table>
+        {% if expenses.paginator.num_pages > 1 %}
+        <nav aria-label="Page navigation">
+          <ul class="pagination justify-content-center flex-wrap">
+            
+            {# Previous Button #}
+            {% if expenses.has_previous %}
+              <li class="page-item">
+                <a class="page-link page-link-ajax" 
+                  href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page={{ expenses.previous_page_number }}">
+                  &laquo; Previous
+                </a>
+              </li>
+            {% endif %}
+
+            {# Page Numbers #}
+            {% for num in expenses.paginator.page_range %}
+              {% if num == expenses.number %}
+                <li class="page-item active">
+                  <a class="page-link" href="#">{{ num }}</a>
+                </li>
+              {% elif num > expenses.number|add:-2 and num < expenses.number|add:2 %}
+                <li class="page-item">
+                  <a class="page-link page-link-ajax"
+                    href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page={{ num }}">
+                    {{ num }}
+                  </a>
+                </li>
+              {% elif num == 1 or num == expenses.paginator.num_pages %}
+                <li class="page-item d-none d-sm-block">
+                  <a class="page-link page-link-ajax"
+                    href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page={{ num }}">
+                    {{ num }}
+                  </a>
+                </li>
+              {% elif num == expenses.number|add:-2 or num == expenses.number|add:2 %}
+                <li class="page-item d-none d-sm-block">
+                  <span class="page-link">...</span>
+                </li>
+              {% endif %}
+            {% endfor %}
+
+            {# Next Button #}
+            {% if expenses.has_next %}
+              <li class="page-item">
+                <a class="page-link page-link-ajax" 
+                  href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page={{ expenses.next_page_number }}">
+                  Next &raquo;
+                </a>
+              </li>
+            {% endif %}
+            
+          </ul>
+        </nav>
+        {% endif %}
     </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Shared Reject Modal (outside the loop) -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="rejectForm">
+          {% csrf_token %}
+          <input type="hidden" name="expense_id" id="rejectExpenseId">
+          <div class="modal-header">
+            <h5 class="modal-title" id="rejectModalLabel">Reject Expense</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <label>Reason for Rejection:</label>
+            <textarea name="reason" id="rejectReason" class="form-control" required></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-danger">Reject</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 
 
+  <!-- ✅ Rejection Modals -->
+{% for exp in expenses %}
+{% if exp.is_rejected %}
+  <div class="modal fade" id="rejectionModal{{ exp.id }}" tabindex="-1" aria-labelledby="rejectionLabel{{ exp.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title" id="rejectionLabel{{ exp.id }}">Rejection Reason Tips</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          {{ exp.rejection_reason|default:"No reason provided." }}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endif %}
+{% endfor %}
+<!-- Tip Rejection Modal -->
+<div class="modal fade" id="tipRejectionModal" tabindex="-1" aria-labelledby="tipRejectionLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <form id="tipRejectionForm" class="modal-content">
+        {% csrf_token %}
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title" id="tipRejectionLabel">Reject Tip</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="voucher_id" id="tipVoucherId">
+          <label for="tipRejectReason" class="form-label">Reason for Rejection:</label>
+          <textarea class="form-control" id="tipRejectReason" name="reason" rows="6" maxlength="800" required></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-danger">Submit Rejection</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+
+{% block extra_scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock extra_scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+  document.addEventListener("click", function (e) {
+    const link = e.target.closest(".page-link-ajax");
+    if (!link) return;
+    e.preventDefault();
+  
+    fetch(link.href, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+      .then((res) => res.json())
+      .then((data) => {
+        const container = document.querySelector("#expenseTableContainer");
+        if (container && data.html) {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(data.html, "text/html");
+          const newDiv = doc.querySelector("#expenseTableContainer");
+          if (newDiv) {
+            container.innerHTML = newDiv.innerHTML;
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }
+        }
+      })
+      .catch((err) => console.error("Pagination error:", err));
+  });
+  </script>
+<script>
+    function exportCustomDateRange(format) {
+        const fromDate = document.getElementById('exportFromDate').value;
+        const toDate = document.getElementById('exportToDate').value;
+    
+        if (!fromDate || !toDate) {
+          alert("Please select both From and To dates.");
+          return;
+        }
+    
+        const baseUrl = `{% url 'export_vouchers' %}`;
+        const url = `${baseUrl}?format=${format}&from=${fromDate}&to=${toDate}`;
+        window.location.href = url;
+      }
+
+    function exportCustomDateRange() {
+        const fromDate = document.getElementById('exportFromDate').value;
+        const toDate = document.getElementById('exportToDate').value;
+    
+        if (!fromDate || !toDate) {
+          alert("Please select both From and To dates.");
+          return;
+        }
+    
+        const url = `{% url 'export_vouchers' %}?format=xlsx&from=${fromDate}&to=${toDate}`;
+        window.location.href = url;
+      }
+    
+  // Wait for the DOM to load
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Approve Tip
+    document.querySelectorAll('.approve-tip-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const voucherId = this.dataset.voucherId;
+        const expenseId = this.dataset.expenseId;
+        const amount = this.dataset.amount;
+  
+        fetch("{% url 'approve_voucher_ajax' %}", {
+          method: "POST",
+          headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: new URLSearchParams({ voucher_id: voucherId,expense_id: expenseId })
+        }).then(res => res.json())
+          .then(data => {
+            alert('Tip Voucher Approved!');
+            location.reload();
+          })
+          .catch(err => alert('Approval failed!'));
+      });
+    });
+  
+    // Reject Tip
+    console.log("✅ Reject Tip JS loaded");
+  
+    const rejectButtons = document.querySelectorAll('.reject-tip-btn');
+    const rejectForm = document.getElementById('tipRejectionForm');
+    const voucherIdInput = document.getElementById('tipVoucherId');
+    const reasonInput = document.getElementById('tipRejectReason');
+  
+    if (!rejectForm || !voucherIdInput || !reasonInput) {
+      console.error("❌ Form elements not found. Check your modal and input IDs.");
+    } else {
+      rejectButtons.forEach(button => {
+        button.addEventListener('click', function () {
+          const voucherId = this.dataset.voucherId;
+          console.log(`📌 Reject clicked for voucher ID: ${voucherId}`);
+          voucherIdInput.value = voucherId;
+          reasonInput.value = '';
+        });
+      });
+  
+      rejectForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        console.log("clicked on submit");
+        const voucherId = voucherIdInput.value;
+        const reason = reasonInput.value.trim();
+  
+        if (!voucherId || !reason) {
+          alert("❗ Please provide a valid reason.");
+          return;
+        }
+  
+        console.log(`🚀 Sending rejection for voucher ${voucherId}: ${reason}`);
+  
+        fetch("{% url 'reject_cash_voucher_ajax' %}", {
+          method: "POST",
+          headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: new URLSearchParams({ voucher_id: voucherId, reason })
+        })
+          .then(res => res.json())
+          .then(data => {
+            console.log("✅ Response Data:", data);
+            if (data.message || data.success) {
+              alert("✅ Tip Voucher rejected!");
+              location.reload();
+            } else {
+              alert("❌ Rejection failed: " + (data.error || "Unknown error"));
+            }
+          })
+          .catch(err => {
+            console.error("❌ AJAX error:", err);
+            alert("Rejection failed! Check console.");
+          });
+      });
+    }
+  
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (const cookie of cookies) {
+          const trimmed = cookie.trim();
+          if (trimmed.startsWith(name + '=')) {
+            cookieValue = decodeURIComponent(trimmed.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+  
+    // Approve Expense
+    window.approveExpense = function (expenseId) {
+      if (!confirm("Are you sure you want to approve this expense?")) return;
+  
+      fetch(`/website/expenses/approve/${expenseId}/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}',
+          'Accept': 'application/json',
+        }
+      })
+        .then(response => {
+          if (response.ok) {
+            const cell = document.getElementById(`action-cell-${expenseId}`);
+            if (cell) {
+              cell.innerHTML = '<span class="badge bg-success">Approved</span>';
+            }
+          } else {
+            alert('Failed to approve expense.');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Something went wrong.');
+        });
+    }
+  
+    // Show Reject Modal
+    window.showRejectModal = function (expenseId) {
+      console.log("Opening reject modal for Expense ID:", expenseId);
+      document.getElementById("rejectExpenseId").value = expenseId;
+      new bootstrap.Modal(document.getElementById("rejectModal")).show();
+    }
+  
+    // Reject Expense
+    const rejectFormMain = document.getElementById('rejectForm');
+    if (rejectFormMain) {
+      rejectFormMain.addEventListener('submit', function (e) {
+        e.preventDefault();
+  
+        if (!confirm("Are you sure you want to reject this expense?")) return;
+  
+        const expenseId = document.getElementById('rejectExpenseId').value;
+        const reason = document.getElementById('rejectReason').value;
+        const csrfToken = '{{ csrf_token }}';
+  
+        fetch('{% url "reject_expense" %}', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrfToken,
+          },
+          body: new URLSearchParams({ 'expense_id': expenseId, 'reason': reason })
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              const cell = document.getElementById(`action-cell-${expenseId}`);
+              if (cell) {
+                cell.innerHTML = `<span class="badge bg-danger">Rejected</span><br><small>${reason}</small>`;
+              }
+              const rejectModal = bootstrap.Modal.getInstance(document.getElementById('rejectModal'));
+              if (rejectModal) rejectModal.hide();
+            } else {
+              alert(data.error || 'Rejection failed');
+            }
+          })
+          .catch(error => {
+            console.error(error);
+            alert('Something went wrong during rejection');
+          });
+      });
+    }
+    
+  
+    // Date Filter Controls
     const filterDateButton = document.getElementById('filterDateButton');
     const dateFields = document.getElementById('dateFields');
     const clearButton = document.getElementById('clearButton');
     const applyFilterButton = document.getElementById('applyFilterButton');
-
-    // Toggle the visibility of date fields
+  
     if (filterDateButton && dateFields) {
-        filterDateButton.addEventListener('click', function () {
-            const isHidden = dateFields.classList.contains('d-none');
-            dateFields.classList.toggle('d-none', !isHidden);
-            dateFields.style.display = isHidden ? 'flex' : 'none';
-        });
+      filterDateButton.addEventListener('click', function () {
+        const isHidden = dateFields.classList.contains('d-none');
+        dateFields.classList.toggle('d-none', !isHidden);
+        dateFields.style.display = isHidden ? 'flex' : 'none';
+      });
     }
-
-    // Clear date fields and search input
-    if (clearButton) {
-        clearButton.addEventListener('click', function () {
-            const fromDateField = document.getElementById('fromDateField');
-            const toDateField = document.getElementById('toDateField');
-            const searchField = document.querySelector('input[name="q"]');
-
-            if (fromDateField) fromDateField.value = '';
-            if (toDateField) toDateField.value = '';
-            if (searchField) searchField.value = '';
-
-            // Reload the page to reset the filters
-            window.location.href = window.location.pathname;
+  
+    document.addEventListener("DOMContentLoaded", function () {
+      const clearFiltersBtn = document.getElementById("clearFiltersBtn");
+      if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener("click", function (e) {
+          e.preventDefault();  // prevent accidental form submit
+          window.location.href = "?";  // behaves same as <a href="?">
         });
-    }
-
-    // Apply the date filter
+      }
+    });
+  
     if (applyFilterButton) {
-        applyFilterButton.addEventListener('click', function () {
-            const fromDate = document.getElementById('fromDateField').value;
-            const toDate = document.getElementById('toDateField').value;
-
-            if (fromDate || toDate) {
-                const urlParams = new URLSearchParams();
-                if (fromDate) urlParams.append('transaction_date_from', fromDate);
-                if (toDate) urlParams.append('transaction_date_to', toDate);
-                window.location.href = `?${urlParams.toString()}`;
-            } else {
-                alert('Please enter valid dates!');
-            }
-        });
+      applyFilterButton.addEventListener('click', function () {
+        const fromDate = document.getElementById('fromDateField').value;
+        const toDate = document.getElementById('toDateField').value;
+    
+        const urlParams = new URLSearchParams(window.location.search);
+    
+        if (fromDate) urlParams.set('transaction_date_from', fromDate);
+        else urlParams.delete('transaction_date_from');
+    
+        if (toDate) urlParams.set('transaction_date_to', toDate);
+        else urlParams.delete('transaction_date_to');
+    
+        const newQuery = urlParams.toString();
+        const newUrl = newQuery ? `${window.location.pathname}?${newQuery}` : window.location.pathname;
+    
+        window.location.href = newUrl;
+      });
     }
-});                                              
+  
+    // Export Buttons
     window.onload = function () {
-        // XLSX Export
-        document.getElementById('downloadXlsx').addEventListener('click', function() {
-            const table = document.querySelector('table');
-            if (table) {
-                const wb = XLSX.utils.table_to_book(table);
-                XLSX.writeFile(wb, 'vouchers.xlsx');
+      document.getElementById('downloadXlsx').addEventListener('click', function () {
+        const table = document.querySelector('table');
+        if (table) {
+          const wb = XLSX.utils.table_to_book(table);
+          XLSX.writeFile(wb, 'vouchers.xlsx');
+        }
+      });
+  
+      document.getElementById('downloadPdf').addEventListener('click', function () {
+        const doc = new jsPDF();
+        doc.autoTable({ html: 'table' });
+        doc.save('vouchers.pdf');
+      });
+  
+      document.getElementById('downloadCsv').addEventListener('click', function () {
+        const table = document.querySelector('table');
+        if (table) {
+          let csvContent = "data:text/csv;charset=utf-8,";
+          const headers = [];
+          table.querySelectorAll('th').forEach(cell => headers.push(cell.innerText));
+          csvContent += headers.join(",") + "\r\n";
+  
+          table.querySelectorAll('tr').forEach(row => {
+            const rowData = [];
+            row.querySelectorAll('td').forEach(cell => rowData.push(cell.innerText));
+            if (rowData.length > 0) {
+              csvContent += rowData.join(",") + "\r\n";
             }
-        });
-
-        // PDF Export
-        document.getElementById('downloadPdf').addEventListener('click', function() {
-            const doc = new jsPDF();
-            doc.autoTable({ html: 'table' });
-            doc.save('vouchers.pdf');
-        });
-
-        // CSV Export
-        document.getElementById('downloadCsv').addEventListener('click', function() {
-            const table = document.querySelector('table');
-            if (table) {
-                let csvContent = "data:text/csv;charset=utf-8,";
-                const headers = [];
-                table.querySelectorAll('th').forEach(cell => headers.push(cell.innerText));
-                csvContent += headers.join(",") + "\r\n";
-
-                table.querySelectorAll('tr').forEach(row => {
-                    const rowData = [];
-                    row.querySelectorAll('td').forEach(cell => rowData.push(cell.innerText));
-                    if (rowData.length > 0) {
-                        csvContent += rowData.join(",") + "\r\n";
-                    }
-                });
-
-                const link = document.createElement('a');
-                link.setAttribute('href', encodeURI(csvContent));
-                link.setAttribute('download', 'vouchers.csv');
-                link.click();
-            }
-        });
-    };
-    document.getElementById('clearButton').addEventListener('click', function () {
-    const url = new URL(window.location.href);
-
-    // Remove search query
-    url.searchParams.delete('q');
-
-    // Remove date filter parameters
-    url.searchParams.delete('transaction_date_from');
-    url.searchParams.delete('transaction_date_to');
-
-    // Reset date fields in the form (if visible)
-    const fromDateField = document.getElementById('fromDateField');
-    const toDateField = document.getElementById('toDateField');
-    if (fromDateField && toDateField) {
-        fromDateField.value = '';
-        toDateField.value = '';
+          });
+  
+          const link = document.createElement('a');
+          link.setAttribute('href', encodeURI(csvContent));
+          link.setAttribute('download', 'vouchers.csv');
+          link.click();
+        }
+      });
     }
+  });
+  document.addEventListener("DOMContentLoaded", function () {
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
+        for (let cookie of cookies) {
+          cookie = cookie.trim();
+          if (cookie.startsWith(name + "=")) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+    const csrftoken = getCookie("csrftoken");
+  
+    // Delete Expense (Admin only)
+    document.addEventListener("click", function (e) {
+      const deleteBtn = e.target.closest(".delete-expense-btn");
+      if (!deleteBtn) return;
+    
+      e.preventDefault();
+    
+      const expenseId = deleteBtn.dataset.expenseId;
+      if (!expenseId) return;
+    
+      if (!confirm("Are you sure you want to delete this expense?")) return;
+    
+      fetch(`/website/expenses/delete/${expenseId}/`, {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "X-Requested-With": "XMLHttpRequest"
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          // Remove row without reloading
+          deleteBtn.closest("tr").remove();
+    
+          // Optional: show SweetAlert
+          Swal.fire({
+            icon: "success",
+            title: "Deleted!",
+            text: "Expense has been deleted successfully.",
+            timer: 1500,
+            showConfirmButton: false
+          });
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: "Failed!",
+            text: data.error || "Delete failed.",
+          });
+        }
+      })
+      .catch(err => console.error("Delete error:", err));
+    });
+    
+    // ✅ Utility for CSRF
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (const cookie of cookies) {
+          const trimmed = cookie.trim();
+          if (trimmed.startsWith(name + '=')) {
+            cookieValue = decodeURIComponent(trimmed.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+  
+    // Request Deletion (User/Admin)
+    document.querySelectorAll(".request-delete-btn").forEach(btn => {
+      btn.addEventListener("click", function () {
+        const expenseId = this.dataset.expenseId;
+        if (!confirm("Request deletion for this expense?")) return;
+  
+        fetch(`/website/expenses/request-delete/${expenseId}/`, {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrftoken,
+            "X-Requested-With": "XMLHttpRequest"
+          }
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            this.outerHTML = `<span class="text-muted">Delete Requested</span>`;
+          } else {
+            alert(data.error || "Request failed.");
+          }
+        })
+        .catch(err => console.error("Request delete error:", err));
+      });
+    });
+  });
 
-    // Redirect to the cleaned URL
-    window.location.href = url.toString();
-});
-{% comment %} function printPage() {
-        window.print();  // This will open the browser's print dialog
-    } {% endcomment %}
+
+  document.addEventListener("click", function (e) {
+    const sortLink = e.target.closest(".sort-link-ajax");
+    if (!sortLink) return;
+  
+    e.preventDefault();
+    fetch(sortLink.href, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+      .then(res => res.json())
+      .then(data => {
+        const container = document.querySelector("#expenseTableContainer");
+        if (container && data.html) {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(data.html, "text/html");
+          const newDiv = doc.querySelector("#expenseTableContainer");
+          if (newDiv) container.innerHTML = newDiv.innerHTML;
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+      })
+      .catch(err => console.error("Sorting error:", err));
+  });
+
+  
 </script>
+{% if messages %}
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      {% for message in messages %}
+        Swal.fire({
+          icon: "{% if message.tags == 'error' %}error{% else %}success{% endif %}",
+          title: "{{ message|escapejs }}",
+          timer: 2500,
+          showConfirmButton: false,
+        });
+      {% endfor %}
+    });
+
+
+    document.getElementById("groupSelect").addEventListener("change", function () {
+      document.getElementById("groupFilterForm").submit();
+    });
+  </script>
+  <script>
+
+      document.addEventListener("click", function (e) {
+        const link = e.target.closest(".page-link-ajax");
+        if (!link) return;
+        e.preventDefault();
+      
+        fetch(link.href, {
+          headers: { "X-Requested-With": "XMLHttpRequest" }
+        })
+        .then(res => res.json())
+        .then(data => {
+          const container = document.querySelector("#expenseTableContainer");
+          if (container && data.html) {
+            container.innerHTML = new DOMParser()
+              .parseFromString(data.html, "text/html")
+              .querySelector("#expenseTableContainer").innerHTML;
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }
+        })
+        .catch(err => console.error("Pagination error:", err));
+      });
+
+      
+
+    </script>
+{% endif %}
 <style>
     .stamp {
         display: inline-flex;
@@ -512,4 +1450,7 @@
         gap: 10px;
     }
 </style>
+
+
+
 {% endblock %}

@@ -1,13 +1,15 @@
-from django.http import HttpResponse
+from pyexpat.errors import messages
+from django.conf import settings
+from django.http import HttpResponse, HttpResponseForbidden
 from weasyprint import HTML  # WeasyPrint to generate PDF
 from django.shortcuts import render, redirect ,get_object_or_404
-from .models import GeneralReport
+
 
 
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from django.http import HttpResponse
-from .models import GeneralReport
+
 from app.models import ModuleVisibility
 
 
@@ -15,7 +17,6 @@ def base(request):
     return render(request ,'base.html')
 
 def home(request):
-    print("apage home rendered")
     return render(request, 'apage/home.html')
 def homea(request):
     return render(request, 'base_generic.html')
@@ -119,7 +120,11 @@ from .models import MaintenanceChecklist
 
 def maintenance_checklist(request):
     user = request.user
-    checklists = MaintenanceChecklist.objects.filter(created_by=user).order_by('-date')  # Order by most recent
+    user_role = user.groups.first().name if user.groups.first() else None 
+    if user_role == 'Admin':
+        checklists = MaintenanceChecklist.objects.all().order_by('-date')
+    else:
+        checklists = MaintenanceChecklist.objects.filter(created_by=user).order_by('-date')  # Order by most recent
     query = request.GET.get('search', '')
     if query:
         checklists = checklists.filter(
@@ -235,8 +240,14 @@ from .models import MOM, Attachment
 from django.utils.timezone import now
 
 def mom(request):
+    user=request.user
+    user_role = user.groups.first().name if user.groups.first() else None
     # Fetch all MOM records ordered by the most recent
-    mom_records = MOM.objects.filter(created_by=request.user).order_by('-id')  # Adjust the order as needed
+    if user_role == 'Admin':
+        mom_records = MOM.objects.all().order_by('-id')
+    else:
+        mom_records = MOM.objects.filter(created_by=request.user).order_by('-id')  # Adjust the order as needed
+
     search_query = request.GET.get('search', '')
     if search_query:
         mom_records = mom_records.filter(
@@ -368,7 +379,7 @@ def pdf_mom(request, mom_id):
 # --------------------------generalreport-----------------------------
 
 from django.shortcuts import render, redirect
-from .models import GeneralReport, Site
+
 from django.core.exceptions import ValidationError
 from django.shortcuts import render, redirect
 from .models import Site, GeneralReport
@@ -404,14 +415,14 @@ def generalreportsnew(request):
 
         # Validate the report instance
         try:
-            report.full_clean()  # This triggers the no_future_dates validator
-            report.save()  # Save only if validation passes
+            if not report.is_draft:
+                report.full_clean()  # Only validate if it's not a draft
+            report.save()  # Always save
         except ValidationError as e:
-            # If validation fails, re-render the form with errors
             return render(request, 'apage/generalreport.html', {
                 'reports': GeneralReport.objects.all(),
                 'sites': sites,
-                'error': e.message_dict  # Pass validation error messages to the template
+                'error': e.message_dict
             })
 
         # Redirect to the viewing page after successful save
@@ -427,10 +438,15 @@ from django.db.models import Q
 
 def generalreport(request):
     query = request.GET.get('search', '')
-    reports = GeneralReport.objects.filter(created_by=request.user).order_by('-id')
+    current_user = request.user
 
+    # Privileged users see all reports; others see only their own
+    if current_user.is_staff or current_user.is_superuser:
+        reports = GeneralReport.objects.all().order_by('-id')
+    else:
+        reports = GeneralReport.objects.filter(created_by=current_user).order_by('-id')
 
-
+    # Search filter
     if query:
         reports = reports.filter(
             Q(site__name__icontains=query) |
@@ -448,9 +464,8 @@ def generalreport(request):
     }
     return render(request, 'apage/generalreportviewing.html', context)
 
-
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import GeneralReport, Site
+
 
 def edit_general_report(request, report_id):
     report = get_object_or_404(GeneralReport, id=report_id)
@@ -476,18 +491,27 @@ def edit_general_report(request, report_id):
         # Update attachment if a new file is uploaded
         if request.FILES.get('attachment'):
             report.attachment = request.FILES.get('attachment')
-        report.full_clean() 
-        report.save()  # Save the updated report
 
-        return redirect('generalreport')  # Redirect to the report list page
+        try:
+            # Only validate if it's a final save (not a draft or partial update)
+            if not getattr(report, "is_draft", False):
+                report.full_clean()
+            report.save()  # Save even if full_clean() is skipped
+        except ValidationError as e:
+            # Handle validation errors (e.g., future date, required fields, etc.)
+            return render(request, 'apage/edit_general_report.html', {
+                'report': report,
+                'sites': sites,
+                'error': e.message_dict  # optional: show in template
+            })
 
-    return render(request, 'apage/edit_general_report.html', {'report': report, 'sites': sites})
+        return redirect('generalreport')  # Redirect after successful save
 
 
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse
 from weasyprint import HTML
-from .models import GeneralReport
+
 
 def generate_report_pdf(request, report_id):
     # Fetch the report based on its ID
@@ -513,46 +537,88 @@ from .models import ChemicalItem ,ChemicalItemStatus ,Pump ,PumpStatus ,Miscella
 from .models import MachineRunTime ,Tool ,ToolStatus ,State
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
+from django.core.exceptions import ObjectDoesNotExist  # Import the exception
+
+
+def safe_get_or_create(model, **kwargs):
+    qs = model.objects.filter(**kwargs)
+
+    # If duplicates exist, return the first one safely
+    if qs.exists():
+        return qs.first(), False
+
+    # If none exists, create one
+    return model.objects.create(**kwargs), True
 
 @login_required
 def servicereport(request):
     search_query = request.GET.get('search', '')
+    user_filter = request.GET.get('user', '')
+    site_filter = request.GET.get('site', '')
 
-    # Filter service reports based on the logged-in user's name
-    service_reports = ServiceReport.objects.filter(created_by=request.user).order_by('-id')
-    
-    # Apply additional filtering if a search query is provided
+    user = request.user
+    user_role = user.groups.first().name if user.groups.first() else None
+
+    # Base queryset
+    if user_role == 'Admin':
+        service_reports = ServiceReport.objects.all()
+    else:
+        service_reports = ServiceReport.objects.filter(created_by=user)
+
+    # 🔍 Search filter
     if search_query:
         service_reports = service_reports.filter(
             Q(service_name__icontains=search_query) |
             Q(customer_name__icontains=search_query) |
             Q(state__name__icontains=search_query) |
             Q(status_of_call__icontains=search_query) |
-            Q(date_of_visit__icontains=search_query)
+            Q(site__name__icontains=search_query)
         )
+
+    # 👤 User filter (Admin only)
+    if user_filter and user_role == 'Admin':
+        service_reports = service_reports.filter(created_by__id=user_filter)
+
+    # 🏢 Site filter
+    if site_filter:
+        service_reports = service_reports.filter(site__id=site_filter)
+
+    service_reports = service_reports.order_by('-date_of_visit')
 
     context = {
         'service_reports': service_reports,
         'search_query': search_query,
+        'selected_user': user_filter,
+        'selected_site': site_filter,
+        'user_role': user_role,
+        'users': User.objects.all() if user_role == 'Admin' else [],
+        'sites': Site.objects.all(),
     }
     return render(request, 'apage/servicereport_viewing.html', context)
 
 # views.py
 from django.shortcuts import render
-from .models import ServiceReport
+from .models import ServiceReport ,ServiceReportAttachment
+from app.models import Zone
+from website.models import Notification
+from datetime import timedelta
 
 def service_report_new(request):
     tools = Tool.objects.all()
     state_name = request.POST.get("state")
     state_instance = State.objects.get(name=state_name) if state_name else None
     service_report = None  # Initialize service_report to None
+    zones = Zone.objects.all()
+
 
 
     if request.method == 'POST':
+        print("post data :",request.POST)
         # Static fields from the form (using .get() with default values to avoid errors)
         service_name = request.POST.get('service_name', '')
-        date_of_visit = request.POST.get('date_of_visit', '')
-        zone = request.POST.get('zone', '')
+        date_of_visit = parse_date(request.POST.get('date_of_visit'))
+        zone_id = request.POST.get('zone')
+        site_id = request.POST.get('site')
         phone_no = request.POST.get('phone_no', '')
         reason_of_visit = request.POST.get('reason_of_visit', '')
         in_time = request.POST.get('in_time', '')
@@ -570,27 +636,95 @@ def service_report_new(request):
         client_signature = request.POST.get('client_signature', '')
         client_name = request.POST.get('client_name', '')
         # Create the ServiceReport
-        service_report = ServiceReport.objects.create(
-            service_name=service_name,
+
+
+        try:
+            zone = Zone.objects.get(id=zone_id) if zone_id else None
+            site = Site.objects.get(id=site_id) if site_id else None
+        except ObjectDoesNotExist:
+            messages.error(request, 'Invalid Zone or Site selected.')
+            return redirect('service_report_new')
+        
+
+
+        service_report = ServiceReport.objects.filter(
+            created_by=request.user,
+            site=site,
             date_of_visit=date_of_visit,
-            zone=zone,
-            phone_no=phone_no,
-            reason_of_visit=reason_of_visit,
-            in_time=in_time,
-            out_time=out_time,
-            customer_name=customer_name,
-            contact_number=contact_number,
-            location=location,
-            state=state_instance,
-            date_of_complaint=date_of_complaint,
-            status_of_call=status_of_call,
-            service_person_signature=service_person_signature,
-            service_person_name=service_person_name,
-            client_signature=client_signature,
-            client_name=client_name,
-            created_by=request.user
+            is_draft=True
+        ).first()
+
+        if service_report:
+            # Finalize existing CONTEXT draft
+            service_report.service_name = service_name
+            service_report.date_of_visit = date_of_visit
+            service_report.zone = zone
+            service_report.site = site
+            service_report.phone_no = phone_no
+            service_report.reason_of_visit = reason_of_visit
+            service_report.in_time = in_time
+            service_report.out_time = out_time
+            service_report.customer_name = customer_name
+            service_report.contact_number = contact_number
+            service_report.location = location
+            service_report.state = state_instance
+            service_report.date_of_complaint = date_of_complaint
+            service_report.status_of_call = status_of_call
+            service_report.service_person_signature = service_person_signature
+            service_report.service_person_name = service_person_name
+            service_report.client_signature = client_signature
+            service_report.client_name = client_name
+            service_report.is_draft = False  # 🔒 LOCK
+            service_report.save()
             
-        )
+        else:
+            service_report = ServiceReport.objects.create(
+                service_name=service_name,
+                date_of_visit=date_of_visit,
+                zone=zone,
+                site=site,
+                phone_no=phone_no,
+                reason_of_visit=reason_of_visit,
+                in_time=in_time,
+                out_time=out_time,
+                customer_name=customer_name,
+                contact_number=contact_number,
+                location=location,
+                state=state_instance,
+                date_of_complaint=date_of_complaint,
+                status_of_call=status_of_call,
+                service_person_signature=service_person_signature,
+                service_person_name=service_person_name,
+                client_signature=client_signature,
+                client_name=client_name,
+                created_by=request.user,
+                is_draft=False,
+            )
+
+        # 🔒 Duplicate prevention BEFORE photo processing
+        existing_report = ServiceReport.objects.filter(
+            created_by=request.user,
+            date_of_visit=date_of_visit,
+            site=site,
+            is_draft=False
+        ).exclude(id=service_report.id).first()
+
+        if existing_report:
+            messages.warning(request, "A service report for this site and date already exists.")
+            return redirect('servicereport')
+
+        # Handle multiple files from both fields
+        for file in request.FILES.getlist('attachment_1'):
+            ServiceReportAttachment.objects.create(
+                service_report=service_report,
+                file=file
+            )
+
+        for file in request.FILES.getlist('attachment_2'):
+            ServiceReportAttachment.objects.create(
+                service_report=service_report,
+                file=file
+            )
 
         electronic_panels = ElectronicPanel.objects.all()
         electronic_items = ElectronicItem.objects.all()
@@ -615,8 +749,28 @@ def service_report_new(request):
         # Join all remarks into a single string separated by newlines
         service_report.other_remarks = '\n'.join(remarks)
         service_report.spares_details = '\n'.join(spares)
-        service_report.full_clean() 
-        service_report.save()     
+
+        try:
+            if not getattr(service_report, "is_draft", False):  # Only validate if not draft
+                service_report.full_clean()  # Will raise ValidationError if any
+            service_report.save()
+            
+            # --- Safe scheduling and notification ---
+            if service_report.site and service_report.date_of_visit:
+                try:
+                    due_date = service_report.date_of_visit + timedelta(days=15)
+                    Notification.objects.create(
+                        user=request.user,
+                        title=f" Second Service Visit Due for {service_report.site.name}",
+                        message=f"A follow-up service visit is required at {service_report.site.name} by {due_date.strftime('%d %b %Y')}.",
+                    )
+                    update_site_schedule(service_report.site, service_report.date_of_visit)
+                except Exception as scheduler_err:
+                    print(f"Scheduling error (non-critical): {scheduler_err}")
+            
+        except ValidationError as e:
+            # Handle or log the validation error if needed
+            print("Validation failed during final save:", e.message_dict)
         # Handle dynamic electronic items and their statuses
         for item in electronic_items:
             checked = request.POST.get(f'checked_{item.id}') == 'on'
@@ -625,14 +779,17 @@ def service_report_new(request):
             remark = request.POST.get(f'remark_eitems_{item.id}')
 
             # Create an entry in ElectronicItemStatus for each item
-            ElectronicItemStatus.objects.create(
+            ElectronicItemStatus.objects.update_or_create(
                 report=service_report,
                 item=item,
-                checked=checked,
-                repair=repair,
-                replacement=replacement,
-                remark=remark
+                defaults={
+                    "checked": checked,
+                    "repair": repair,
+                    "replacement": replacement,
+                    "remark": remark,
+                }
             )
+            
 
         # Handle dynamic electronic panels and their statuses
         for panel in electronic_panels:
@@ -642,13 +799,15 @@ def service_report_new(request):
             remark = request.POST.get(f'remark_epanels_{panel.id}')
 
             # Create an entry in ElectronicPanelStatus for each panel
-            ElectronicPanelStatus.objects.create(
+            ElectronicPanelStatus.objects.update_or_create(
                 report=service_report,
                 panel=panel,
-                checked=checked,
-                repair=repair,
-                replacement=replacement,
-                remark=remark
+                defaults={
+                "checked" : checked,
+                "repair" : repair,
+                "replacement" : replacement,
+                "remark" : remark,
+                 }
             )
 
         
@@ -659,13 +818,15 @@ def service_report_new(request):
             remark = request.POST.get(f'remark_chemical_{item.id}')
 
             # Create ChemicalItemStatus entry
-            ChemicalItemStatus.objects.create(
+            ChemicalItemStatus.objects.update_or_create(
                 report=service_report,
                 item=item,
-                checked=checked,
-                repair=repair,
-                replacement=replacement,
-                remark=remark
+                defaults={
+                "checked" : checked,
+                "repair" : repair,
+                "replacement" : replacement,
+                "remark" : remark,
+                 }
             )
 
         for pump in pumps:
@@ -675,13 +836,15 @@ def service_report_new(request):
             remark = request.POST.get(f'remark_pump_{pump.id}')
 
             # Create PumpStatus entry
-            PumpStatus.objects.create(
+            PumpStatus.objects.update_or_create(
                 report=service_report,
                 pump=pump,
-                checked=checked,
-                repair=repair,
-                replacement=replacement,
-                remark=remark
+                defaults={
+                "checked" : checked,
+                "repair" : repair,
+                "replacement" : replacement,
+                "remark" : remark,
+                 }
             )
 
         for item in miscellaneous_items:
@@ -691,13 +854,15 @@ def service_report_new(request):
             remark = request.POST.get(f'remark_miscellaneous_{item.id}')
 
             # Create MiscellaneousItemStatus entry
-            MiscellaneousItemStatus.objects.create(
+            MiscellaneousItemStatus.objects.update_or_create(
                 report=service_report,
                 item=item,
-                checked=checked,
-                repair=repair,
-                replacement=replacement,
-                remark=remark
+                defaults={
+                "checked" : checked,
+                "repair" : repair,
+                "replacement" : replacement,
+                "remark" : remark,
+                 }
             )
         
         for parameter in wastewater_parameters:
@@ -707,13 +872,15 @@ def service_report_new(request):
             remark = request.POST.get(f'remark_wastewater_{parameter.id}')
 
             # Create WastewaterParameterStatus entry
-            WastewaterParameterStatus.objects.create(
+            WastewaterParameterStatus.objects.update_or_create(
                 report=service_report,
                 parameter=parameter,
-                checked=checked,
-                repair=repair,
-                replacement=replacement,
-                remark=remark
+                defaults={
+                "checked" : checked,
+                "repair" : repair,
+                "replacement" : replacement,
+                "remark" : remark,
+                 }
             )
         
 
@@ -737,43 +904,38 @@ def service_report_new(request):
 
 
             # Create a new run cycle entry in the database
-            MachineRunTime.objects.create(
+            MachineRunTime.objects.update_or_create(
                 service_report=service_report,
                 run_type=f'Run cycle {cycle_number}',
-                run_time=run_time,
-                end_time=end_time,
-                checked=checked,
-                pass_status=pass_status,
-                fail_status=fail_status,
-                remark=remark
+                defaults={
+                    "run_time": run_time,
+                    "end_time": end_time,
+                    "checked": checked,
+                    "pass_status": pass_status,
+                    "fail_status": fail_status,
+                    "remark": remark,
+                }
             )
         
         for tool in tools:
-            # Get the quantity from POST data, default to 0 if invalid
-            quantity_str = request.POST.get(f'quantity_{tool.id}', '')
-            if not quantity_str or not quantity_str.isdigit() or int(quantity_str) < 0:
-                quantity = 0  # Default to 0 if invalid
-            else:
-                quantity = int(quantity_str)
+            quantity = request.POST.get(f'quantity_{tool.id}')
+            remark = request.POST.get(f'remark_tools_{tool.id}')
+            taken_status = request.POST.get(f'taken_status_{tool.id}') == 'on'
+            print(f"Tool {tool.name}: {quantity}, {remark}, {taken_status}")
+            
+            # Only create the record if quantity is provided
+            if quantity:
+                ToolStatus.objects.update_or_create(
+                    tool=tool,
+                    service_report=service_report,
+                    defaults={
+                        "quantity": int(quantity),
+                        "remark": remark,
+                        "taken_status": taken_status,
+                    }
+                )
 
-            # Get the remark from POST data, default to an empty string if not provided
-            remark = request.POST.get(f'remark_tools_{tool.id}', '')
-
-            # Get the taken status from POST data, default to False if not checked
-            taken_status = request.POST.get(f'taken_status_{tool.id}', '') == 'on'
-
-            # Get or create the ToolStatus object
-            tool_status, created = ToolStatus.objects.get_or_create(
-            tool=tool, service_report=service_report)
-
-            # Update the ToolStatus object with the validated values
-            tool_status.quantity = quantity
-            tool_status.remark = remark
-            tool_status.taken_status = taken_status
-
-            # Save the updated ToolStatus object
-            tool_status.save()
-            return redirect('servicereport')
+        return redirect('servicereport')
 
 
             # if request.method == 'POST':
@@ -792,8 +954,6 @@ def service_report_new(request):
         machine_runtimes=MachineRunTime.objects.all()
         states = State.objects.all()  # Get all states from the database
 
-
-
     context = {
         # 'service_report': service_report,
         'electronic_items': electronic_items,
@@ -805,10 +965,410 @@ def service_report_new(request):
         'machine_runtimes' : machine_runtimes,
         'tools': tools,
         'states': states,
-
-
+        'zones': zones,
     }
     return render(request, 'apage/servicereport.html', context)
+
+from apage.models import SiteVisitSchedule
+from datetime import timedelta
+
+def update_site_schedule(site, date_of_visit):
+    if not site or not date_of_visit:
+        return
+
+    obj, created = SiteVisitSchedule.objects.update_or_create(
+        site=site,
+        defaults={
+            'last_visit': date_of_visit,
+            'next_due': date_of_visit + timedelta(days=15)
+        }
+    )
+
+def site_visit_schedule_view(request):
+    schedules = SiteVisitSchedule.objects.select_related('site').all().order_by('next_due')
+    return render(request, 'xp/home.html', {'schedules': schedules})
+
+from django.http import JsonResponse
+from django.utils.dateparse import parse_date, parse_time
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from .models import (
+    ServiceReport, Zone, Site, State,
+    Tool, ToolStatus, MachineRunTime
+)
+
+@csrf_exempt
+@login_required
+def autosave_service_report(request):
+    if request.method != "POST":
+        return JsonResponse({"status": "error"})
+
+    # ─────────────────────────────
+    # 1. Resolve CONTEXT first
+    # ─────────────────────────────
+    site_id = request.POST.get("site")
+    date_of_visit = parse_date(request.POST.get("date_of_visit"))
+
+    if not site_id or not date_of_visit:
+        # ⛔ No context → do not autosave
+        return JsonResponse({"status": "skipped", "reason": "context_incomplete"})
+
+    site = Site.objects.filter(id=site_id).first()
+    if not site:
+        return JsonResponse({"status": "skipped", "reason": "invalid_site"})
+
+    # ─────────────────────────────
+    # 2. Find or create draft 
+    # ─────────────────────────────
+    report_id = request.POST.get("report_id")
+    if report_id and report_id.isdigit():
+        # If ID is provided, target specifically that report (Edit Mode)
+        report = ServiceReport.objects.filter(id=report_id, created_by=request.user).first()
+        if not report:
+            return JsonResponse({"status": "error", "message": "Report not found or permission denied"})
+    else:
+        # Standard draft resolution by context (New Mode)
+        report = ServiceReport.objects.filter(
+            created_by=request.user,
+            site=site,
+            date_of_visit=date_of_visit,
+            is_draft=True
+        ).first()
+
+        if not report:
+            report = ServiceReport.objects.create(
+                created_by=request.user,
+                site=site,
+                date_of_visit=date_of_visit,
+                is_draft=True,
+                service_name=request.user.username
+            )
+
+    # 🔒 Protection: locked reports (only if NOT explicitly targeted by ID)
+    if not report_id and report.is_draft is False:
+        return JsonResponse({"status": "locked"})
+
+    # ─────────────────────────────
+    # 3. SAFE field updates (NO ERASE)
+    # ─────────────────────────────
+    def safe_set(field, value):
+        if value not in (None, "", []):
+            setattr(report, field, value)
+
+    def safe_set_signature(field, value):
+        if value and value.startswith("data:image"):
+            setattr(report, field, value)
+
+    safe_set("customer_name", request.POST.get("customer_name"))
+    safe_set("phone_no", request.POST.get("phone_no"))
+    safe_set("location", request.POST.get("location"))
+    safe_set("reason_of_visit", request.POST.get("reason_of_visit"))
+    safe_set("contact_number", request.POST.get("contact_number"))
+    safe_set("status_of_call", request.POST.get("status_of_call"))
+    safe_set("service_person_name", request.POST.get("service_person_name"))
+    safe_set("client_name", request.POST.get("client_name"))
+    safe_set_signature("service_person_signature", request.POST.get("service_person_signature"))
+    safe_set_signature("client_signature", request.POST.get("client_signature"))
+
+    report.in_time = parse_time(request.POST.get("in_time")) or report.in_time
+    report.out_time = parse_time(request.POST.get("out_time")) or report.out_time
+    report.date_of_complaint = parse_date(request.POST.get("date_of_complaint")) or report.date_of_complaint
+    safe_set("service_person_signature", request.POST.get("service_person_signature"))
+
+
+    # Zone / State (safe)
+    if request.POST.get("zone"):
+        report.zone = Zone.objects.filter(id=request.POST.get("zone")).first() or report.zone
+
+    if request.POST.get("state"):
+        report.state = State.objects.filter(name=request.POST.get("state")).first() or report.state
+
+    # Remarks & spares (append-safe)
+    remarks = [v.strip() for k, v in request.POST.items() if k.startswith("remark_orm_") and v.strip()]
+    spares = [v.strip() for k, v in request.POST.items() if k.startswith("spare_") and v.strip()]
+
+    if remarks:
+        report.other_remarks = "\n".join(remarks)
+
+    if spares:
+        report.spares_details = "\n".join(spares)
+
+    report.save()
+
+    # ─────────────────────────────
+    # 4. Related objects → UPDATE, NEVER DELETE
+    # ─────────────────────────────
+    save_all_statuses(report, request)   # must use update_or_create internally
+
+    for tool in Tool.objects.all():
+        qty = request.POST.get(f"quantity_{tool.id}", "")
+        ToolStatus.objects.update_or_create(
+            service_report=report,
+            tool=tool,
+            defaults={
+                "quantity": int(qty) if qty.isdigit() else 0,
+                "remark": request.POST.get(f"remark_tools_{tool.id}", ""),
+                "taken_status": request.POST.get(f"taken_status_{tool.id}") == "on",
+            }
+        )
+
+    return JsonResponse({
+        "status": "saved",
+        "report_id": report.id
+    })
+
+
+
+# ✅ Separately define this below (or in helpers)
+
+from django.utils.dateparse import parse_time
+
+def save_all_statuses(report, request, mode="autosave"):
+    from .models import (
+        ElectronicItemStatus, ElectronicItem,
+        ElectronicPanelStatus, ElectronicPanel,
+        ChemicalItemStatus, ChemicalItem,
+        PumpStatus, Pump,
+        MiscellaneousItemStatus, MiscellaneousItem,
+        WastewaterParameterStatus, WastewaterParameter,
+        ToolStatus, Tool,
+        MachineRunTime,
+    )
+
+    # ─────────────────────────────
+    # Helper: SAFE update_or_create (NO DELETE)
+    # ─────────────────────────────
+    def save_category(status_model, field_model, field_attr, checkbox_prefix, remark_prefix):
+        for item in field_model.objects.all():
+            item_id = str(item.id)
+
+            checked = (
+                request.POST.get(f"checked_{checkbox_prefix}_{item_id}") == "on"
+                if checkbox_prefix else request.POST.get(f"checked_{item_id}") == "on"
+            )
+            repair = (
+                request.POST.get(f"repair_{checkbox_prefix}_{item_id}") == "on"
+                if checkbox_prefix else request.POST.get(f"repair_{item_id}") == "on"
+            )
+            replacement = (
+                request.POST.get(f"replacement_{checkbox_prefix}_{item_id}") == "on"
+                if checkbox_prefix else request.POST.get(f"replacement_{item_id}") == "on"
+            )
+            remark = request.POST.get(f"{remark_prefix}{item_id}", "").strip()
+
+            # ⛔ Do nothing if user has not interacted with this item
+            if not any([checked, repair, replacement, remark]):
+                continue
+
+            status_model.objects.update_or_create(
+                report=report,
+                **{field_attr: item},
+                defaults={
+                    "checked": checked,
+                    "repair": repair,
+                    "replacement": replacement,
+                    "remark": remark,
+                }
+            )
+
+    # ─────────────────────────────
+    # Save all category statuses (SAFE)
+    # ─────────────────────────────
+    save_category(ElectronicItemStatus, ElectronicItem, "item", "", "remark_eitems_")
+    save_category(ElectronicPanelStatus, ElectronicPanel, "panel", "", "remark_epanels_")
+    save_category(ChemicalItemStatus, ChemicalItem, "item", "chemical", "remark_chemical_")
+    save_category(PumpStatus, Pump, "pump", "pump", "remark_pump_")
+    save_category(MiscellaneousItemStatus, MiscellaneousItem, "item", "miscellaneous", "remark_miscellaneous_")
+    save_category(WastewaterParameterStatus, WastewaterParameter, "parameter", "wastewater", "remark_wastewater_")
+
+    # ─────────────────────────────
+    # Tool Statuses (SAFE)
+    # ─────────────────────────────
+    for tool in Tool.objects.all():
+        tool_id = str(tool.id)
+        qty = request.POST.get(f"quantity_{tool_id}", "")
+        remark = request.POST.get(f"remark_tools_{tool_id}", "").strip()
+        taken = request.POST.get(f"taken_status_{tool_id}") == "on"
+
+        if not any([qty, remark, taken]):
+            continue
+
+        ToolStatus.objects.update_or_create(
+            service_report=report,
+            tool=tool,
+            defaults={
+                "quantity": int(qty) if qty.isdigit() else 0,
+                "remark": remark,
+                "taken_status": taken,
+            }
+        )
+
+    # ─────────────────────────────
+    # Machine Run Times (SAFE)
+    # ─────────────────────────────
+    run_cycle_count = int(request.POST.get("run_cycle_count", 0))
+
+    for i in range(1, run_cycle_count + 1):
+        run_time = request.POST.get(f"run_time_{i}")
+        end_time = request.POST.get(f"end_time_{i}")
+
+        if not run_time and not end_time:
+            continue
+
+        MachineRunTime.objects.update_or_create(
+            service_report=report,
+            run_type=f"Run cycle {i}",
+            defaults={
+                "run_time": parse_time(run_time) if run_time else None,
+                "end_time": parse_time(end_time) if end_time else None,
+                "checked": request.POST.get(f"checked_run_{i}") == "on",
+                "pass_status": request.POST.get(f"pass_run_{i}") == "on",
+                "fail_status": request.POST.get(f"fail_run_{i}") == "on",
+                "remark": request.POST.get(f"remark_run_{i}", "").strip(),
+            }
+        )
+
+
+
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from .models import (
+    ServiceReport, ElectronicItemStatus, PumpStatus, ChemicalItemStatus,
+    MiscellaneousItemStatus, ElectronicPanelStatus, WastewaterParameterStatus,
+    MachineRunTime, ToolStatus
+)
+
+def get_checkbox_states(model, field_name, report):
+    result = {}
+    for obj in model.objects.filter(report=report):
+        key = getattr(obj, field_name).id
+        result[str(key)] = {
+            "checked": obj.checked,
+            "repair": obj.repair,
+            "replacement": obj.replacement,
+            "remark": obj.remark or ""
+        }
+    return result
+
+def get_tool_statuses(report):
+    tools = {}
+    for tool in ToolStatus.objects.filter(service_report=report):
+        tools[str(tool.tool.id)] = {
+            "quantity": tool.quantity,
+            "remark": tool.remark or "",
+            "taken_status": tool.taken_status,
+        }
+    return tools
+
+def get_machine_run_times(report):
+    runs = {}
+    for idx, run in enumerate(report.run_times.all(), start=1):
+        key = f"run_{idx}"
+        runs[key] = {
+            "run_time": run.run_time.strftime('%H:%M') if run.run_time else "",
+            "end_time": run.end_time.strftime('%H:%M') if run.end_time else "",
+            "checked": run.checked,
+            "pass_status": run.pass_status,
+            "fail_status": run.fail_status,
+            "remark": run.remark or "",
+        }
+    return runs
+
+def get_report_draft(request, pk):
+    report = get_object_or_404(ServiceReport, pk=pk)
+
+    # ✅ Split and prepare remark_orm_X and spare_X keys
+    remark_lines = (report.other_remarks or "").splitlines()
+    spare_lines = (report.spares_details or "").splitlines()
+
+    remarks_dict = {
+        f"remark_orm_{i+1}": line.strip()
+        for i, line in enumerate(remark_lines) if line.strip()
+    }
+    spares_dict = {
+        f"spare_{i+1}": line.strip()
+        for i, line in enumerate(spare_lines) if line.strip()
+    }
+
+
+    # ✅ JSON data
+    response_data = {
+        # Basic Data
+        "service_name": report.service_name,
+        "customer_name": report.customer_name,
+        "phone_no": report.phone_no,
+        "location": report.location,
+        "reason_of_visit": report.reason_of_visit,
+        "contact_number": report.contact_number,
+        "date_of_visit": report.date_of_visit.isoformat() if report.date_of_visit else "",
+        "in_time": report.in_time.strftime('%H:%M') if report.in_time else "",
+        "out_time": report.out_time.strftime('%H:%M') if report.out_time else "",
+        "date_of_complaint": report.date_of_complaint.isoformat() if report.date_of_complaint else "",
+        "status_of_call": report.status_of_call,
+        "service_person_name": report.service_person_name,
+        "client_name": report.client_name,
+        "client_signed": report.client_signed,
+        "zone": report.zone.id if report.zone else "",
+        "site": report.site.id if report.site else "",
+        "state": report.state.name if report.state else "",
+
+        # Base64 signatures
+        "service_person_signature": report.service_person_signature,
+        "client_signature": report.client_signature,
+
+        # Checkbox groups
+        "electronic_items": get_checkbox_states(ElectronicItemStatus, "item", report),
+        "pumps": get_checkbox_states(PumpStatus, "pump", report),
+        "chemical_items": get_checkbox_states(ChemicalItemStatus, "item", report),
+        "miscellaneous_items": get_checkbox_states(MiscellaneousItemStatus, "item", report),
+        "electronic_panels": get_checkbox_states(ElectronicPanelStatus, "panel", report),
+        "wastewater_parameters": get_checkbox_states(WastewaterParameterStatus, "parameter", report),
+
+        # Tools & Runtime
+        "tool_statuses": get_tool_statuses(report),
+        "machine_runs": get_machine_run_times(report),
+    }
+
+    # ✅ Inject dynamic remark/spare fields
+    response_data.update(remarks_dict)
+    print(remarks_dict)
+    response_data.update(spares_dict)
+    print(spares_dict)
+
+
+    return JsonResponse(response_data)
+
+
+
+
+
+
+from django.views.decorators.http import require_POST
+from django.contrib import messages
+from django.views.decorators.csrf import csrf_exempt
+import json
+@require_POST
+
+
+@csrf_exempt
+@login_required
+def reject_service_report(request, pk):
+    service_report = get_object_or_404(ServiceReport, pk=pk)
+    
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        reason = data.get('reason', '')
+        service_report.reject(reason)
+        return redirect('servicereport')
+    
+    return HttpResponseForbidden("Invalid method.")
+
+def get_sites(request):
+    zone_id = request.GET.get('zone_id')
+    sites = Site.objects.filter(zone_id=zone_id).values('id', 'name')
+    return JsonResponse(list(sites), safe=False)
+
+
 
 
 def view_service_report(request, pk):
@@ -822,6 +1382,8 @@ def view_service_report(request, pk):
     wastewater_parameter_statuses = WastewaterParameterStatus.objects.filter(report=service_report)
     machine_run_times = MachineRunTime.objects.filter(service_report=service_report)
     tool_statuses = ToolStatus.objects.filter(service_report=service_report)
+    existing_attachments = ServiceReportAttachment.objects.filter(service_report=service_report)
+
     context = {
         'service_report': service_report,
         'electronic_item_statuses': electronic_item_statuses,
@@ -832,6 +1394,8 @@ def view_service_report(request, pk):
         'wastewater_parameter_statuses': wastewater_parameter_statuses,
         'machine_run_times': machine_run_times,
         'tool_statuses': tool_statuses,
+        'existing_attachments': existing_attachments,
+
     }    
 
     return render(request, 'apage/servicereport_detail.html', context)
@@ -849,40 +1413,72 @@ from .models import (
     ToolStatus,
 )
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import ServiceReport, State, ElectronicItemStatus, ElectronicPanelStatus, ChemicalItemStatus, PumpStatus, MiscellaneousItemStatus, WastewaterParameterStatus, MachineRunTime, ToolStatus
+from .models import (
+    ServiceReport, Zone, Site, State, ServiceReportAttachment,
+    ElectronicItem, ElectronicItemStatus,
+    ElectronicPanel, ElectronicPanelStatus,
+    ChemicalItem, ChemicalItemStatus,
+    Pump, PumpStatus,
+    MiscellaneousItem, MiscellaneousItemStatus,
+    WastewaterParameter, WastewaterParameterStatus,
+    MachineRunTime, Tool, ToolStatus
+)
 
 def edit_service_report(request, report_id):
-    # Fetch the service report that needs to be edited
     service_report = get_object_or_404(ServiceReport, id=report_id)
-
-    # Fetch related data for the form (filtering by the service report)
-    electronic_items = ElectronicItemStatus.objects.filter(report=service_report)
-    electronic_panels = ElectronicPanelStatus.objects.filter(report=service_report)
-    chemical_items = ChemicalItemStatus.objects.filter(report=service_report)
-    pumps = PumpStatus.objects.filter(report=service_report)
-    miscellaneous_items = MiscellaneousItemStatus.objects.filter(report=service_report)
-    wastewater_parameters = WastewaterParameterStatus.objects.filter(report=service_report)
-    machine_runs = MachineRunTime.objects.filter(service_report=service_report)
-    tools = ToolStatus.objects.filter(service_report=service_report)
-    states = State.objects.all()  # For the dropdown in the form
     service_report.edited_by = request.user
-    if request.method == 'POST':
-        # Process form data
-        state_id = request.POST.get('state')  # Get state from the form
-        
-        if state_id:
-            try:
-                # Try to fetch the state by ID (as that's usually passed from the form)
-                state_instance = State.objects.get(id=state_id)
-                service_report.state = state_instance  # Assign the correct state instance
-            except State.DoesNotExist:
-                print(f"State with ID {state_id} does not exist.")
-        else:
-            print("No state was selected or passed.")
 
-        # Other fields assignment from the form
+    existing_attachments = ServiceReportAttachment.objects.filter(service_report=service_report)
+    zones = Zone.objects.all()
+    sites = Site.objects.filter(zone=service_report.zone) if service_report.zone else []
+    states = State.objects.all()
+
+    # ✅ Ensure all item statuses are initialized and always fetched
+    electronic_items = [
+        safe_get_or_create(ElectronicItemStatus, report=service_report, item=item)[0]
+        for item in ElectronicItem.objects.all()
+    ]
+
+    electronic_panels = [
+        safe_get_or_create(ElectronicPanelStatus, report=service_report, panel=panel)[0]
+        for panel in ElectronicPanel.objects.all()
+    ]
+
+    chemical_items = [
+        safe_get_or_create(ChemicalItemStatus, report=service_report, item=item)[0]
+        for item in ChemicalItem.objects.all()
+    ]
+
+    pumps = [
+        safe_get_or_create(PumpStatus, report=service_report, pump=pump)[0]
+        for pump in Pump.objects.all()
+    ]
+
+    miscellaneous_items = [
+        safe_get_or_create(MiscellaneousItemStatus, report=service_report, item=item)[0]
+        for item in MiscellaneousItem.objects.all()
+    ]
+
+    wastewater_parameters = [
+        safe_get_or_create(WastewaterParameterStatus, report=service_report, parameter=p)[0]
+        for p in WastewaterParameter.objects.all()
+    ]
+
+    tools = [
+        safe_get_or_create(ToolStatus, service_report=service_report, tool=tool)[0]
+        for tool in Tool.objects.all()
+    ]
+
+    machine_runs = MachineRunTime.objects.filter(service_report=service_report)
+
+    if request.method == 'POST':
+        # Service Report basic fields
+        service_report.service_name = request.POST.get('service_name') or service_report.service_name
         service_report.date_of_visit = request.POST.get('date_of_visit')
-        service_report.zone = request.POST.get('zone')
+        zone_id = request.POST.get('zone')
+        site_id = request.POST.get('site')
+        service_report.zone = Zone.objects.filter(id=zone_id).first() if zone_id else None
+        service_report.site = Site.objects.filter(id=site_id).first() if site_id else None
         service_report.phone_no = request.POST.get('phone_no')
         service_report.reason_of_visit = request.POST.get('reason_of_visit')
         service_report.in_time = request.POST.get('in_time')
@@ -890,105 +1486,111 @@ def edit_service_report(request, report_id):
         service_report.customer_name = request.POST.get('customer_name')
         service_report.contact_number = request.POST.get('contact_number')
         service_report.location = request.POST.get('location')
-        service_report.date_of_complaint = request.POST.get('date_of_complaint')
         service_report.status_of_call = request.POST.get('status_of_call')
-        # Updating signatures and names
-        service_report.service_person_name = request.POST.get('service_person_name', service_report.service_person_name)
-        service_report.client_name = request.POST.get('client_name', service_report.client_name)
-        
-        # Handle the service person signature (base64 data)
-        service_person_signature = request.POST.get('service_person_signature')
-        if service_person_signature:
-            service_report.service_person_signature = service_person_signature
+        service_report.date_of_complaint = request.POST.get('date_of_complaint')
 
-        # Handle the client signature (base64 data)
-        client_signature = request.POST.get('client_signature')
-        if client_signature:
-            service_report.client_signature = client_signature
+        # Signatures & Names
+        service_report.service_person_name = request.POST.get('service_person_name')
+        service_report.client_name = request.POST.get('client_name')
+        service_report.service_person_signature = request.POST.get('service_person_signature')
+        service_report.client_signature = request.POST.get('client_signature')
 
-        # Handle the remarks and spare details
-        remarks = []
-        spares = []
-        
-        # Collect all remarks from form data
-        for key, value in request.POST.items():
-            if key.startswith('remark_orm_') and value.strip():
-                remarks.append(value.strip())
+        # Handle State
+        state_id = request.POST.get('state')
+        if state_id:
+            state_obj = State.objects.filter(id=state_id).first()
+            if state_obj:
+                service_report.state = state_obj
 
-        # Collect all spares from form data
-        for key, value in request.POST.items():
-            if key.startswith('spare_') and value.strip():
-                spares.append(value.strip())
-
-        # Join all remarks and spares into a single string separated by newlines
+        # Handle Remarks
+        remarks = [v.strip() for k, v in request.POST.items() if k.startswith('remark_orm_') and v.strip()]
+        spares = [v.strip() for k, v in request.POST.items() if k.startswith('spare_') and v.strip()]
         service_report.other_remarks = '\n'.join(remarks)
         service_report.spares_details = '\n'.join(spares)
-        service_report.user = request.user
-        # Save the service report
-        service_report.save()
 
-        # Save dynamic items (Electronic, Chemical, Pump, Miscellaneous, etc.)
+        # Handle Attachments
+        to_remove = request.POST.getlist('remove_attachment')
+        if to_remove:
+            ServiceReportAttachment.objects.filter(id__in=to_remove).delete()
+
+        for f in request.FILES.getlist('new_attachment'):
+            ServiceReportAttachment.objects.create(service_report=service_report, file=f)
+
+        # ❗ Helper to update dynamic items
+        def update_status(obj, prefix):
+            obj.checked = f'checked_{prefix}{obj.id}' in request.POST
+            obj.repair = f'repair_{prefix}{obj.id}' in request.POST
+            obj.replacement = f'replacement_{prefix}{obj.id}' in request.POST
+            obj.remark = request.POST.get(f'remark_{prefix}{obj.id}', '')
+            obj.save()
+
+        # Update all item statuses (keep correct prefixes)
+        # Update all item statuses (keep correct prefixes)
         for item in electronic_items:
-            item.checked = 'checked_' + str(item.id) in request.POST
-            item.repair = 'repair_' + str(item.id) in request.POST
-            item.replacement = 'replacement_' + str(item.id) in request.POST
-            item.remark = request.POST.get('remark_epanels_' + str(item.id), '')
-            item.save()
+            update_status(item, 'eitems_')
 
-        for item in electronic_panels:
-            item.checked = 'checked_' + str(item.id) in request.POST
-            item.repair = 'repair_' + str(item.id) in request.POST
-            item.replacement = 'replacement_' + str(item.id) in request.POST
-            item.remark = request.POST.get('remark_eitems_' + str(item.id), '')
-            item.save()
+        for panel in electronic_panels:
+            update_status(panel, 'epanels_')
 
         for item in chemical_items:
-            item.checked = 'checked_chemical_' + str(item.id) in request.POST
-            item.repair = 'repair_chemical_' + str(item.id) in request.POST
-            item.replacement = 'replacement_chemical_' + str(item.id) in request.POST
-            item.remark = request.POST.get('remark_chemical_' + str(item.id), '')
-            item.save()
+            update_status(item, 'chemical_')
 
         for pump in pumps:
-            pump.checked = 'checked_pump_' + str(pump.id) in request.POST
-            pump.repair = 'repair_pump_' + str(pump.id) in request.POST
-            pump.replacement = 'replacement_pump_' + str(pump.id) in request.POST
-            pump.remark = request.POST.get('remark_pump_' + str(pump.id), '')
-            pump.save()
+            update_status(pump, 'pump_')
 
         for item in miscellaneous_items:
-            item.checked = 'checked_miscellaneous_' + str(item.id) in request.POST
-            item.repair = 'repair_miscellaneous_' + str(item.id) in request.POST
-            item.replacement = 'replacement_miscellaneous_' + str(item.id) in request.POST
-            item.remark = request.POST.get('remark_miscellaneous_' + str(item.id), '')
-            item.save()
+            update_status(item, 'miscellaneous_')
 
-        for parameter in wastewater_parameters:
-            parameter.checked = 'checked_wastewater_' + str(parameter.id) in request.POST
-            parameter.repair = 'repair_wastewater_' + str(parameter.id) in request.POST
-            parameter.replacement = 'replacement_wastewater_' + str(parameter.id) in request.POST
-            parameter.remark = request.POST.get('remark_wastewater_' + str(parameter.id), '')
-            parameter.save()
+        for param in wastewater_parameters:
+            update_status(param, 'wastewater_')
 
+        # Machine run times
         for run in machine_runs:
-            run.run_time = request.POST.get('run_time_' + str(run.id), '')
-            run.end_time = request.POST.get('end_time_' + str(run.id), '')
-            run.checked = 'checked_run_' + str(run.id) in request.POST
-            run.pass_ = 'pass_run_' + str(run.id) in request.POST
-            run.fail = 'fail_run_' + str(run.id) in request.POST
-            run.remark = request.POST.get('remark_run_' + str(run.id), '')
+            run.run_time = request.POST.get(f'run_time_{run.id}') or run.run_time
+            run.end_time = request.POST.get(f'end_time_{run.id}') or run.end_time
+            run.checked = f'checked_run_{run.id}' in request.POST
+            run.pass_status = f'pass_run_{run.id}' in request.POST
+            run.fail_status = f'fail_run_{run.id}' in request.POST
+            run.remark = request.POST.get(f'remark_run_{run.id}', '')
             run.save()
 
+        # Tools
         for tool in tools:
-            tool.quantity = request.POST.get('quantity_' + str(tool.id), '')
-            tool.remark = request.POST.get('remark_tools_' + str(tool.id), '')
-            tool.taken_status = 'taken_status_' + str(tool.id) in request.POST
+            qty = request.POST.get(f'quantity_{tool.id}', '')
+            tool.quantity = int(qty) if qty.isdigit() else 0
+            tool.remark = request.POST.get(f'remark_tools_{tool.id}', '')
+            tool.taken_status = f'taken_status_{tool.id}' in request.POST
             tool.save()
 
-        # Redirect or show success message
-        return redirect('view_service_report', pk=service_report.id)
+        # Handle New Machine Run Times
+        try:
+            new_run_count = int(request.POST.get('new_machine_run_count', 0))
+        except ValueError:
+            new_run_count = 0
 
-    # Display the form with current values
+        for i in range(1, new_run_count + 1):
+            r_type = request.POST.get(f'new_run_type_{i}')
+            if r_type:  # basic validation
+                MachineRunTime.objects.create(
+                    service_report=service_report,
+                    run_type=r_type,
+                    run_time=request.POST.get(f'new_run_time_{i}') or None,
+                    end_time=request.POST.get(f'new_end_time_{i}') or None,
+                    checked=f'new_checked_run_{i}' in request.POST,
+                    pass_status=f'new_pass_run_{i}' in request.POST,
+                    fail_status=f'new_fail_run_{i}' in request.POST,
+                    remark=request.POST.get(f'new_remark_run_{i}', '')
+                )
+
+
+        
+        # Reset status if it was rejected/draft so it can be reviewed again
+        service_report.status = 'pending'
+        service_report.rejection_reason = None
+        service_report.is_draft = False
+        service_report.save()
+        return redirect('servicereport')
+
     return render(request, 'apage/edit_service_report.html', {
         'service_report': service_report,
         'electronic_items': electronic_items,
@@ -997,10 +1599,14 @@ def edit_service_report(request, report_id):
         'pumps': pumps,
         'miscellaneous_items': miscellaneous_items,
         'wastewater_parameters': wastewater_parameters,
-        'machine_runs': machine_runs,
         'tools': tools,
-        'states': states,  # Provide the states to the template
+        'machine_runs': machine_runs,
+        'states': states,
+        'zones': zones,
+        'sites': sites,
+        'existing_attachments': existing_attachments,
     })
+
 
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
@@ -1019,7 +1625,13 @@ from .models import (
     State,
 )
 
+from apage.models import ServiceReportAttachment  # adjust import if needed
+from django.conf import settings
+from urllib.parse import urljoin
+import os
+
 def service_report_pdf(request, pk):
+    print("GOT IN")
     service_report = ServiceReport.objects.get(pk=pk)
     electronic_item_statuses = ElectronicItemStatus.objects.filter(report=service_report)
     panel_statuses = ElectronicPanelStatus.objects.filter(report=service_report)
@@ -1029,8 +1641,21 @@ def service_report_pdf(request, pk):
     wastewater_parameter_statuses = WastewaterParameterStatus.objects.filter(report=service_report)
     machine_run_times = MachineRunTime.objects.filter(service_report=service_report)
     tool_statuses = ToolStatus.objects.filter(service_report=service_report)
+    attachments = ServiceReportAttachment.objects.filter(service_report=service_report)
 
-    # Prepare context for the template
+    # Create a web-accessible URL for each attachment
+    for attachment in attachments:
+        file_path = attachment.file.path
+        if not os.path.exists(file_path):
+            print(f"❌ File does not exist: {file_path}")
+        else:
+            print(f"✅ Image file exists: {file_path}")
+
+        attachment.web_url = f'file://{file_path}'
+
+
+
+
     context = {
         'service_report': service_report,
         'electronic_item_statuses': electronic_item_statuses,
@@ -1041,19 +1666,15 @@ def service_report_pdf(request, pk):
         'wastewater_parameter_statuses': wastewater_parameter_statuses,
         'machine_run_times': machine_run_times,
         'tool_statuses': tool_statuses,
+        'attachments': attachments,
     }
 
-    # Render the HTML template as a string
     html_string = render_to_string('apage/pdf_servicereport.html', context)
 
-    try:
-        # Generate the PDF using WeasyPrint
-        pdf_file = HTML(string=html_string).write_pdf()
-    except Exception as e:
-        # Return a plain text error if PDF generation fails
-        return HttpResponse(f"Error generating PDF: {str(e)}", status=500)
+    # Use MEDIA_ROOT or base directory as base_url so embedded URLs are resolved
+    pdf_file = HTML(string=html_string, base_url="/").write_pdf()
 
-    # Return the PDF as a response
+
     response = HttpResponse(pdf_file, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="service_report_{pk}.pdf"'
     return response
@@ -1112,6 +1733,103 @@ def update_service_report_status(request, pk, action):
     # Redirect to the service report list or any other relevant page after action
     return redirect('servicereport')  # Adjust URL as per your project’s structure
 
+
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import ServiceReport
+from .forms import ClientSignatureForm  # we'll create this
+
+def client_sign_report(request, pk):
+    report = get_object_or_404(ServiceReport, pk=pk)
+
+    if request.method == 'POST':
+        form = ClientSignatureForm(request.POST)
+        if form.is_valid():
+            report.client_name = form.cleaned_data['client_name']
+            report.client_signature = form.cleaned_data['client_signature']  # base64
+            report.save()
+            return render(request, 'apage/client_signature_success.html', {'report': report})
+    else:
+        form = ClientSignatureForm()
+
+    return render(request, 'apage/client_sign_report.html', {
+        'report': report,
+        'form': form,
+    })
+
+from django.shortcuts import render, get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
+from .models import (
+    ServiceReport, ElectronicItemStatus, ElectronicPanelStatus, ChemicalItemStatus,
+    PumpStatus, MiscellaneousItemStatus, WastewaterParameterStatus,
+    MachineRunTime, ToolStatus, ServiceReportAttachment
+)
+
+from django.shortcuts import render, get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
+from apage.models import (
+    ServiceReport, ElectronicItemStatus, ElectronicPanelStatus,
+    ChemicalItemStatus, PumpStatus, MiscellaneousItemStatus,
+    WastewaterParameterStatus, MachineRunTime, ToolStatus,
+    ServiceReportAttachment
+)
+
+@csrf_exempt
+def client_sign_view(request, pk):
+    print("GOT HITTING")
+    report = get_object_or_404(ServiceReport, pk=pk)
+
+    # ✅ Prevent access if already signed
+    if report.client_signed:
+        return render(request, "apage/link_expired.html", {"report": report})
+
+    # Fetch related status models
+    electronic_item_statuses = ElectronicItemStatus.objects.filter(report=report)
+    panel_statuses = ElectronicPanelStatus.objects.filter(report=report)
+    chemical_item_statuses = ChemicalItemStatus.objects.filter(report=report)
+    pump_statuses = PumpStatus.objects.filter(report=report)
+    miscellaneous_item_statuses = MiscellaneousItemStatus.objects.filter(report=report)
+    wastewater_parameter_statuses = WastewaterParameterStatus.objects.filter(report=report)
+    machine_run_times = MachineRunTime.objects.filter(service_report=report)
+    tool_statuses = ToolStatus.objects.filter(service_report=report)
+    attachments = ServiceReportAttachment.objects.filter(service_report=report)
+
+    error = None
+
+    if request.method == "POST":
+        print("GOY ING TO SIGN")
+        name = request.POST.get("client_name")
+        signature = request.POST.get("client_signature")
+        remark = request.POST.get("client_remark")
+
+        print("POST client_name:", name)
+        print("POST client_signature starts with:", signature[:30] if signature else "None")
+        print("Received POST:", name[:50], signature[:50] if signature else "No Signature")
+
+        if name and signature:
+            report.client_name = name
+            report.client_signature = signature
+            report.client_remark = remark 
+            report.client_signed = True  # ✅ Set flag to prevent reuse
+            report.save()
+            return render(request, "apage/sign_success.html", {"report": report})
+        else:
+            error = "Please provide both name and signature."
+
+    context = {
+        "service_report": report,
+        "electronic_item_statuses": electronic_item_statuses,
+        "panel_statuses": panel_statuses,
+        "chemical_item_statuses": chemical_item_statuses,
+        "pump_statuses": pump_statuses,
+        "miscellaneous_item_statuses": miscellaneous_item_statuses,
+        "wastewater_parameter_statuses": wastewater_parameter_statuses,
+        "machine_run_times": machine_run_times,
+        "tool_statuses": tool_statuses,
+        "attachments": attachments,
+        "error": error,
+    }
+
+    return render(request, "apage/client_sign.html", context)
 # ---------------------------------dashboard----------------------
 
 from django.shortcuts import render
@@ -1119,14 +1837,22 @@ from django.db.models import Count
 from datetime import timedelta
 from django.utils import timezone
 from django.db.models import Sum
+from django.contrib.auth.models import User
 
 from .models import ServiceReport, MOM, MaintenanceChecklist, GeneralReport
 
 def dashboard(request):
     today = timezone.now().date()
-
+    user = request.user
+    user_role = user.groups.first().name if user.groups.exists() else None
+    print("user role",user_role)
     # Default to current month
     start_date = today.replace(day=1)
+
+    users = User.objects.all()
+    sites = Site.objects.all()
+    print("sites",sites)
+    print(sites.count())
 
     # Get the selected time range from the query parameters (defaults to 'month')
     time_range = request.GET.get('time_range', 'month')
@@ -1156,9 +1882,13 @@ def dashboard(request):
     print(user)
     user_role = user.groups.first().name if user.groups.exists() else None
     completeion = request.GET.get('status', 'all')
+    # New Filters
+    created_by = request.GET.get('created_by')
+    print("created by",created_by)
+    selected_site = request.GET.get('site')
 
 
-    if user_role == "admin":
+    if user_role == "Admin":
         # Admin users can see all reports
         service_reports = ServiceReport.objects.filter(created_date__gte=start_date)
         mom_reports = MOM.objects.filter(created_date__gte=start_date)
@@ -1176,9 +1906,21 @@ def dashboard(request):
         service_reports = service_reports.filter(status=completeion)
         maintenance_reports = maintenance_reports.filter(status=completeion)
 
+    # Apply created_by filter
+    if created_by:
+        service_reports = service_reports.filter(created_by_id=created_by)
+
+    # Apply site filter
+    if selected_site:
+        service_reports = service_reports.filter(site_id=selected_site)
+
     months_in_range = ((today.year - start_date.year) * 12 + today.month - start_date.month) + 1
     required_service_reports = 2 * months_in_range
     required_maintenance_checklists = 4 * months_in_range
+
+    if  created_by and  not selected_site:
+        required_service_reports = 2 * sites.count() * months_in_range
+        print("required_service_reports",required_service_reports)
 
     total_service_reports = service_reports.count()
     total_maintenance_reports = maintenance_reports.count()
@@ -1230,11 +1972,110 @@ def dashboard(request):
         'maintenance_submitted': maintenance_submitted,
         'maintenance_remaining': maintenance_remaining,
         'status_filter':completeion,
+        'created_by': created_by,
+        'selected_site': selected_site,
+        'users': users,
+        'sites': sites,
     }
     return render(request, 'apage/dashboard.html', context)
 
 
+# --------------------------------------------------Generator Report---------------------------------------
 
-    
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+
+from datetime import datetime, timedelta   # ✅ THIS WAS MISSING
+
+from .models import GeneratorReport
 
 
+@login_required
+def add_generator_report(request):
+    if request.method == "POST":
+        date = request.POST.get("date")
+        start_time = request.POST.get("start_time")
+
+        try:
+            # Convert values
+            date_obj = datetime.strptime(date, "%Y-%m-%d").date()
+            start_time_obj = datetime.strptime(start_time, "%H:%M").time()
+
+            # Ensure last entry has an end_time before allowing a new entry
+            last_entry = GeneratorReport.objects.filter(
+                created_by=request.user
+            ).order_by('-id').first()
+
+            if last_entry and last_entry.end_time is None:
+                return JsonResponse(
+                    {"error": "Cannot add a new entry while the last entry is incomplete."},
+                    status=400
+                )
+
+            # Save to DB
+            print("start :", start_time_obj)
+            print("start :", start_time)
+
+            GeneratorReport.objects.create(
+                created_by=request.user,
+                date=date_obj,
+                start_time=start_time_obj,
+            )
+
+            return redirect('generator_report')
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+    return render(request, "apage/add_generator_report.html")
+
+
+import datetime as dt
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from .models import GeneratorReport
+
+
+@login_required
+def edit_generator_report(request, report_id):
+    report = get_object_or_404(GeneratorReport, id=report_id, created_by=request.user)
+
+    if request.method == "POST":
+        end_time = request.POST.get("end_time")
+
+        try:
+            end_time_obj = dt.datetime.strptime(end_time, "%H:%M").time()
+
+            start_datetime = dt.datetime.combine(report.date, report.start_time)
+            end_datetime = dt.datetime.combine(report.date, end_time_obj)
+
+            if end_datetime < start_datetime:
+                end_datetime += dt.timedelta(days=1)
+
+            total_time_obj = end_datetime - start_datetime
+
+            report.end_time = end_time_obj
+            report.total_time = total_time_obj
+            report.save()
+
+            return redirect('generator_report')
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+    return render(request, "apage/edit_generator_report.html", {"report": report})
+
+
+@login_required
+def generator_report(request):
+    reports = GeneratorReport.objects.filter(
+        created_by=request.user
+    ).order_by('-date')
+
+    return render(
+        request,
+        'apage/GeneratorReports_viewing.html',
+        {'reports': reports}
+    )

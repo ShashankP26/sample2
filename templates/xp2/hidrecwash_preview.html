@@ -1,4 +1,4 @@
-{% load static %}
+{% comment %} {% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -210,6 +210,321 @@
         <p>© Xpredict Labs. All rights reserved.</p>
          <button class="print-button" onclick="window.print()">Print this quotation</button>
     </footer>
+
+</body>
+</html> {% endcomment %}
+
+
+
+
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=800"/> {# Adjusted viewport width for better control #}
+    <title>Quotation Preview - {{ quotation_number }}</title>
+    <link href="https://unpkg.com/@tabler/core@latest/dist/css/tabler.min.css" rel="stylesheet"/>
+    <style>
+        @page { size: A4; margin: 18mm 0; } /* Set A4 page size and margins for print */
+
+        html, body {
+            background: #f6f8fb; /* Light grey background for the overall page */
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+    
+        /* Main container mimicking the "quote-box" from the first template */
+        .quote-box {
+            width: 185mm; /* Standard width for content area */
+            min-height: 251mm; /* Minimum height for A4 content */
+            margin: 32px auto; /* Centered with top/bottom margin */
+            background: #fff; /* White background for the "paper" */
+            border-radius: 0.45rem; /* Soft rounded corners */
+            box-shadow: 0 0 10px rgba(0,0,0,0.07); /* Subtle shadow */
+            padding: 28px; /* Inner padding */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        /* Modern Header styling */
+        .quote-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #e0e6ed;
+            padding-bottom: 9px;
+        }
+
+        .quote-header .info {
+            text-align: right;
+            font-size: 14px; /* Slightly smaller font for header info */
+        }
+        .quote-header .info strong {
+            font-size: 15px; /* Slightly larger for main title */
+        }
+        .quote-header .info p {
+            margin: 0; /* Remove paragraph margins */
+            line-height: 1.5; /* Spacing for info lines */
+        }
+
+        /* General heading style for sections if needed outside of .styled-section */
+        .section-heading h1 {
+            font-size: 24px; /* Adjust as needed */
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #333;
+            text-align: left;
+        }
+        .section-heading p {
+            margin: 2px 0;
+            font-size: 14px;
+            color: #555;
+            text-align: left;
+        }
+
+
+        /* Table styling */
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        .info-table th, .info-table td {
+            border: 1px solid #b6bcc6;
+            padding: 7px;
+            text-align: left;
+            vertical-align: middle;
+            font-size: 13px; /* Consistent font size */
+        }
+
+        .info-table td:first-child {
+            background-color: #eff3fb; /* Light background for labels */
+            font-weight: 700;
+            width: 25%;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #e0e6ed;
+            margin: 20px 0;
+        }
+
+        /* ----- Styles for the styled content blocks (already present) ----- */
+        .styled-section {
+            margin-top: 20px; 
+            font-size: 13px; 
+        }
+
+        .styled-section h3 {
+            background-color: #eff3fb; 
+            padding: 10px 15px;
+            margin-bottom: 0; 
+            border: 1px solid #e0e6ed; 
+            border-bottom: none; 
+            border-radius: 4px 4px 0 0; 
+            font-size: 15px; 
+            font-weight: 600; 
+            color: #222; 
+        }
+
+        .styled-content {
+            margin: 0;
+            padding: 15px; 
+            border: 1px solid #e0e6ed; 
+            border-radius: 0 0 4px 4px; 
+            background-color: #fdfdff; 
+        }
+
+        .styled-content p {
+            margin: 0; 
+            line-height: 1.6; 
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 12px;
+            page-break-inside: avoid;
+        }
+
+        /* Print Button outside the main quote box */
+        .print-button-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .print-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .print-button:hover {
+            background-color: #0056b3;
+        }
+
+
+        /* Media queries for print */
+        @media print {
+            html, body {
+                background: none !important; /* Remove background in print */
+                min-height: 0;
+                height: auto;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .quote-box {
+                width: 185mm !important; /* Ensure width is consistent for print */
+                min-height: 251mm !important; /* Ensure min-height for print */
+                margin: 0 auto !important; /* Center on page */
+                border-radius: 0; /* No rounded corners in print */
+                padding: 0 !important; /* No padding in print box itself (margins are on body) */
+                box-shadow: none !important; /* Remove shadow in print */
+            }
+            .print-button-container {
+                display: none !important; /* Hide print button */
+            }
+            .styled-section, footer {
+                page-break-inside: avoid; /* Prevent breaking inside these sections */
+            }
+            .info-table {
+                page-break-inside: auto; /* Allow table to break */
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="quote-box"> {# Main container div #}
+
+    <!-- Header Section -->
+    <div class="quote-header">
+        <img src="{% static 'xlogo.png' %}" width="110" height="32" alt="Xpredict" class="navbar-brand-image">
+        <div class="info">
+            <p><strong>Date:</strong> {{ current_date }}</p>
+            {% for hid in hidrec %}
+            <p><strong>Quotation No:</strong> {{ hid.quotation_no }}</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <hr>
+    
+    <div class="section-heading">
+        <h1>HIDREC WASH</h1>
+        {% for comp in company %}
+          <p><strong>{{ comp.c_name }} </strong></p>
+          <p>{{ comp.mail }} / {{ comp.phone }} </p>
+        {% endfor %}
+    </div>
+    
+    {% for hid in hidrec %}
+    <table class="info-table"> {# Changed class to info-table #}
+        <tbody>
+            <tr>
+                <td>Validity</td>
+                <td>15 days</td>
+            </tr>
+            <tr>
+                <td>Prepared by</td>
+                <td>Kirti</td>
+            </tr>
+        </tbody>
+    </table>
+    {% endfor %}
+
+    {% for hid in hidrec %}
+        <div class="styled-section">
+            <h3>Contents</h3>
+            <div class="styled-content">
+                <p>{{hid.contents|linebreaksbr}}</p>
+            </div>
+        </div>
+
+        <div class="styled-section">
+            <h3>Hidrec Wash</h3>
+            <div class="styled-content">
+                <p>{{hid.hidrec_wash_text|linebreaksbr}}</p>
+            </div>
+        </div>
+
+        <div class="styled-section">
+            <h3>Price</h3>
+            <div class="styled-content">
+                <p><strong>{{hid.price}}</strong></p>
+            </div>
+        </div>
+
+        <div class="styled-section">
+            <h3>Description</h3>
+            <div class="styled-content">
+                <p>{{hid.carwash_text|linebreaksbr}}</p>
+            </div>
+        </div>
+
+        <div class="styled-section">
+            <h3>Price (Oil Skimmer)</h3>
+            <div class="styled-content">
+                <p><strong>{{hid.priceoil_skimmer}}</strong></p>
+            </div>
+        </div>
+
+        <div class="styled-section">
+            <h3>Specifications</h3>
+            <div class="styled-content">
+                <p>{{hid.specification|linebreaksbr}}</p>
+            </div>
+        </div>
+       
+        <div class="styled-section">
+            <h3>Terms and Conditions</h3>
+            <div class="styled-content">
+                <p>{{hid.terms_conditions|linebreaksbr}}</p>
+            </div>
+        </div>
+
+        <div class="styled-section">
+            <h3>General Maintenance</h3>
+            <div class="styled-content">
+                <p>{{hid.general_maintenance|linebreaksbr}}</p>
+            </div>
+        </div>
+
+        <div class="styled-section">
+            <h3>Total</h3>
+            <div class="styled-content">
+                <p><strong>{{hid.total_price}} </strong></p>
+            </div>
+        </div>
+    {% endfor %}
+
+    <hr>
+    
+    <footer>
+        <p>© Xpredict Labs. All rights reserved.</p>
+    </footer>
+</div>
+
+<div class="print-button-container">
+    <button class="print-button" onclick="window.print()">
+        <i class="ti ti-printer"></i> Print this quotation
+    </button>
+</div>
+
+{# Include Tabler JS for icons if using them (e.g., for print button icon) #}
+<script src="https://unpkg.com/@tabler/core@latest/dist/js/tabler.min.js"></script>
 
 </body>
 </html>

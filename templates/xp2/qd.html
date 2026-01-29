@@ -1,0 +1,1079 @@
+{% comment %} {% load humanize %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quotation Preview</title>
+    <style>
+        /* A4 Page Layout */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0 auto;
+            padding: 20px;
+            width: 21cm;
+            min-height: 29.7cm;
+            box-sizing: border-box;
+            background-color: #fff;
+            max-height:99vh;
+        }
+    
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            margin-top: 0px;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+        }
+    
+        header h1 {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 0;
+        }
+    
+        /* Flex Layout for sections */
+        .details-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+    
+        #rows {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+    
+        .details-row .section {
+            width: 40%;
+        }
+    
+        .section {
+            margin-bottom: 20px;
+        }
+    
+        /* Table Layout */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+    
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 6px; /* Reduced padding for more compact table */
+            text-align: center;
+        }
+    
+        table th {
+            background-color: #f4f4f4;
+            font-weight: bold;
+        }
+    
+        /* Adjust column widths */
+        table th:nth-child(1), table td:nth-child(1) { /* First column (e.g., Serial Number) */
+            width: 10%;
+        }
+        table th:nth-child(2), table td:nth-child(2) { /* Second column (e.g., Item Name) */
+            width: 25%;
+            white-space: normal; /* Allow text wrapping for long item names */
+        }
+        table th:nth-child(3), table td:nth-child(3), 
+        table th:nth-child(4), table td:nth-child(4) { /* Quantity and Price columns */
+            width: 15%;
+        }
+        table th:nth-child(5), table td:nth-child(5) { /* Total column */
+            width: 20%;
+        }
+    
+        .totals p {
+            margin: 0;
+            font-weight: bold;
+        }
+    
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 12px;
+            page-break-inside: avoid; /* Prevent page break inside footer */
+        }
+    
+        .content-section h3 {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+    
+        .content-section p {
+            margin: 5px 0;
+        }
+    
+        /* Totals Section: Right */
+        .totals-right {
+            text-align: right;
+            padding: 10px;
+            margin-top: 20px;
+        }
+    
+        .totals-right p {
+            margin: 5px 0;
+            font-weight: normal;
+            color: #333;
+        }
+    
+        .totals-right .total-title {
+            font-weight: bold;
+            color: #333;
+        }
+    
+        /* Line Border */
+        .line-border {
+            border-top: 1px solid #ddd;
+            margin-top: 20px;
+        }
+    
+        /* Flexbox Layout for the totals container */
+        .totals-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            flex-wrap: wrap; /* Allows sections to wrap on smaller screens */
+        }
+    
+        .totals-left, .totals-right {
+            width: 48%; /* Each section will take up 48% of the width */
+        }
+    
+        .totals-left p, .totals-right p {
+            margin: 5px 0;
+        }
+    
+        .totals-left h3, .totals-right h3 {
+            font-size: 16px;
+            font-weight: bold;
+        }
+    
+        /* Signature Section */
+        .signature-container {
+            width: 15%;
+            height: 40%;
+            text-align: right;
+        }
+    
+        .signature-container p {
+            margin: 20px 0;
+        }
+    
+        .signature-space {
+            height: 10px;
+            margin-bottom: 10px;
+        }
+    
+        .date {
+            text-align: right;
+        }
+    
+        /* Print Specific Styles */
+        @media print {
+            /* Hide print button on print */
+            .print-button {
+                display: none;
+            }
+    
+            /* Ensure body takes up the full page size for A4 */
+            body {
+                width: 100%;
+                min-height: auto;
+                margin: 0;
+                padding: 20mm;
+            }
+    
+            /* Adjust layout for printing */
+            .totals-container {
+                flex-direction: column;
+                justify-content: flex-start;
+            }
+    
+            /* Make sure signature container is full width in print */
+            .signature-container {
+                width: 100%;
+                text-align: center;
+            }
+    
+            /* Flex sections will be stacked for print */
+            .totals-left, .totals-right {
+                width: 100%;
+                text-align: left;
+            }
+    
+            .line-border {
+                border-top: 1px solid #ddd;
+                margin-top: 20px;
+            }
+    
+            /* Page Break Handling */
+            .page-break {
+                page-break-before: always;
+            }
+    
+            /* Ensures that the layout is consistent on both screen and print */
+            .details-row .section {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+    
+            /* This ensures that the totals container sections take up the full width */
+            .totals-container {
+                flex-direction: column;
+                justify-content: flex-start;
+            }
+    
+            /* Adjust spacing between totals */
+            .totals-left, .totals-right {
+                width: 100%;
+            }
+        }
+    </style>
+    
+    
+    
+    
+</head>
+<body>
+    <!-- Header Section -->
+    <header>
+        <img src="{% static 'xpredictlogo.jpg' %}" width="110" height="32" alt="Xpredict" class="navbar-brand-image">
+    </header>
+
+    <!-- Quotation Information -->
+    <div class="section">
+        <div class="date"><p><strong>Date: {{ current_date }}</strong></p></div>
+        <p><strong>Quotation No:</strong> {{ quotation.quotation_no }}</p>
+    </div>
+
+    <!-- From and Bank Details -->
+    <div class="details-row">
+        <div class="section">
+            <h3>From:</h3>
+            <p>
+                {{ quotation.from_company_name }}<br>
+                Phone: {{ quotation.from_phone }}<br>
+                Email: {{ quotation.from_email }}<br>
+                GST: {{ quotation.from_gst }}<br>
+                PAN: {{ quotation.from_pan }}<br>
+                Address: {{ quotation.from_address }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Bill To and Ship To Details -->
+    <div class="details-row" id="rows">
+        <div class="section">
+            <h3>Bill To:</h3>
+            <p>
+                {{ quotation.bill_to_company_name }}<br>
+                Customer Name: {{ quotation.bill_to_customer_name }}<br>
+                GST: {{ quotation.bill_to_gst_number }}<br>
+                Address: {{ quotation.bill_to_address }}
+            </p>
+        </div>
+
+        <div class="section">
+            <h3>Ship To:</h3>
+            <p>
+                {{ quotation.ship_to_company_name }}<br>
+                Customer Name: {{ quotation.ship_to_customer_name }}<br>
+                GST: {{ quotation.ship_to_gst_number }}<br>
+                Address: {{ quotation.ship_to_address }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Quotation Items Table -->
+    <div class="section">
+        <h3>Item Details:</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>SL</th>
+                    <th>Product</th>
+                    <th>HSN</th>
+                    <th>Unit Price</th>
+                    <th>Qnty</th>
+                    <th>Taxable Amount</th>
+                    <th>CGST</th>
+                    <th>SGST</th>
+                    <th>IGST</th>
+                    <th> Amount After Tax</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in quotation_items %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ item.product.name }}</td>
+                    <td>{{ item.hsncode }}</td>
+                    <td>{{ item.unit_price|floatformat:2 }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.rate|intcomma }}</td>
+                    <td>{{ item.cgst }}</td>
+                    <td>{{ item.sgst }}</td>
+                    <td>{{ item.igst }}</td>
+                    <td>{{ item.final_amount|intcomma }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="details-row" id="rows">
+        <div class="section">
+            <h3>Bank Details:</h3>
+            <p>
+                Bank Name: {{ quotation.bank.bank_name }}<br>
+                Account Holder Name: {{ quotation.bank.account_holder_name }}<br>
+                Account Number: {{ quotation.bank.account_number }}<br>
+                IFSC Code: {{ quotation.bank.ifsc_code }}<br>
+                Branch Name: {{ quotation.bank.branch_name }}<br>
+            </p>
+            
+        </div>
+
+        <div class="section">
+            <p><strong>Taxable Amount: {{ quotation.subtotal }}</strong></p>
+            <p><strong>CGST Total: {{quotation.cgst_total}}</strong></p>
+            <p><strong>SGST Total: {{quotation.sgst_total }}</strong></p>
+            <p><strong>IGST Total: {{ quotation.igst_total }}</strong></p>
+            <p><strong>Total Amount After Tax: {{ quotation.grand_total }}</strong></p>
+        </div>
+    </div>
+    <!-- Total in Words, Bank Details, and Signature -->
+    <div class="details-row" id="rows">
+        <div class="section">
+            <!-- Total Amount in Words -->
+            <div class="totals-in-words">
+                <p><strong>Total Amount in Words: </strong><br><br>
+                    <strong>{{ grand_total_in_words }}</strong></p>
+            </div>
+
+            <!-- Bank Details -->
+            
+        </div>
+
+        <!-- Signature -->
+        <div class="section">
+            <strong><p>Authorized Signature:</p></strong>
+            <div class="signature-space"></div>
+        </div>
+    </div>
+
+    <!-- Terms and Conditions -->
+    <div class="section">
+        <h3>Terms and Conditions:</h3>
+        <ul>
+            {% for term in quotation.terms_and_conditions.splitlines %}
+                <li>{{ term }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Line border after Terms and Conditions -->
+    <div class="line-border"></div>
+
+    <!-- Footer Section -->
+    <footer>
+        <p>© Xpredict Labs. All rights reserved.</p>
+    </footer>
+    <button class="print-button" onclick="window.print()">Print this quotation</button>
+</body>
+</html>  {% endcomment %}
+
+
+
+
+
+{% load humanize %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quotation Preview</title>
+  <link href="https://unpkg.com/@tabler/core@latest/dist/css/tabler.min.css" rel="stylesheet" />
+  <style>
+    body {
+      background: #f6f8fb;
+      padding: 2rem;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .quote-box {
+      background: #ffffff;
+      padding: 2rem;
+      border-radius: .5rem;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+      max-width: 900px;
+      margin: auto;
+    }
+
+    .quote-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid #e0e6ed;
+      padding-bottom: 1rem;
+    }
+
+    .quote-section h3 {
+      font-weight: 600;
+      margin-bottom: .5rem;
+    }
+
+    .quote-table th,
+    .quote-table td {
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .totals {
+      text-align: right;
+      margin-top: 2rem;
+    }
+
+    .totals p {
+      margin: 0.25rem 0;
+    }
+
+    .terms {
+      margin-top: 2rem;
+    }
+
+    .signature {
+      text-align: right;
+      margin-top: 4rem;
+    }
+
+    @media print {
+      .print-button {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="quote-box">
+    <div class="quote-header">
+      <img src="{% static 'xlogo.png' %}" width="120" alt="Xpredict Logo" />
+      <div>
+        <strong>Date:</strong> {{ current_date }}<br />
+        <strong>Quotation No:</strong> {{ quotation.quotation_no }}
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6">
+        <div class="quote-section">
+          <h3>From</h3>
+          <p>
+            {{ quotation.from_company_name }}<br />
+            {{ quotation.from_address }}<br />
+            Phone: {{ quotation.from_phone }}<br />
+            Email: {{ quotation.from_email }}<br />
+            GST: {{ quotation.from_gst }}<br />
+            PAN: {{ quotation.from_pan }}
+          </p>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="quote-section">
+          <h3>To</h3>
+          <p>
+            {{ quotation.bill_to_company_name }}<br />
+            {{ quotation.bill_to_address }}<br />
+            Customer: {{ quotation.bill_to_customer_name }}<br />
+            GST: {{ quotation.bill_to_gst_number }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-bordered quote-table">
+        <thead class="table-primary">
+          <tr>
+            <th>SL</th>
+            <th>Product</th>
+            <th>HSN</th>
+            <th>Unit Price</th>
+            <th>Qty</th>
+            <th>Taxable Amount</th>
+            <th>CGST</th>
+            <th>SGST</th>
+            <th>IGST</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in quotation_items %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ item.product.name }}</td>
+            <td>{{ item.hsncode }}</td>
+            <td>{{ item.unit_price|floatformat:2 }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>{{ item.rate|intcomma }}</td>
+            <td>{{ item.cgst }}%</td>
+            <td>{{ item.sgst }}%</td>
+            <td>{{ item.igst }}%</td>
+            <td>{{ item.final_amount|intcomma }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6">
+        <div class="quote-section">
+          <h3>Bank Details</h3>
+          <p>
+            Bank Name: {{ quotation.bank.bank_name }}<br />
+            A/C Holder: {{ quotation.bank.account_holder_name }}<br />
+            A/C Number: {{ quotation.bank.account_number }}<br />
+            IFSC: {{ quotation.bank.ifsc_code }}<br />
+            Branch: {{ quotation.bank.branch_name }}
+          </p>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="totals">
+          <p><strong>Subtotal:</strong> ₹{{ quotation.subtotal|intcomma }}</p>
+          <p><strong>CGST Total:</strong> ₹{{ quotation.cgst_total|intcomma }}</p>
+          <p><strong>SGST Total:</strong> ₹{{ quotation.sgst_total|intcomma }}</p>
+          <p><strong>IGST Total:</strong> ₹{{ quotation.igst_total|intcomma }}</p>
+          <p><strong>Grand Total:</strong> ₹{{ quotation.grand_total|intcomma }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mt-3">
+      <div class="col-md-12">
+        <p><strong>Total in Words:</strong> {{ grand_total_in_words }}</p>
+      </div>
+    </div>
+
+    <div class="terms">
+      <h3>Terms & Conditions</h3>
+      <ul>
+        {% for term in quotation.terms_and_conditions.splitlines %}
+        <li>{{ term }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="signature">
+      <p><strong>Authorized Signature</strong></p>
+      <div style="height: 50px; border-bottom: 1px solid #ccc; width: 200px; float: right;"></div>
+    </div>
+    <footer>
+        <p>© Xpredict Labs. All rights reserved.</p>
+    </footer>
+  </div>
+  
+  <div class="text-center mt-4">
+    <button class="btn btn-primary print-button" onclick="window.print()">
+      <i class="ti ti-printer"></i> Print Quotation
+    </button>
+  </div>
+  <script src="https://unpkg.com/@tabler/core@latest/dist/js/tabler.min.js"></script>
+</body>
+
+</html>   
+
+
+
+
+
+
+{% comment %} amc_quotation_details.html {% endcomment %}
+{% extends "base.html" %}
+{% load static %}
+
+
+{% block content %} 
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quotation Details</title>
+    {% comment %} <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet"> {% endcomment %}
+    <style>
+        .form-check-inline {
+            display: flex;
+            align-items: center;
+        }
+        .form-check-inline input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        .form-check-inline input[type="text"] {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid mt-5">
+        <h2> Techno-Commercial AMC Proposal </h2><br>
+
+        <form id="quotationForm" method="POST">
+            {% csrf_token %}
+            <div class="card-body ">
+                <div class="mb-4">
+                    <label for="quotation_number" class="form-label">Quotation Number</label>
+                    <input type="text" id="quotation_number" name="quotation_number" class="form-control" value="{{ quotation_number }}" readonly>
+                </div>
+                <div class="card-header">
+                    <h3>Contents</h3>
+                </div>
+                <div class="mb-2" id="contentsSection">
+                    {% for content in contents %}
+                    <div class="form-check-inline mb-2" id="content_{{ forloop.counter }}">
+                        <input type="hidden" name="content_select_{{ forloop.counter }}" value="0">
+                        <input type="checkbox" name="content_select_{{ forloop.counter }}" class="form-check-input content-checkbox" value="1">
+
+                        <input type="text" name="content_{{ forloop.counter }}" value="{{ content.contents }}-------------------" class="form-control">
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn btn-primary mb-2" id="addContentButton" onclick="addContent()">Add</button>
+
+
+                <!-- AMC Proposal Section -->
+                <div class="card-header">
+                    <h3>AMC Proposal</h3>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="amcTable">
+                        <thead>
+                            <tr>
+                                <th>Select</th>
+                                <th>Product on Offer</th>
+                                <th>Capacity</th>
+                                <th>Total Needed Capacity</th>
+                                <th>Wastewater Type</th>
+                                <th>Total Number Of Machines</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Existing rows are populated here from the server -->
+                            {% for inst in installations %}
+                            <tr id="row_{{ forloop.counter }}">
+                                <td>
+                                    <input type="hidden" name="select_amc_{{ forloop.counter }}" value="0">
+                                    <input type="checkbox" name="select_amc_check_{{ forloop.counter }}" class="form-check-input amc-proposal-checkbox" value="1">
+
+                                </td>
+                                <td>
+                                    <input type="text" name="pd_name_{{ forloop.counter }}" value="{{ inst.pd_name }}" class="form-control">
+                                </td>
+                                <td>
+                                    <input type="text" name="capacity_{{ forloop.counter }}" value="{{ inst.capacity }}" class="form-control">
+                                </td>
+                                <td>
+                                    <input type="text" name="total_needed_capacity_{{ forloop.counter }}" value="{{ inst.total_needed_capacity }}" class="form-control">
+                                </td>
+                                <td>
+                                    <input type="text" name="waste_water_type_{{ forloop.counter }}" value="{{ inst.waste_water_type }}" class="form-control">
+                                </td>
+                                <td>
+                                    <input type="text" name="total_no_machines_{{ forloop.counter }}" value="{{ inst.total_no_machines }}" class="form-control">
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Buttons Below Table -->
+                <div class="d-flex justify-content-start mb-3">
+                    <button type="button" class="btn btn-primary" id="addAMCButton" onclick="addAMCRow()">Add</button>
+                    <button type="button" class="btn btn-danger ms-2" id="removeAMCButton" onclick="removeAMCRow()" disabled>Remove</button>
+                </div>
+
+
+                <!-- Inclusions Section -->
+                <div class="card-header">
+                    <h3>Inclusions: Comprehensive AMC</h3>
+                </div>
+                <div class="card-header">
+                    <h4>Maintenance Support Package</h4>
+                </div>
+                <div class="mb-2" id="maintenanceSupportSection">
+                    {% for line in maintenance_lines %}
+                    <div class="form-check-inline mb-2" id="maintenanceSupport_{{ forloop.counter }}">
+                        <input type="hidden" name="maintenance_support_check_{{ forloop.counter }}" value="0">
+                        <input type="checkbox" name="maintenance_support_check_{{ forloop.counter }}" class="form-check-input" value="1">
+                        <input type="text" name="maintenance_support_{{ forloop.counter }}" value="{{ line }}" class="form-control">
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn btn-primary mb-2" onclick="addMaintenanceSupportField()">Add Line</button>
+
+                <div class="card-header">
+                    <h4>Yearly Maintenance and Upkeep</h4>
+                </div>
+                <div class="mb-2" id="yearlyMaintenanceSection">
+                    {% for line in maintenance_lines_year %}
+                    <div class="form-check-inline mb-2" id="yearlyMaintenance_{{ forloop.counter }}">
+                        <input type="hidden" name="yearly_maintenance_check_{{ forloop.counter }}" value="0">
+                        <input type="checkbox" name="yearly_maintenance_check_{{ forloop.counter }}" class="form-check-input" value="1">
+                        <input type="text" name="yearly_maintenance_{{ forloop.counter }}" value="{{ line }}" class="form-control">
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn btn-primary mb-2" onclick="addYearlyMaintenanceField()">Add Line</button>
+
+                <div class="card-header">
+                    <h4>Running Consumables and Chemicals Required</h4>
+                </div>
+                <div class="mb-2" id="runningConsumablesSection">
+                    {% for line in maintenance_lines_run %}
+                    <div class="form-check-inline mb-2" id="runningConsumables_{{ forloop.counter }}">
+                        <input type="hidden" name="running_consumables_check_{{ forloop.counter }}" value="0">
+                        <input type="checkbox" name="running_consumables_check_{{ forloop.counter }}" class="form-check-input" value="1">
+                        <input type="text" name="running_consumables_{{ forloop.counter }}" value="{{ line }}" class="form-control">
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn btn-primary mb-2" onclick="addRunningConsumablesField()">Add Line</button>
+
+                <!-- Exclusions Section -->
+                <div class="card-header">
+                    <h4>Exclusions: Comprehensive AMC</h4>
+                </div>
+                <div class="mb-2" id="exclusionsSection">
+                    {% for line in maintenance_lines_excl %}
+                    <div class="form-check-inline mb-2" id="exclusions_{{ forloop.counter }}">
+                        <input type="hidden" name="exclusions_check_{{ forloop.counter }}" value="0">
+                        <input type="checkbox" name="exclusions_check_{{ forloop.counter }}" class="form-check-input" value="1">
+                        <input type="text" name="exclusions_{{ forloop.counter }}" value="{{ line }}" class="form-control">
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn btn-primary mb-2" onclick="addExclusionsField()">Add Line</button>
+
+                <!-- AMC Proposal Section -->
+                <div class="card-header">
+                    <h3>AMC Pricing For One Year</h3>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="amcpTable">
+                        <thead>
+                            <tr>
+                                <th>select</th>
+                                <th>Product on offer</th>
+                                <th>Capacity</th>
+                                <th>Total Needed Capacity</th>
+                                <th>Wastewater Type</th>
+                                <th>Total Number Of Machines</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for inst in installations %}
+                            <tr id="amcRow_{{ forloop.counter }}">
+                                <td>
+                                    <input type="hidden" name="select_amcp_{{ forloop.counter }}" value="0">
+                                    <input type="checkbox" name="select_amcp_check_{{ forloop.counter }}" class="form-check-input" value="1">
+                                </td>
+                                <td>
+                                    <input type="text" name="pd_namep_{{ forloop.counter }}" value="{{ inst.pd_name }}" class="form-control">
+                                </td>
+                                <td>
+                                    <input type="text" name="capacityp_{{ forloop.counter }}" value="{{ inst.capacity }}" class="form-control">
+                                </td>
+                                <td>
+                                    <input type="text" name="total_needed_capacityp_{{ forloop.counter }}" value="{{ inst.total_needed_capacity }}" class="form-control">
+                                </td>
+                                <td>
+                                    <input type="text" name="waste_water_typep_{{ forloop.counter }}" value="{{ inst.waste_water_type }}" class="form-control">
+                                </td>
+                                <td>
+                                    <input type="text" name="total_no_machinesp_{{ forloop.counter }}" value="{{ inst.total_no_machines }}" class="form-control">
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="d-flex justify-content-start mb-3">
+                    <button type="button" class="btn btn-primary" onclick="addAMCPricingRow()">Add Row</button>
+                    <button type="button" id="removeAMCPricingButton" class="btn btn-danger ms-2" onclick="removeAMCPricingRow()" disabled>Remove Row</button>
+                </div>
+                <br>
+
+                <!-- AMC Particulars Section -->
+                <div class="card-header">
+                    <h3>AMC Particulars</h3>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="amcParticularsTable">
+                        <thead>
+                            <tr>
+                                <th>select</th>
+                                <th>Particulars</th>
+                                <th>1st year (Excluding 18% GST)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for particular in particulars %}
+                            <tr>
+                                <td>
+                                    <input type="hidden" name="select_per_{{ forloop.counter }}" value="0">
+                                    <input type="checkbox" name="select_per_check_{{ forloop.counter }}" class="form-check-input" value="1">
+                                </td>
+                                <td>
+                                    <input type="text" name="particulars_{{ forloop.counter }}" value="{{ particular.particulars }}" class="form-control">
+                                </td>
+                                <td>
+                                    <input type="text" name="first_year_exgst_{{ forloop.counter }}" value="{{ particular.first_year_exgst }}" class="form-control first-year-exgst" oninput="calculateTotals()">
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% comment %} <button type="button" class="btn btn-primary" onclick="addAMCParticularRow()">Add AMC Particular Row</button>
+                <button type="button" id="removeAMCParticularButton" class="btn btn-danger" onclick="removeAMCParticularRow()" disabled>Remove AMC Particular Row</button> {% endcomment %}
+                </table>
+                <div class="row mb-1">
+                    <div class="col-auto">
+                        <p>
+                            <label>
+                                <input type="checkbox" class="form-check-input" name="content_select_sub" id="subtotal-checkbox">
+                                <strong>Subtotal:</strong> 
+                                <input type="hidden" name="Subtotal1" id="Subtotal1" >
+                                <span id="subtotal"></span>
+                            </label>
+                        </p>
+                        <p>
+                            <label>
+                                <input type="checkbox" class="form-check-input" name="content_select_gst" id="gst-checkbox">
+                                <strong>GST (18%):</strong> 
+                                <input type="hidden" name="gst1" id="gst1">
+                                <span id="gst"></span>
+                            </label>
+                        </p>
+                        <p>
+                            <label>
+                                <input type="checkbox" class="form-check-input"  name="content_select_gtotal" id="grand-total-checkbox">
+                                <strong>Grand Total:</strong> 
+                                <input type="hidden" name="grand" id="grand">
+                                <span id="grand-total"></span>
+                            </label>
+                        </p>
+                    </div>
+                </div>
+                <!-- Terms and Conditions Section -->
+                <h3>Terms and Conditions</h3>
+                <div class="card-header">
+                </div>  
+                <div class="mb-2" id="termsSection">
+                    {% for line in terms_and_conds %}
+                    <div class="form-check-inline mb-2" id="term_{{ forloop.counter }}">
+                        <input type="hidden" name="terms_check_{{ forloop.counter }}" value="0">
+                        <input type="checkbox" name="terms_check_{{ forloop.counter }}" class="form-check-input" value="1">
+                        <input type="text" name="terms_{{ forloop.counter }}" id="term_{{ forloop.counter }}" value="{{ line }}" class="form-control">
+                        
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Button to Add New Term -->
+                <div class="mb-4">
+                    <button type="button" class="btn btn-primary" onclick="addTerm()">Add Line</button>
+                </div>
+
+
+
+                <button type="button" id="saveButton" class="btn btn-success">Save</button>
+                <button type="button" id="draftbutton" class="btn btn-secondary">Save as Draft</button>
+                {% comment %} <a href="{% url 'saved_quotations' %}" class="btn btn-dark">Back</a> {% endcomment %}
+            </div>
+        </form>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{% static 'js/addextraamc.js' %}"></script>
+    <script src="{% static 'js/addextrapr.js' %}"></script>
+    <script>
+        function validateSectionDependencies() {
+            // Checks if "AMC Proposal" is checked in Contents, then at least 1 AMC Proposal row must be checked
+            var amcProposalChecked = false;
+            $('.content-checkbox').each(function() {
+                var label = $(this).siblings('input[type="text"]').val() || "";
+                if ($(this).is(':checked') && label.toLowerCase().includes('amc proposal')) {
+                    amcProposalChecked = true;
+                }
+            });
+            var atLeastOneAmcChecked = $('.amc-proposal-checkbox:checked').length > 0;
+            if (amcProposalChecked && !atLeastOneAmcChecked) {
+                alert("Since you selected 'AMC Proposal' in Contents, please select at least one product in the AMC Proposal table.");
+                $('html, body').animate({scrollTop: $('#amcTable').offset().top - 80}, 400);
+                return false;
+            }
+            return true;
+        }
+        
+        $(document).ready(function () {
+            $('#saveButton').on('click', function () {
+                if (!validateSectionDependencies()) return;
+                // The rest of your AJAX code is already present
+            });
+            $('#draftbutton').on('click', function () {
+                if (!validateSectionDependencies()) return;
+                // The rest of your AJAX draft code is already present
+            });
+        });
+        </script>
+        
+
+
+    <script>
+        var enquiryId = {{ enquiry_id }}
+        console.log("enq");
+        console.log("enq",enquiryId);
+        // CSRF token setup for AJAX requests
+        function getCSRFToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]').value;
+        }
+
+        $(document).ready(function () {
+            $('#saveButton').on('click', function () {
+                // Create a FormData object from the form
+                const formElement = document.getElementById('quotationForm');
+                const formData = new FormData(formElement);
+        
+                $.ajax({
+                    url: "{% url 'store_data' enquiry_id=enquiry_id quotation_number=quotation_number %}", 
+                    type: "POST",
+                    data: formData,
+                    processData: false, 
+                    contentType: false, 
+                    headers: {
+                        "X-CSRFToken": getCSRFToken(), 
+                        "X-Requested-With": "XMLHttpRequest" 
+                    },
+                    success: function (response) {
+                        console.log("Response from server: ", response);
+                        if (response.status === "error") {
+                            alert("An error occurred: " + response.message);
+                        } else {
+                            alert("Quotation saved successfully!");
+                            window.location.href = `/riva/manage_quotation/${enquiryId}/`;
+                            
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error saving quotation:", error);
+                        alert("An error occurred while saving the quotation.");
+                    }
+                    
+                });
+                console.log("formdata ajax",formData);
+            });
+        });
+
+/////////////////////////////////////////////////////////////////////////////////
+        var enquiryId = {{ enquiry_id }}
+        console.log("enq",enquiryId);
+        // CSRF token setup for AJAX requests
+        function getCSRFToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]').value;
+        }
+
+        $(document).ready(function () {
+            $('#draftbutton').on('click', function () {
+                // Create a FormData object from the form
+                const formElement = document.getElementById('quotationForm');
+                const formData = new FormData(formElement);
+
+                $.ajax({
+                    url: "{% url 'draft_store_data' enquiry_id=enquiry_id quotation_number=quotation_number %}", 
+                    type: "POST",
+                    data: formData,
+                    processData: false, 
+                    contentType: false, 
+                    headers: {
+                        "X-CSRFToken": getCSRFToken(), 
+                        "X-Requested-With": "XMLHttpRequest" 
+                    },
+                    success: function (response) {
+                        console.log("Response from server: ", response);
+                        if (response.status === "error") {
+                            alert("An error occurred: " + response.message);
+                        } else {
+                            alert("Draft saved successfully!");
+                            window.location.href = `/riva/manage_quotation/${enquiryId}/`;
+                            
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error saving quotation:", error);
+                        alert("An error occurred while saving the quotation.");
+                    }
+                    
+                });
+                console.log("formdata ajax",formData);
+            });
+        });
+
+        function calculateTotals() {
+            // Get all input fields with the class 'first-year-exgst' and their corresponding checkboxes
+            const rows = document.querySelectorAll('tr');
+            let subtotal = 0;
+
+            rows.forEach(row => {
+                const input = row.querySelector('.first-year-exgst');
+                const checkbox = row.querySelector('[type="checkbox"]');
+
+                if (checkbox && checkbox.checked && input) {
+                    const value = parseFloat(input.value) || 0; // Convert to number or default to 0
+                    subtotal += value;
+                }
+            });
+
+            // Calculate GST and grand total
+            const gstRate = 0.18; // 18% GST
+            const gst = subtotal * gstRate;
+            const grandTotal = subtotal + gst;
+
+            // Update the values in the table
+            document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+            document.getElementById('Subtotal1').value = subtotal.toFixed(2);
+            document.getElementById('gst').textContent = gst.toFixed(2);
+            document.getElementById('gst1').value = gst.toFixed(2);
+            document.getElementById('grand-total').textContent = grandTotal.toFixed(2);
+            document.getElementById('grand').value = grandTotal.toFixed(2);
+        }
+
+        // Attach the event listener to checkboxes and input fields
+        document.querySelectorAll('.form-check-input').forEach(checkbox => {
+            checkbox.addEventListener('change', calculateTotals);
+        });
+        document.querySelectorAll('.first-year-exgst').forEach(input => {
+            input.addEventListener('input', calculateTotals);
+        });
+
+        // Call the function initially to set totals
+        calculateTotals();
+    </script>
+</body>
+{% endblock %}
+
